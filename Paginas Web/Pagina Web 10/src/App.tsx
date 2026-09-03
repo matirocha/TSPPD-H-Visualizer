@@ -5,6 +5,7 @@ import {
   PlaybackStatus,
   AnimationSpeed,
   NodeDef,
+  ModelType,
 } from './types/solution';
 import { fetchSolutionsList, fetchSolutionDetail } from './lib/api';
 import { Header } from './components/Header';
@@ -20,9 +21,10 @@ import { NodeDetailsModal } from './components/NodeDetailsModal';
 import { AlertTriangle, Loader2 } from 'lucide-react';
 
 export const App: React.FC = () => {
-  // Solutions State
+  // Solutions & Model State
   const [solutions, setSolutions] = useState<SolutionMeta[]>([]);
   const [selectedFilename, setSelectedFilename] = useState<string>('');
+  const [activeModel, setActiveModel] = useState<ModelType>('TSPPD-H');
   const [currentSolution, setCurrentSolution] = useState<SolutionData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +46,24 @@ export const App: React.FC = () => {
   // Animation Loop Ref
   const animRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | null>(null);
+
+  // Handler to switch active model and automatically match the current instance ID
+  const handleSelectModel = useCallback(
+    (newModel: ModelType) => {
+      setActiveModel(newModel);
+      const targetId = currentSolution ? currentSolution.instanceId : 1;
+      const matchingSolution = solutions.find(
+        (s) => (s.model || 'TSPPD-H') === newModel && s.instanceId === targetId
+      );
+      if (matchingSolution) {
+        setSelectedFilename(matchingSolution.filename);
+      } else {
+        const firstMatch = solutions.find((s) => (s.model || 'TSPPD-H') === newModel);
+        if (firstMatch) setSelectedFilename(firstMatch.filename);
+      }
+    },
+    [currentSolution, solutions]
+  );
 
   // 1. Load solutions list from Outputs/
   const loadSolutionsList = useCallback(async () => {
@@ -77,6 +97,9 @@ export const App: React.FC = () => {
         const data = await fetchSolutionDetail(selectedFilename);
         if (isMounted) {
           setCurrentSolution(data);
+          if (data.model && data.model !== activeModel) {
+            setActiveModel(data.model);
+          }
           setCurrentStepIndex(0);
           setProgress(0);
           setIsArrived(false);
@@ -200,6 +223,8 @@ export const App: React.FC = () => {
       <Header
         solutions={solutions}
         selectedFilename={selectedFilename}
+        activeModel={activeModel}
+        onSelectModel={handleSelectModel}
         onSelectSolution={setSelectedFilename}
         onOpenSelectorModal={() => setIsSelectorOpen(true)}
         onOpenModelModal={() => setIsModelOpen(true)}
@@ -309,6 +334,10 @@ export const App: React.FC = () => {
         onClose={() => setIsSelectorOpen(false)}
         onSelectSolution={(fn) => {
           setSelectedFilename(fn);
+          const picked = solutions.find((s) => s.filename === fn);
+          if (picked?.model && picked.model !== activeModel) {
+            setActiveModel(picked.model);
+          }
         }}
       />
 
@@ -323,6 +352,8 @@ export const App: React.FC = () => {
           <ModelFormulaModal
             isOpen={isModelOpen}
             onClose={() => setIsModelOpen(false)}
+            activeModel={activeModel}
+            onSelectModel={handleSelectModel}
           />
 
           <NodeDetailsModal

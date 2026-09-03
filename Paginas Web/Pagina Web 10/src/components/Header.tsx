@@ -1,10 +1,12 @@
 import React from 'react';
-import { Truck, RefreshCw, Layers, Table, BookOpen, ChevronDown, Check } from 'lucide-react';
-import { SolutionMeta } from '../types/solution';
+import { Truck, RefreshCw, Layers, Table, BookOpen, ChevronDown, Check, Cpu } from 'lucide-react';
+import { SolutionMeta, ModelType } from '../types/solution';
 
 interface HeaderProps {
   solutions: SolutionMeta[];
   selectedFilename: string;
+  activeModel: ModelType;
+  onSelectModel: (model: ModelType) => void;
   onSelectSolution: (filename: string) => void;
   onOpenSelectorModal: () => void;
   onOpenModelModal: () => void;
@@ -16,6 +18,8 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   solutions,
   selectedFilename,
+  activeModel,
+  onSelectModel,
   onSelectSolution,
   onOpenSelectorModal,
   onOpenModelModal,
@@ -24,6 +28,9 @@ export const Header: React.FC<HeaderProps> = ({
   onRefresh,
 }) => {
   const currentMeta = solutions.find((s) => s.filename === selectedFilename);
+
+  // Filter solutions matching the active model
+  const currentModelSolutions = solutions.filter((s) => (s.model || 'TSPPD-H') === activeModel);
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-xl">
@@ -39,8 +46,12 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="flex items-center gap-2">
               <h1 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
                 TSPPD-H Visualizer
-                <span className="text-[10px] font-mono font-extrabold uppercase px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
-                  Página 9 &middot; Gurobi Opt
+                <span className={`text-[10px] font-mono font-extrabold uppercase px-2 py-0.5 rounded-md border ${
+                  activeModel === 'TSPPD-H_1'
+                    ? 'bg-purple-500/10 text-purple-300 border-purple-500/30'
+                    : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
+                }`}>
+                  {activeModel === 'TSPPD-H_1' ? 'TSPPD-H_1 (Política 1)' : 'TSPPD-H (General)'}
                 </span>
               </h1>
             </div>
@@ -52,6 +63,32 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Quick Solution Selector Dropdown & Modal Openers */}
         <div className="flex items-center gap-2.5">
+          {/* Quick Model Toggle Pill */}
+          <div className="hidden sm:flex items-center bg-zinc-900/90 border border-zinc-700/80 rounded-xl p-0.5 shadow-sm">
+            <button
+              onClick={() => onSelectModel('TSPPD-H')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                activeModel === 'TSPPD-H'
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-xs'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+              title="Modelo General (Ecuaciones 1-16)"
+            >
+              TSPPD-H
+            </button>
+            <button
+              onClick={() => onSelectModel('TSPPD-H_1')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                activeModel === 'TSPPD-H_1'
+                  ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-xs'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+              title="Modelo con Política 1 (Ecuaciones 17-25)"
+            >
+              TSPPD-H_1
+            </button>
+          </div>
+
           {/* Solution Selector Dropdown */}
           <div className="relative flex items-center">
             <select
@@ -59,7 +96,7 @@ export const Header: React.FC<HeaderProps> = ({
               onChange={(e) => onSelectSolution(e.target.value)}
               className="appearance-none bg-zinc-900/90 border border-zinc-700/80 hover:border-zinc-600 rounded-xl pl-3 pr-8 py-1.5 text-xs font-mono text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer transition-all shadow-sm max-w-[200px] sm:max-w-[280px] truncate"
             >
-              {solutions.map((s) => (
+              {(currentModelSolutions.length > 0 ? currentModelSolutions : solutions).map((s) => (
                 <option key={s.filename} value={s.filename} className="bg-zinc-900 text-zinc-100 font-mono py-1">
                   ID #{s.instanceId} &middot; {s.numCustomers} Clientes &middot; Z*={s.objectiveValue.toFixed(2)}
                 </option>
@@ -89,14 +126,21 @@ export const Header: React.FC<HeaderProps> = ({
             <span>Matriz C_ij</span>
           </button>
 
-          {/* Model Formula Button */}
+          {/* Model Button (Renamed from "Modelo (1-16)" to "Modelo") */}
           <button
             onClick={onOpenModelModal}
-            className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-zinc-300 hover:text-white transition-all cursor-pointer"
-            title="Ver formulación matemática (Ecuaciones 1-16)"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-all cursor-pointer shadow-sm ${
+              activeModel === 'TSPPD-H_1'
+                ? 'bg-purple-950/40 hover:bg-purple-900/40 border-purple-500/40 text-purple-200 hover:text-white'
+                : 'bg-zinc-900/80 hover:bg-zinc-800 border-zinc-800 text-zinc-300 hover:text-white'
+            }`}
+            title="Elegir entre modelo TSPPD-H o TSPPD-H_1 y ver formulaciones matemáticas"
           >
-            <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-            <span>Modelo (1-16)</span>
+            <BookOpen className={`w-3.5 h-3.5 ${activeModel === 'TSPPD-H_1' ? 'text-purple-400' : 'text-amber-400'}`} />
+            <span className="font-semibold">Modelo</span>
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-300 border border-zinc-700/60">
+              {activeModel}
+            </span>
           </button>
 
           {/* Refresh Button */}

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { X, Search, Check, Layers, Route, AlertCircle, ArrowUpDown, Filter, Sparkles } from 'lucide-react';
-import { SolutionMeta } from '../types/solution';
+import { X, Search, Check, Layers, Route, AlertCircle, ArrowUpDown, Filter, Sparkles, Cpu } from 'lucide-react';
+import { SolutionMeta, ModelType } from '../types/solution';
 import { formatDistance, formatNumber } from '../lib/utils';
 
 interface SolutionSelectorModalProps {
@@ -22,11 +22,18 @@ export const SolutionSelectorModal: React.FC<SolutionSelectorModalProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortBy, setSortBy] = useState<SortByOption>('id-asc');
+  const [filterModel, setFilterModel] = useState<'all' | 'TSPPD-H' | 'TSPPD-H_1'>('all');
   const [filterHandling, setFilterHandling] = useState<'all' | 'zero' | 'with-handling'>('all');
 
   const filteredAndSortedSolutions = useMemo(() => {
     return solutions
       .filter((s) => {
+        // Model filter
+        const solModel = s.model || 'TSPPD-H';
+        if (filterModel !== 'all' && solModel !== filterModel) {
+          return false;
+        }
+
         // Text search
         const q = searchQuery.toLowerCase().trim();
         const matchesText =
@@ -34,7 +41,8 @@ export const SolutionSelectorModal: React.FC<SolutionSelectorModalProps> = ({
           s.filename.toLowerCase().includes(q) ||
           s.instance.toLowerCase().includes(q) ||
           `id ${s.instanceId}`.includes(q) ||
-          `${s.numCustomers} clientes`.includes(q);
+          `${s.numCustomers} clientes`.includes(q) ||
+          solModel.toLowerCase().includes(q);
 
         // Handling filter
         let matchesHandling = true;
@@ -61,7 +69,7 @@ export const SolutionSelectorModal: React.FC<SolutionSelectorModalProps> = ({
             return 0;
         }
       });
-  }, [solutions, searchQuery, sortBy, filterHandling]);
+  }, [solutions, searchQuery, sortBy, filterModel, filterHandling]);
 
   if (!isOpen) return null;
 
@@ -97,26 +105,64 @@ export const SolutionSelectorModal: React.FC<SolutionSelectorModalProps> = ({
         {/* Search, Filter and Sort Toolbar */}
         <div className="px-6 py-3.5 border-b border-zinc-800 bg-zinc-950/40 flex flex-wrap items-center justify-between gap-3">
           {/* Search Input */}
-          <div className="relative flex-1 min-w-[240px]">
+          <div className="relative flex-1 min-w-[200px]">
             <Search className="h-4 w-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por ID, clientes, nombre..."
+              placeholder="Buscar por ID, clientes, modelo..."
               className="w-full bg-zinc-900 border border-zinc-700/80 rounded-xl pl-9 pr-4 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-mono"
             />
           </div>
 
+          {/* Filter by Model */}
+          <div className="flex items-center gap-1.5 bg-zinc-900/90 p-1 rounded-xl border border-zinc-800 text-xs">
+            <span className="text-[11px] font-mono text-zinc-400 px-1.5 flex items-center gap-1">
+              <Cpu className="h-3 w-3 text-purple-400" />
+              Modelo:
+            </span>
+            <button
+              onClick={() => setFilterModel('all')}
+              className={`px-2 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer ${
+                filterModel === 'all'
+                  ? 'bg-zinc-800 text-white font-semibold'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              Todos
+            </button>
+            <button
+              onClick={() => setFilterModel('TSPPD-H')}
+              className={`px-2 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer ${
+                filterModel === 'TSPPD-H'
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              TSPPD-H
+            </button>
+            <button
+              onClick={() => setFilterModel('TSPPD-H_1')}
+              className={`px-2 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer ${
+                filterModel === 'TSPPD-H_1'
+                  ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30 font-semibold'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              TSPPD-H_1
+            </button>
+          </div>
+
           {/* Filter by Handling */}
           <div className="flex items-center gap-1.5 bg-zinc-900/90 p-1 rounded-xl border border-zinc-800 text-xs">
-            <span className="text-[11px] font-mono text-zinc-400 px-2 flex items-center gap-1">
+            <span className="text-[11px] font-mono text-zinc-400 px-1.5 flex items-center gap-1">
               <Filter className="h-3 w-3 text-cyan-400" />
               Handling:
             </span>
             <button
               onClick={() => setFilterHandling('all')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer ${
+              className={`px-2 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer ${
                 filterHandling === 'all'
                   ? 'bg-zinc-800 text-white font-semibold'
                   : 'text-zinc-400 hover:text-zinc-200'
@@ -126,29 +172,29 @@ export const SolutionSelectorModal: React.FC<SolutionSelectorModalProps> = ({
             </button>
             <button
               onClick={() => setFilterHandling('zero')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer ${
+              className={`px-2 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer ${
                 filterHandling === 'zero'
                   ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold'
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              Cero (h=0)
+              h=0
             </button>
             <button
               onClick={() => setFilterHandling('with-handling')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer ${
+              className={`px-2 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer ${
                 filterHandling === 'with-handling'
                   ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold'
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              Con Conflicto
+              h &gt; 0
             </button>
           </div>
 
           {/* Sort dropdown */}
           <div className="flex items-center gap-1.5 bg-zinc-900/90 p-1 rounded-xl border border-zinc-800 text-xs">
-            <span className="text-[11px] font-mono text-zinc-400 px-2 flex items-center gap-1">
+            <span className="text-[11px] font-mono text-zinc-400 px-1.5 flex items-center gap-1">
               <ArrowUpDown className="h-3 w-3 text-emerald-400" />
               Orden:
             </span>
@@ -176,6 +222,7 @@ export const SolutionSelectorModal: React.FC<SolutionSelectorModalProps> = ({
           ) : (
             filteredAndSortedSolutions.map((s) => {
               const isSelected = s.filename === selectedFilename;
+              const isH1 = s.model === 'TSPPD-H_1';
 
               return (
                 <div
@@ -193,16 +240,25 @@ export const SolutionSelectorModal: React.FC<SolutionSelectorModalProps> = ({
                     }
                   `}
                 >
-                  {/* Top line: ID and active check */}
+                  {/* Top line: ID, Model badge and active check */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <span className="h-7 w-7 rounded-xl bg-zinc-800 text-zinc-200 font-mono font-bold text-xs flex items-center justify-center border border-zinc-700">
                         #{s.instanceId}
                       </span>
                       <div>
-                        <h4 className="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors">
-                          {s.numCustomers} Clientes
-                        </h4>
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors">
+                            {s.numCustomers} Clientes
+                          </h4>
+                          <span className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded border ${
+                            isH1
+                              ? 'bg-purple-500/15 text-purple-300 border-purple-500/30'
+                              : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                          }`}>
+                            {isH1 ? 'TSPPD-H_1' : 'TSPPD-H'}
+                          </span>
+                        </div>
                         <span className="text-[10px] font-mono text-zinc-400">
                           h = {s.h} &middot; Q = {s.capacity}
                         </span>
@@ -239,7 +295,7 @@ export const SolutionSelectorModal: React.FC<SolutionSelectorModalProps> = ({
                         {formatDistance(s.totalDistance)}
                       </span>
                       <span className="flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3 text-amber-400" />
+                        <AlertCircle className={`h-3 w-3 ${s.handlingCost > 0 ? 'text-amber-400' : 'text-zinc-500'}`} />
                         H: {formatNumber(s.handlingCost, 2)}
                       </span>
                     </div>

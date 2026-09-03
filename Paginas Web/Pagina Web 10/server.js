@@ -28,8 +28,13 @@ app.get('/api/solutions', (req, res) => {
       try {
         const raw = fs.readFileSync(filePath, 'utf-8');
         const content = JSON.parse(raw);
+        const isH1 = (content.model === 'TSPPD-H_1') || file.includes('TSPPD_H1') || file.includes('_H1_');
+        const modelType = isH1 ? 'TSPPD-H_1' : 'TSPPD-H';
+        const modelName = content.modelName || (isH1 ? 'TSPPD-H_1 (Política 1, Ecs. 17-25)' : 'TSPPD-H (General, Ecs. 1-16)');
         meta = {
           ...meta,
+          model: modelType,
+          modelName: modelName,
           instance: content.instance || file.replace(/\.[^/.]+$/, ''),
           numCustomers: content.numCustomers || 0,
           instanceId: content.instanceId || 0,

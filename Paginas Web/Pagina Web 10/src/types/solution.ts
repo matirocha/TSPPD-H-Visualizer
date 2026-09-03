@@ -31,8 +31,13 @@ export interface StepData {
   explanation: string;
 }
 
+export type ModelType = 'TSPPD-H' | 'TSPPD-H_1';
+
 export interface SolutionData {
   instance: string;
+  model?: ModelType;
+  modelName?: string;
+  policy?: number;
   numCustomers: number;
   instanceId: number;
   h: number;
@@ -51,6 +56,9 @@ export interface SolutionData {
 export interface SolutionMeta {
   filename: string;
   instance: string;
+  model?: ModelType;
+  modelName?: string;
+  policy?: number;
   numCustomers: number;
   instanceId: number;
   h: number;
