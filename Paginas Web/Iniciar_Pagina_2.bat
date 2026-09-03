@@ -1,0 +1,10 @@
+@echo off
+title Iniciar TSPPD-H Visualizer - Pagina 2
+echo ===================================================
+echo   Iniciando TSPPD-H Visualizador - Pagina Web 2
+echo ===================================================
+echo.
+cd /d "%~dp0Pagina Web 2"
+start "" http://localhost:3001
+node server.js
+pause

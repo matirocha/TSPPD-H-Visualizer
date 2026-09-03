@@ -1,0 +1,16 @@
+NAME: IA_generated_2
+COMMENT: Instancia_generada_por_IA_menor_escala
+TYPE: TSPDC
+DIMENSION: 4
+CAPACITY: 18
+EDGE_WEIGHT_TYPE: EXPLICIT
+EDGE_WEIGHT_FORMAT: FULL_MATRIX
+EDGE_WEIGHT_SECTION:
+  10000000        68        57
+        68  10000000        50
+        57        50  10000000
+ DEMAND_SECTION:
+ 0   18   0
+ 1   13   11
+ 2   5   4
+ 3   0   15

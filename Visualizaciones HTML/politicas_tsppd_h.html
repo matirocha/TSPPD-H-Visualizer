@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TSPPD-H: Políticas de Manejo de Carga</title>
+<style>
+  :root {
+    --blue: #2563eb;
+    --blue-light: #93c5fd;
+    --orange: #ea580c;
+    --orange-light: #fdba74;
+    --green: #16a34a;
+    --green-light: #86efac;
+    --purple: #7c3aed;
+    --gray: #6b7280;
+    --bg: #0f172a;
+    --card: #1e293b;
+    --text: #f1f5f9;
+    --text-muted: #94a3b8;
+    --border: #334155;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .slides-wrapper {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    padding: 2rem 3rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    opacity: 0;
+    transform: translateX(80px);
+    transition: opacity .45s ease, transform .45s ease;
+    pointer-events: none;
+    overflow-y: auto;
+  }
+
+  .slide.active {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: all;
+  }
+
+  .slide.exit-left {
+    opacity: 0;
+    transform: translateX(-80px);
+  }
+
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .9rem 2.5rem;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  nav button {
+    background: var(--blue);
+    border: none;
+    color: #fff;
+    padding: .55rem 1.6rem;
+    border-radius: 8px;
+    font-size: .95rem;
+    cursor: pointer;
+    transition: background .2s, transform .1s;
+  }
+  nav button:hover { background: #1d4ed8; transform: scale(1.04); }
+  nav button:disabled { background: var(--border); color: var(--text-muted); cursor: default; transform: none; }
+
+  .dots { display: flex; gap: .5rem; }
+  .dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--border);
+    cursor: pointer;
+    transition: background .3s, transform .2s;
+  }
+  .dot.active { background: var(--blue); transform: scale(1.3); }
+
+  h1 { font-size: 2.4rem; font-weight: 800; line-height: 1.15; }
+  h2 { font-size: 1.8rem; font-weight: 700; margin-bottom: 1rem; }
+  h3 { font-size: 1.15rem; font-weight: 600; }
+  .subtitle { font-size: 1.1rem; color: var(--text-muted); margin-top: .5rem; }
+  .badge {
+    display: inline-block;
+    background: var(--blue);
+    color: white;
+    padding: .2rem .75rem;
+    border-radius: 999px;
+    font-size: .8rem;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    margin-bottom: .5rem;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem 1.5rem;
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+
+  .vehicle-labels {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 520px;
+    font-size: .75rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+
+  .vehicle-body {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    max-width: 520px;
+    height: 68px;
+    border: 2.5px solid #475569;
+    border-radius: 8px;
+    background: #0f172a;
+    overflow: hidden;
+    padding: 6px;
+    gap: 4px;
+  }
+
+  .vehicle-body::after {
+    content: '';
+    position: absolute;
+    right: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px; height: 44px;
+    background: #475569;
+    border-radius: 0 6px 6px 0;
+  }
+
+  .cargo-block {
+    height: 100%;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: .85rem;
+    color: #fff;
+    transition: width .6s cubic-bezier(.4,0,.2,1), opacity .4s;
+    flex-shrink: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  .block-a { background: var(--blue); }
+  .block-b { background: var(--orange); }
+  .block-empty { background: #1e293b; border: 1.5px dashed #334155; }
+
+  .step-container { display: flex; flex-direction: column; gap: .75rem; }
+
+  .step-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity .4s ease, transform .4s ease;
+  }
+  .step-row.visible { opacity: 1; transform: translateY(0); }
+
+  .step-num {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .8rem;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .step-text { font-size: .9rem; color: var(--text-muted); flex: 1; }
+  .step-text strong { color: var(--text); }
+
+  .cost-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    background: #1e293b;
+    border: 1.5px solid var(--border);
+    padding: .3rem .9rem;
+    border-radius: 999px;
+    font-size: .85rem;
+    font-weight: 700;
+  }
+  .cost-pill .num { font-size: 1.1rem; }
+
+  .cmp-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  .cmp-table th, .cmp-table td {
+    padding: .6rem .9rem;
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+  }
+  .cmp-table th { color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: .75rem; }
+  .cmp-table tr:last-child td { border-bottom: none; }
+  .cmp-table .highlight { color: var(--green-light); font-weight: 700; }
+  .cmp-table .bad { color: var(--orange-light); }
+
+  .demo-btn {
+    background: var(--card);
+    border: 2px solid var(--border);
+    color: var(--text);
+    padding: .5rem 1.2rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: .9rem;
+    font-weight: 600;
+    transition: all .2s;
+  }
+  .demo-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .demo-btn.selected { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+  #slide-0 {
+    background: radial-gradient(ellipse 80% 60% at 50% 40%, #1d3a6e 0%, var(--bg) 70%);
+    text-align: center;
+    align-items: center;
+  }
+
+  .cover-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    animation: float 3s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .legend { display: flex; gap: 1.5rem; align-items: center; font-size: .82rem; }
+  .legend-item { display: flex; align-items: center; gap: .4rem; }
+  .legend-box { width: 18px; height: 18px; border-radius: 4px; }
+
+  .pattern-box {
+    background: #0f172a;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: .4rem .8rem;
+    font-family: monospace;
+    font-size: .9rem;
+    display: inline-flex;
+    gap: .3rem;
+    align-items: center;
+  }
+  .p-a { color: var(--blue-light); font-weight: 700; }
+  .p-b { color: var(--orange-light); font-weight: 700; }
+  .p-sep { color: var(--text-muted); }
+
+  .route-diagram { display: flex; align-items: center; justify-content: center; gap: .5rem; flex-wrap: wrap; }
+  .node {
+    width: 54px; height: 54px;
+    border-radius: 50%;
+    border: 2.5px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: .7rem;
+    font-weight: 700;
+    background: var(--card);
+  }
+  .node.depot { border-color: var(--green); background: rgba(22,163,74,.15); }
+  .node-label { font-size: .65rem; color: var(--text-muted); }
+  .arrow { color: var(--text-muted); font-size: 1.2rem; }
+</style>
+</head>
+<body>
+
+<div class="slides-wrapper">
+
+  <!-- SLIDE 0: COVER -->
+  <div class="slide active" id="slide-0">
+    <div class="cover-icon">🚚</div>
+    <div class="badge">Battarra et al., 2010 · Transportation Science 44(3)</div>
+    <h1>TSPPD-H</h1>
+    <h1 style="color:var(--blue-light)">Políticas de Manejo de Carga</h1>
+    <p class="subtitle" style="max-width:600px;margin-top:.8rem">
+      El <strong>Traveling Salesman Problem with Pickups, Deliveries &amp; Handling Costs</strong>
+      considera un vehículo con carga trasera (LIFO) que sirve clientes con
+      <em>entregas</em> (commodity <strong style="color:var(--blue-light)">a</strong>) y
+      <em>recolecciones</em> (commodity <strong style="color:var(--orange-light)">b</strong>).
+    </p>
+    <div style="margin-top:1.5rem" class="legend">
+      <div class="legend-item">
+        <div class="legend-box" style="background:var(--blue)"></div>
+        <span>Commodity <strong>a</strong> – para entregar</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-box" style="background:var(--orange)"></div>
+        <span>Commodity <strong>b</strong> – para recoger</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-box" style="background:#1e293b;border:1.5px dashed #334155;"></div>
+        <span>Espacio libre</span>
+      </div>
+    </div>
+    <p style="margin-top:2rem;font-size:.8rem;color:var(--text-muted)">
+      Usa → / ← para navegar · Espacio para avanzar
+    </p>
+  </div>
+
+  <!-- SLIDE 1: CONTEXTO -->
+  <div class="slide" id="slide-1">
+    <div class="badge">Contexto del Problema</div>
+    <h2>Vehículo con carga trasera (LIFO)</h2>
+    <div class="grid-2" style="gap:1.2rem">
+      <div style="display:flex;flex-direction:column;gap:.9rem">
+        <div class="card">
+          <h3>🏭 Configuración inicial</h3>
+          <p style="font-size:.88rem;color:var(--text-muted);margin-top:.4rem">
+            El vehículo parte del depósito con <strong>todas las commodities a</strong>
+            cargadas. Debe visitar N clientes, entregar sus α<sub>i</sub> unidades de <strong style="color:var(--blue-light)">a</strong>
+            y recoger β<sub>i</sub> unidades de <strong style="color:var(--orange-light)">b</strong>.
+          </p>
+        </div>
+        <div class="card">
+          <h3>📦 Restricción LIFO</h3>
+          <p style="font-size:.88rem;color:var(--text-muted);margin-top:.4rem">
+            Solo se puede cargar/descargar por el <strong>Rear</strong> (trasera).
+            Lo último que entra es lo primero que puede salir.
+            Si hay <strong style="color:var(--orange-light)">b</strong> recogidas bloqueando,
+            se deben retirar primero para acceder a las <strong style="color:var(--blue-light)">a</strong>.
+          </p>
+        </div>
+        <div class="card" style="border-color:var(--blue)">
+          <h3>⚠️ Operación adicional</h3>
+          <p style="font-size:.88rem;color:var(--text-muted);margin-top:.4rem">
+            Descargar y recargar una unidad bloqueante = <strong>1 operación adicional</strong>,
+            con costo <em>h<sub>a</sub></em> o <em>h<sub>b</sub></em>.
+            Las tres políticas buscan minimizar estas operaciones.
+          </p>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.9rem;align-items:center;justify-content:center">
+        <p style="font-size:.85rem;color:var(--text-muted);text-align:center">Estado inicial del vehículo</p>
+        <div class="vehicle-labels" style="max-width:420px">
+          <span>◀ Rear (entrada/salida)</span>
+          <span>Front ▶</span>
+        </div>
+        <div class="vehicle-body" style="max-width:420px">
+          <div class="cargo-block block-a" style="width:58%">a × 10</div>
+          <div class="cargo-block block-empty" style="width:41%;font-size:.7rem;color:var(--text-muted)">(libre)</div>
+        </div>
+        <p style="font-size:.78rem;color:var(--text-muted);margin-top:.3rem;text-align:center">
+          Las <span style="color:var(--orange-light)">b</span> recogidas se cargan por el Rear,<br>
+          empujando hacia el frente las <span style="color:var(--blue-light)">a</span> restantes.
+        </p>
+        <div class="vehicle-labels" style="max-width:420px;margin-top:.8rem">
+          <span>◀ Rear</span>
+          <span>Front ▶</span>
+        </div>
+        <div class="vehicle-body" style="max-width:420px">
+          <div class="cargo-block block-b" style="width:22%">b×2</div>
+          <div class="cargo-block block-a" style="width:42%">a × 7</div>
+          <div class="cargo-block block-empty" style="width:30%;font-size:.7rem;color:var(--text-muted)">(libre)</div>
+        </div>
+        <p style="font-size:.75rem;color:var(--orange-light);text-align:center">
+          ⚠️ Las b al Rear bloquean el acceso a las a
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: POLICY 1 -->
+  <div class="slide" id="slide-2">
+    <div class="badge" style="background:var(--blue)">Política 1</div>
+    <h2>Política 1 – <span style="color:var(--blue-light)">LIFO Puro (b al Rear)</span></h2>
+    <div style="display:flex;align-items:center;gap:.7rem;margin-bottom:.8rem;flex-wrap:wrap">
+      <span style="font-size:.88rem;color:var(--text-muted)">Patrón siempre:</span>
+      <div class="pattern-box">
+        <span class="p-sep">( F</span>
+        <span class="p-a">a … a</span>
+        <span class="p-b">b … b</span>
+        <span class="p-sep">R )</span>
+      </div>
+    </div>
+    <div class="grid-2" style="gap:1rem">
+      <div class="step-container" id="p1-steps">
+        <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:.3rem">Llegando al cliente con α=4, β=4 · Vehículo: [a×7 | b×2]:</p>
+        <div class="step-row" data-delay="0">
+          <div class="step-num">1</div>
+          <div class="step-text"><strong>Retirar las b obstructoras</strong> — las 2 b del Rear se descargan temporalmente.</div>
+        </div>
+        <div class="step-row" data-delay="200">
+          <div class="step-num">2</div>
+          <div class="step-text"><strong>Entregar las 4 a</strong> — ahora accesibles, se entregan al cliente.</div>
+        </div>
+        <div class="step-row" data-delay="400">
+          <div class="step-num">3</div>
+          <div class="step-text"><strong>Recargar las 2 b al Rear</strong> — vuelven a su posición. (+2 ops)</div>
+        </div>
+        <div class="step-row" data-delay="600">
+          <div class="step-num">4</div>
+          <div class="step-text"><strong>Cargar las 4 b nuevas al Rear</strong> — la recolección del cliente se carga.</div>
+        </div>
+        <div class="step-row" data-delay="800">
+          <div class="step-num" style="background:var(--orange)">!</div>
+          <div class="step-text"><strong>Costo:</strong> solo las b que <em>obstruyen</em> generan operaciones adicionales. Económico si hay pocas b previas.</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:.8rem;align-items:center">
+        <div class="vehicle-labels" style="max-width:380px">
+          <span>◀ Rear</span>
+          <span>Front ▶</span>
+        </div>
+        <div id="p1-veh" class="vehicle-body" style="max-width:380px"></div>
+        <div id="p1-label" style="font-size:.8rem;color:var(--text-muted);text-align:center;height:2.5rem">Haz clic en "Animar" para ver el proceso paso a paso</div>
+        <div style="display:flex;gap:.7rem">
+          <button class="demo-btn" onclick="animateP1()">▶ Animar</button>
+          <button class="demo-btn" onclick="resetP1()">↺ Reiniciar</button>
+        </div>
+        <div class="cost-pill">
+          Operaciones adicionales: <span class="num" id="p1-cost-num" style="color:var(--orange-light)">0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: POLICY 2 -->
+  <div class="slide" id="slide-3">
+    <div class="badge" style="background:var(--orange)">Política 2</div>
+    <h2>Política 2 – <span style="color:var(--orange-light)">b siempre al Front</span></h2>
+    <div style="display:flex;align-items:center;gap:.7rem;margin-bottom:.8rem;flex-wrap:wrap">
+      <span style="font-size:.88rem;color:var(--text-muted)">Patrón siempre:</span>
+      <div class="pattern-box">
+        <span class="p-sep">( F</span>
+        <span class="p-b">b … b</span>
+        <span class="p-a">a … a</span>
+        <span class="p-sep">R )</span>
+      </div>
+    </div>
+    <div class="grid-2" style="gap:1rem">
+      <div class="step-container" id="p2-steps">
+        <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:.3rem">Llegando al cliente con α=4, β=4 · Vehículo: [b×2 | a×7]:</p>
+        <div class="step-row" data-delay="0">
+          <div class="step-num" style="background:var(--orange)">1</div>
+          <div class="step-text"><strong>Descargar TODAS las a restantes</strong> — se retiran las 7a para dejar libre el Rear.</div>
+        </div>
+        <div class="step-row" data-delay="200">
+          <div class="step-num" style="background:var(--orange)">2</div>
+          <div class="step-text"><strong>Cargar las 4 b nuevas al frente del bloque b</strong> — quedan al frente del vehículo.</div>
+        </div>
+        <div class="step-row" data-delay="400">
+          <div class="step-num" style="background:var(--orange)">3</div>
+          <div class="step-text"><strong>Recargar las 3 a restantes</strong> — se vuelven a cargar (sin las 4 entregadas). (+7 ops)</div>
+        </div>
+        <div class="step-row" data-delay="600">
+          <div class="step-num" style="background:var(--orange)">!</div>
+          <div class="step-text"><strong>Ventaja:</strong> en el próximo cliente, la a estará directamente en el Rear sin obstáculos. Se paga ahora para ahorrar después.</div>
+        </div>
+        <div class="step-row" data-delay="800">
+          <div class="step-num" style="background:var(--orange)">⚠</div>
+          <div class="step-text"><strong>Costo alto</strong> si quedan muchas a en el vehículo. Mejor al final del recorrido cuando quedan pocas a.</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:.8rem;align-items:center">
+        <div class="vehicle-labels" style="max-width:380px">
+          <span>◀ Rear</span>
+          <span>Front ▶</span>
+        </div>
+        <div id="p2-veh" class="vehicle-body" style="max-width:380px"></div>
+        <div id="p2-label" style="font-size:.8rem;color:var(--text-muted);text-align:center;height:2.5rem">Haz clic en "Animar" para ver el proceso paso a paso</div>
+        <div style="display:flex;gap:.7rem">
+          <button class="demo-btn" onclick="animateP2()">▶ Animar</button>
+          <button class="demo-btn" onclick="resetP2()">↺ Reiniciar</button>
+        </div>
+        <div class="cost-pill">
+          Operaciones adicionales: <span class="num" id="p2-cost-num" style="color:var(--orange-light)">0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: POLICY 3 -->
+  <div class="slide" id="slide-4">
+    <div class="badge" style="background:var(--purple)">Política 3</div>
+    <h2>Política 3 – <span style="color:#c4b5fd">Híbrida: elige P1 o P2 por cliente</span></h2>
+    <div style="display:flex;align-items:center;gap:.7rem;margin-bottom:.8rem;flex-wrap:wrap">
+      <span style="font-size:.88rem;color:var(--text-muted)">Patrón posible:</span>
+      <div class="pattern-box">
+        <span class="p-sep">( F</span>
+        <span class="p-b">b</span>
+        <span class="p-a">a…a</span>
+        <span class="p-b">b</span>
+        <span class="p-sep">R )</span>
+      </div>
+      <span style="font-size:.8rem;color:var(--text-muted)">hasta 3 bloques</span>
+    </div>
+    <div class="grid-2" style="gap:1rem">
+      <div style="display:flex;flex-direction:column;gap:.8rem">
+        <div class="card" style="border-color:var(--purple)">
+          <h3 style="color:#c4b5fd">Decisión local en cada cliente</h3>
+          <p style="font-size:.85rem;color:var(--text-muted);margin-top:.4rem">
+            En cada parada, el agente evalúa y elige la política más económica:
+          </p>
+          <ul style="font-size:.85rem;color:var(--text-muted);margin-top:.4rem;padding-left:1.2rem;display:flex;flex-direction:column;gap:.3rem">
+            <li><strong style="color:var(--blue-light)">P1</strong>: solo retirar las b que obstruyen → barato si hay pocas b previas</li>
+            <li><strong style="color:var(--orange-light)">P2</strong>: reorganizar todo → barato si quedan pocas a</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>📊 Cuándo conviene cada opción</h3>
+          <table class="cmp-table" style="margin-top:.5rem">
+            <thead><tr><th>Condición</th><th>Elegir</th></tr></thead>
+            <tbody>
+              <tr><td style="text-align:left">Pocas b previas recolectadas</td><td class="highlight">P1</td></tr>
+              <tr><td style="text-align:left">Muchas b previas, pocas a restantes</td><td class="highlight">P2</td></tr>
+              <tr><td style="text-align:left">Primera parada (sin b aún)</td><td class="highlight">P1 (gratis)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card" style="border-color:var(--green)">
+          <h3>✅ Ventaja práctica</h3>
+          <p style="font-size:.85rem;color:var(--text-muted);margin-top:.4rem">
+            P3 no es óptima, pero combina lo mejor de ambas con instrucciones
+            simples para el conductor. La solución óptima requiere inserciones
+            en posiciones <em>intermedias</em>, lo que complica la operación real.
+          </p>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:.8rem;align-items:center">
+        <p style="font-size:.82rem;color:var(--text-muted);text-align:center">
+          Escenario: [a×3 | b×2] en Rear. Cliente pide entregar 1a, recoger 2b.
+        </p>
+        <div class="vehicle-labels" style="max-width:380px">
+          <span>◀ Rear</span>
+          <span>Front ▶</span>
+        </div>
+        <div id="p3-veh" class="vehicle-body" style="max-width:380px"></div>
+        <div id="p3-label" style="font-size:.8rem;color:var(--text-muted);text-align:center;height:2.5rem;max-width:380px">Elige una política para ver el resultado</div>
+        <div style="display:flex;gap:.7rem;flex-wrap:wrap;justify-content:center">
+          <button class="demo-btn" id="p3-btn1" onclick="animateP3(1)">Elegir Política 1</button>
+          <button class="demo-btn" id="p3-btn2" onclick="animateP3(2)">Elegir Política 2</button>
+          <button class="demo-btn" onclick="resetP3()">↺ Reiniciar</button>
+        </div>
+        <div class="cost-pill">
+          Operaciones adicionales: <span class="num" id="p3-cost-num" style="color:var(--orange-light)">0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: EXAMPLE FROM PAPER -->
+  <div class="slide" id="slide-5">
+    <div class="badge" style="background:var(--green)">Ejemplo del Paper (Figura 1)</div>
+    <h2>3 Clientes — Comparando las 3 Políticas</h2>
+    <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:.8rem">
+      Ruta: Depósito → C1 (α=3, β=2) → C2 (α=4, β=4) → C3 (α=3, β=4) · h<sub>a</sub>=h<sub>b</sub>=1
+    </p>
+    <div class="route-diagram" style="margin-bottom:.8rem">
+      <div class="node depot"><span>🏭</span><span class="node-label">Depot</span></div>
+      <span class="arrow">→</span>
+      <div class="node"><span style="font-size:.9rem">C1</span><span class="node-label">(3,2)</span></div>
+      <span class="arrow">→</span>
+      <div class="node"><span style="font-size:.9rem">C2</span><span class="node-label">(4,4)</span></div>
+      <span class="arrow">→</span>
+      <div class="node"><span style="font-size:.9rem">C3</span><span class="node-label">(3,4)</span></div>
+      <span class="arrow">→</span>
+      <div class="node depot"><span>🏭</span><span class="node-label">Depot</span></div>
+    </div>
+
+    <div class="grid-3" style="gap:.8rem">
+      <!-- P1 -->
+      <div style="display:flex;flex-direction:column;gap:.5rem">
+        <h3 style="color:var(--blue-light);text-align:center">Política 1</h3>
+        <div class="card" style="border-color:var(--blue);padding:.8rem">
+          <p style="font-size:.75rem;color:var(--text-muted)">Depósito → a×10 cargadas</p>
+        </div>
+        <div class="card" style="padding:.8rem">
+          <p style="font-size:.75rem;color:var(--text-muted)">Tras C1 (α=3, β=2)</p>
+          <p style="font-size:.78rem;margin-top:.2rem">[<span style="color:var(--blue-light)">a×7</span> | <span style="color:var(--orange-light)">b×2</span>]</p>
+          <p style="font-size:.72rem;color:var(--green-light)">+0 ops (no hay b previas)</p>
+        </div>
+        <div class="card" style="padding:.8rem">
+          <p style="font-size:.75rem;color:var(--text-muted)">Tras C2 (α=4, β=4)</p>
+          <p style="font-size:.78rem;margin-top:.2rem">[<span style="color:var(--blue-light)">a×3</span> | <span style="color:var(--orange-light)">b×6</span>]</p>
+          <p style="font-size:.72rem;color:var(--orange-light)">+2 ops (retirar 2b)</p>
+        </div>
+        <div class="card" style="padding:.8rem">
+          <p style="font-size:.75rem;color:var(--text-muted)">Tras C3 (α=3, β=4)</p>
+          <p style="font-size:.78rem;margin-top:.2rem">[<span style="color:var(--orange-light)">b×10</span>]</p>
+          <p style="font-size:.72rem;color:var(--orange-light)">+6 ops (retirar 6b)</p>
+        </div>
+        <div class="cost-pill" style="justify-content:center">
+          Total: <span class="num" style="color:var(--orange-light)">8 ops</span>
+        </div>
+      </div>
+
+      <!-- P2 -->
+      <div style="display:flex;flex-direction:column;gap:.5rem">
+        <h3 style="color:var(--orange-light);text-align:center">Política 2</h3>
+        <div class="card" style="border-color:var(--orange);padding:.8rem">
+          <p style="font-size:.75rem;color:var(--text-muted)">Depósito → a×10 cargadas</p>
+        </div>
+        <div class="card" style="padding:.8rem">
+          <p style="font-size:.75rem;color:var(--text-muted)">Tras C1 (α=3, β=2)</p>
+          <p style="font-size:.78rem;margin-top:.2rem">[<span style="color:var(--orange-light)">b×2</span> | <span style="color:var(--blue-light)">a×7</span>]</p>
+          <p style="font-size:.72rem;color:var(--orange-light)">+7 ops (sacar 7a, acomodar)</p>
+        </div>
+        <div class="card" style="padding:.8rem">
+          <p style="font-size:.75rem;color:var(--text-muted)">Tras C2 (α=4, β=4)</p>
+          <p style="font-size:.78rem;margin-top:.2rem">[<span style="color:var(--orange-light)">b×6</span> | <span style="color:var(--blue-light)">a×3</span>]</p>
+          <p style="font-size:.72rem;color:var(--orange-light)">+3 ops (sacar 3a, acomodar)</p>
+        </div>
+        <div class="card" style="padding:.8rem">
+          <p style="font-size:.75rem;color:var(--text-muted)">Tras C3 (α=3, β=4)</p>
+          <p style="font-size:.78rem;margin-top:.2rem">[<span style="color:var(--orange-light)">b×10</span>]</p>
+          <p style="font-size:.72rem;color:var(--green-light)">+0 ops (a ya accesible)</p>
+        </div>
+        <div class="cost-pill" style="justify-content:center">
+          Total: <span class="num" style="color:var(--orange-light)">10 ops</span>
+        </div>
+      </div>
+
+      <!-- P3 -->
+      <div style="display:flex;flex-direction:column;gap:.5rem">
+        <h3 style="color:#c4b5fd;text-align:center">Política 3 🏆</h3>
+        <div class="card" style="border-color:var(--purple);padding:.8rem">
+          <p style="font-size:.75rem;color:var(--text-muted)">Depósito → a×10 cargadas</p>
+        </div>
+        <div class="card" style="padding:.8rem">
+          <p style="font-size:.75rem;color:var(--text-muted)">C1: aplica <strong style="color:var(--blue-light)">P1</strong></p>
+          <p style="font-size:.78rem;margin-top:.2rem">[<span style="color:var(--blue-light)">a×7</span> | <span style="color:var(--orange-light)">b×2</span>]</p>
+          <p style="font-size:.72rem;color:var(--green-light)">+0 ops</p>
+        </div>
+        <div class="card" style="padding:.8rem">
+          <p style="font-size:.75rem;color:var(--text-muted)">C2: aplica <strong style="color:var(--orange-light)">P2</strong></p>
+          <p style="font-size:.78rem;margin-top:.2rem">[<span style="color:var(--orange-light)">b×6</span> | <span style="color:var(--blue-light)">a×3</span>]</p>
+          <p style="font-size:.72rem;color:var(--orange-light)">+5 ops (2b+3a fuera/dentro)</p>
+        </div>
+        <div class="card" style="padding:.8rem">
+          <p style="font-size:.75rem;color:var(--text-muted)">C3: aplica <strong style="color:var(--blue-light)">P1</strong></p>
+          <p style="font-size:.78rem;margin-top:.2rem">[<span style="color:var(--orange-light)">b×10</span>]</p>
+          <p style="font-size:.72rem;color:var(--green-light)">+0 ops</p>
+        </div>
+        <div class="cost-pill" style="justify-content:center;border-color:var(--green)">
+          Total: <span class="num" style="color:var(--green-light)">5 ops</span> ✓
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: SUMMARY -->
+  <div class="slide" id="slide-6">
+    <div class="badge" style="background:var(--green)">Resumen</div>
+    <h2>Las Tres Políticas en Perspectiva</h2>
+    <table class="cmp-table" style="margin-bottom:1.2rem">
+      <thead>
+        <tr>
+          <th>Política</th>
+          <th>Patrón de carga</th>
+          <th>Qué hace en cada cliente</th>
+          <th>Costo típico</th>
+          <th>Formulación ILP</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong style="color:var(--blue-light)">Política 1</strong></td>
+          <td><span class="p-a">a…a</span> | <span class="p-b">b…b</span> ← Rear</td>
+          <td style="text-align:left;font-size:.82rem">Solo retira b obstructoras, entrega a, recarga b</td>
+          <td class="highlight">Moderado</td>
+          <td class="highlight">Simple (2 flujos yᵢⱼ, zᵢⱼ)</td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--orange-light)">Política 2</strong></td>
+          <td><span class="p-b">b…b</span> → Front | <span class="p-a">a…a</span></td>
+          <td style="text-align:left;font-size:.82rem">Saca todas las a, mete b al front, recarga a</td>
+          <td class="bad">Mayor</td>
+          <td class="highlight">Simple (2 flujos yᵢⱼ, zᵢⱼ)</td>
+        </tr>
+        <tr>
+          <td><strong style="color:#c4b5fd">Política 3</strong></td>
+          <td><span class="p-b">b</span>|<span class="p-a">a…a</span>|<span class="p-b">b</span></td>
+          <td style="text-align:left;font-size:.82rem">Elige P1 o P2 por cliente según situación</td>
+          <td class="highlight">Menor</td>
+          <td class="bad">Extendida (3 flujos)</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="grid-2" style="gap:1rem">
+      <div class="card" style="border-color:var(--green)">
+        <h3>📌 Contribución del paper</h3>
+        <ul style="font-size:.85rem;color:var(--text-muted);margin-top:.5rem;padding-left:1.2rem;display:flex;flex-direction:column;gap:.4rem">
+          <li>Formulación ILP exacta para TSPPD-H completo</li>
+          <li>Formulaciones tractables para P1 y P2 (flujos)</li>
+          <li>Formulación extendida para P3 (tres bloques)</li>
+          <li>Branch-and-Cut + Benders decomposition</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>🚲 Aplicación: Bike Sharing</h3>
+        <p style="font-size:.85rem;color:var(--text-muted);margin-top:.5rem">
+          Bicicletas en buen estado = commodity <strong style="color:var(--blue-light)">a</strong> (entregar a estaciones).
+          Bicicletas defectuosas = commodity <strong style="color:var(--orange-light)">b</strong> (recoger y llevar a talleres).
+          La carga en rack lineal genera exactamente el conflicto LIFO que modelan estas políticas.
+        </p>
+      </div>
+    </div>
+    <p style="margin-top:.8rem;font-size:.78rem;color:var(--text-muted);text-align:center">
+      Battarra, M., Cordeau, J.-F., Iori, M. &amp; Laporte, G. (2010).
+      <em>The Traveling Salesman Problem with Pickups, Deliveries, and Handling Costs.</em>
+      Transportation Science, 44(3), 383–399.
+    </p>
+  </div>
+
+</div><!-- end slides-wrapper -->
+
+<nav>
+  <button id="btn-prev" onclick="changeSlide(-1)" disabled>← Anterior</button>
+  <div class="dots" id="dots"></div>
+  <button id="btn-next" onclick="changeSlide(1)">Siguiente →</button>
+</nav>
+
+<script>
+// ── SLIDE MANAGER ──
+const TOTAL = 7;
+let current = 0;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 0; i < TOTAL; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 0 ? ' active' : '');
+  d.onclick = () => goTo(i);
+  dotsEl.appendChild(d);
+}
+
+function changeSlide(dir) { goTo(current + dir); }
+
+function goTo(idx) {
+  if (idx < 0 || idx >= TOTAL) return;
+  const slides = document.querySelectorAll('.slide');
+  slides[current].classList.remove('active');
+  slides[current].classList.add('exit-left');
+  setTimeout(() => slides[current].classList.remove('exit-left'), 500);
+  current = idx;
+  slides[current].classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === current));
+  document.getElementById('btn-prev').disabled = current === 0;
+  document.getElementById('btn-next').disabled = current === TOTAL - 1;
+  if (current === 2) triggerSteps('p1-steps');
+  if (current === 3) triggerSteps('p2-steps');
+}
+
+function triggerSteps(id) {
+  const rows = document.querySelectorAll(`#${id} .step-row`);
+  rows.forEach(r => r.classList.remove('visible'));
+  rows.forEach(r => {
+    const delay = parseInt(r.dataset.delay || 0) + 150;
+    setTimeout(() => r.classList.add('visible'), delay);
+  });
+}
+
+// ── VEHICLE RENDERING ──
+function renderVehicle(id, blocks) {
+  const el = document.getElementById(id);
+  el.innerHTML = '';
+  const total = blocks.reduce((s, b) => s + b.count, 0) || 10;
+  blocks.forEach(block => {
+    if (block.count <= 0) return;
+    const div = document.createElement('div');
+    const pct = (block.count / total) * 100;
+    div.style.width = pct + '%';
+    div.className = 'cargo-block ' + (block.type === 'a' ? 'block-a' : block.type === 'b' ? 'block-b' : 'block-empty');
+    if (pct > 8) div.textContent = block.type === 'empty' ? '' : block.type.toUpperCase() + '×' + block.count;
+    el.appendChild(div);
+  });
+}
+
+// ── POLICY 1 ANIMATION ──
+// Scenario: [a×7 | b×2] arriving at customer α=4, β=4
+const p1States = [
+  { label: 'Llegada: [a×7 | b×2] en Rear, cliente pide α=4, β=4', state: [{type:'a',count:7},{type:'b',count:2},{type:'empty',count:1}], ops: 0 },
+  { label: '① Retirando temporalmente las 2 b obstructoras...', state: [{type:'a',count:7},{type:'empty',count:3}], ops: 0 },
+  { label: '② Entregando 4 a al cliente', state: [{type:'a',count:3},{type:'empty',count:7}], ops: 0 },
+  { label: '③ Recargando las 2 b al Rear (+2 ops)', state: [{type:'a',count:3},{type:'b',count:2},{type:'empty',count:5}], ops: 2 },
+  { label: '④ Cargando las 4 b nuevas al Rear', state: [{type:'a',count:3},{type:'b',count:6}], ops: 2 },
+  { label: '✅ Final: [a×3 | b×6] — b acumuladas al Rear', state: [{type:'a',count:3},{type:'b',count:6}], ops: 2 },
+];
+let p1idx = 0, p1timer = null;
+
+function resetP1() {
+  if (p1timer) clearInterval(p1timer);
+  p1idx = 0;
+  renderVehicle('p1-veh', p1States[0].state);
+  document.getElementById('p1-label').textContent = p1States[0].label;
+  document.getElementById('p1-cost-num').textContent = '0';
+}
+
+function animateP1() {
+  if (p1timer) clearInterval(p1timer);
+  resetP1();
+  p1timer = setInterval(() => {
+    p1idx++;
+    if (p1idx >= p1States.length) { clearInterval(p1timer); return; }
+    const s = p1States[p1idx];
+    renderVehicle('p1-veh', s.state);
+    document.getElementById('p1-label').textContent = s.label;
+    document.getElementById('p1-cost-num').textContent = s.ops;
+  }, 1200);
+}
+renderVehicle('p1-veh', p1States[0].state);
+
+// ── POLICY 2 ANIMATION ──
+// Same scenario but vehicle starts as [b×2 | a×7]
+const p2States = [
+  { label: 'Llegada: [b×2 | a×7] en orden P2, cliente pide α=4, β=4', state: [{type:'b',count:2},{type:'a',count:7},{type:'empty',count:1}], ops: 0 },
+  { label: '① Descargando TODAS las 7 a restantes temporalmente', state: [{type:'b',count:2},{type:'empty',count:8}], ops: 0 },
+  { label: '② Cargando 4 b nuevas al frente del bloque b', state: [{type:'b',count:6},{type:'empty',count:4}], ops: 0 },
+  { label: '③ Recargando las 3 a restantes al Rear (+7 ops)', state: [{type:'b',count:6},{type:'a',count:3}], ops: 7 },
+  { label: '✅ Final: [b×6 | a×3] — a directamente accesible en próxima parada', state: [{type:'b',count:6},{type:'a',count:3}], ops: 7 },
+];
+let p2idx = 0, p2timer = null;
+
+function resetP2() {
+  if (p2timer) clearInterval(p2timer);
+  p2idx = 0;
+  renderVehicle('p2-veh', p2States[0].state);
+  document.getElementById('p2-label').textContent = p2States[0].label;
+  document.getElementById('p2-cost-num').textContent = '0';
+}
+
+function animateP2() {
+  if (p2timer) clearInterval(p2timer);
+  resetP2();
+  p2timer = setInterval(() => {
+    p2idx++;
+    if (p2idx >= p2States.length) { clearInterval(p2timer); return; }
+    const s = p2States[p2idx];
+    renderVehicle('p2-veh', s.state);
+    document.getElementById('p2-label').textContent = s.label;
+    document.getElementById('p2-cost-num').textContent = s.ops;
+  }, 1200);
+}
+renderVehicle('p2-veh', p2States[0].state);
+
+// ── POLICY 3 INTERACTIVE ──
+function resetP3() {
+  renderVehicle('p3-veh', [{type:'b',count:2},{type:'a',count:3}]);
+  document.getElementById('p3-label').textContent = 'Estado: [b×2 | a×3] — elige una política para el próximo cliente';
+  document.getElementById('p3-cost-num').textContent = '0';
+  document.getElementById('p3-btn1').classList.remove('selected');
+  document.getElementById('p3-btn2').classList.remove('selected');
+}
+
+function animateP3(policy) {
+  document.getElementById('p3-btn1').classList.toggle('selected', policy === 1);
+  document.getElementById('p3-btn2').classList.toggle('selected', policy === 2);
+
+  if (policy === 1) {
+    // P1: retire b obstructoras (2), deliver 1a, reload 2b, add 2b new
+    const steps = [
+      { label: '① Retirando 2 b obstructoras del Rear...', state: [{type:'a',count:3},{type:'empty',count:2}], ops: 0 },
+      { label: '② Entregando 1 a al cliente', state: [{type:'a',count:2},{type:'empty',count:3}], ops: 0 },
+      { label: '③ Recargando 2 b + cargando 2 b nuevas al Rear (+2 ops)', state: [{type:'a',count:2},{type:'b',count:4}], ops: 2 },
+      { label: '✅ Resultado P1: [a×2 | b×4] — 2 ops adicionales', state: [{type:'a',count:2},{type:'b',count:4}], ops: 2 },
+    ];
+    runSteps('p3-veh', 'p3-label', 'p3-cost-num', steps, 1000);
+  } else {
+    // P2: retire all a (3), add 2b new, reload 2a remaining
+    const steps = [
+      { label: '① Descargando todas las 3 a temporalmente...', state: [{type:'b',count:2},{type:'empty',count:3}], ops: 0 },
+      { label: '② Cargando 2 b nuevas al bloque b', state: [{type:'b',count:4},{type:'empty',count:1}], ops: 0 },
+      { label: '③ Recargando las 2 a restantes al Rear (+3 ops)', state: [{type:'b',count:4},{type:'a',count:2}], ops: 3 },
+      { label: '✅ Resultado P2: [b×4 | a×2] — 3 ops adicionales', state: [{type:'b',count:4},{type:'a',count:2}], ops: 3 },
+    ];
+    runSteps('p3-veh', 'p3-label', 'p3-cost-num', steps, 1000);
+  }
+}
+
+function runSteps(vehId, labelId, costId, steps, interval) {
+  let i = 0;
+  const t = setInterval(() => {
+    if (i >= steps.length) { clearInterval(t); return; }
+    renderVehicle(vehId, steps[i].state);
+    document.getElementById(labelId).textContent = steps[i].label;
+    document.getElementById(costId).textContent = steps[i].ops;
+    i++;
+  }, interval);
+}
+
+resetP3();
+
+// ── KEYBOARD NAVIGATION ──
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); changeSlide(1); }
+  if (e.key === 'ArrowLeft') changeSlide(-1);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Production build outputs
+dist/
+build/
+.vite/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyc
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment and OS
+.env
+.env.local
+.DS_Store
+Thumbs.db

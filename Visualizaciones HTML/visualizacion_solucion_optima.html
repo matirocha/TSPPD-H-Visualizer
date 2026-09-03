@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSPPD-H - Visualización de Solución Óptima</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        :root {
+            --bg-primary: #0f1117;
+            --bg-secondary: #1a1d27;
+            --bg-card: #21242f;
+            --bg-card-hover: #282c3a;
+            --accent-blue: #4f8ff7;
+            --accent-blue-dim: #2d5aa0;
+            --accent-orange: #f7944f;
+            --accent-orange-dim: #a06030;
+            --accent-green: #4ff78f;
+            --accent-green-dim: #2da060;
+            --accent-red: #f74f4f;
+            --accent-purple: #a855f7;
+            --text-primary: #e8eaf0;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border: #2d3348;
+            --depot-color: #f59e0b;
+            --customer-color: #3b82f6;
+            --type-a-color: #ef4444;
+            --type-a-bg: rgba(239,68,68,0.15);
+            --type-b-color: #22d3ee;
+            --type-b-bg: rgba(34,211,238,0.15);
+            --truck-color: #a855f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-card));
+            border-bottom: 1px solid var(--border);
+            padding: 20px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .header-icon {
+            width: 48px; height: 48px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px;
+        }
+        .header h1 {
+            font-size: 22px; font-weight: 700;
+            background: linear-gradient(to right, var(--text-primary), var(--accent-blue));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .header p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+
+        .header-stats {
+            display: flex; gap: 16px; flex-wrap: wrap;
+        }
+        .stat-badge {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 8px 16px;
+            text-align: center;
+            min-width: 90px;
+        }
+        .stat-badge .value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 18px; font-weight: 700;
+        }
+        .stat-badge .label {
+            font-size: 10px; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+        .stat-badge.optimal .value { color: var(--accent-green); }
+        .stat-badge.distance .value { color: var(--accent-orange); }
+        .stat-badge.capacity .value { color: var(--accent-blue); }
+        .stat-badge.handling .value { color: var(--accent-purple); }
+
+        /* ===== MAIN LAYOUT ===== */
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            grid-template-rows: auto auto;
+            gap: 0;
+            height: calc(100vh - 100px);
+        }
+
+        /* ===== GRAPH PANEL ===== */
+        .graph-panel {
+            grid-row: 1 / 3;
+            position: relative;
+            background: var(--bg-primary);
+            border-right: 1px solid var(--border);
+            overflow: hidden;
+        }
+        .graph-panel canvas {
+            width: 100%; height: 100%;
+        }
+        .graph-legend {
+            position: absolute; top: 16px; left: 16px;
+            background: rgba(33, 36, 47, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 18px;
+            font-size: 12px;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .legend-item {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .legend-dot {
+            width: 12px; height: 12px; border-radius: 50%;
+        }
+        .legend-line {
+            width: 24px; height: 3px; border-radius: 2px;
+        }
+
+        /* ===== RIGHT SIDE ===== */
+        .right-panel {
+            display: flex; flex-direction: column;
+            background: var(--bg-secondary);
+            overflow: hidden;
+        }
+
+        /* ===== CONTROLS ===== */
+        .controls-bar {
+            padding: 16px 20px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            display: flex; flex-direction: column; gap: 12px;
+        }
+        .controls-row {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .ctrl-btn {
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 16px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
+        }
+        .ctrl-btn:hover { background: var(--bg-card-hover); border-color: var(--accent-blue); }
+        .ctrl-btn.active {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: white;
+        }
+        .ctrl-btn.play-btn { width: 52px; height: 52px; border-radius: 50%; font-size: 20px; }
+        .ctrl-btn.play-btn.active {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            box-shadow: 0 0 20px rgba(79, 143, 247, 0.3);
+        }
+
+        .speed-control {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 12px; color: var(--text-secondary);
+        }
+        .speed-control input[type="range"] {
+            width: 100px; accent-color: var(--accent-blue);
+        }
+        .step-indicator {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+        .step-indicator span { color: var(--accent-blue); font-weight: 600; }
+
+        /* ===== TRUCK CARGO ===== */
+        .cargo-section {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .cargo-title {
+            font-size: 13px; font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .cargo-truck {
+            background: var(--bg-primary);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 24px 16px 16px 16px;
+            position: relative;
+            min-height: 80px;
+        }
+        .cargo-truck::before {
+            content: '🚛';
+            position: absolute; top: -12px; right: 12px;
+            font-size: 20px;
+            background: var(--bg-secondary);
+            padding: 0 4px;
+        }
+        .truck-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .single-track {
+            display: flex;
+            gap: 2px;
+            height: 32px;
+            background: rgba(0,0,0,0.1);
+            border-radius: 4px;
+            border: 2px solid var(--border);
+            position: relative;
+            padding: 2px;
+        }
+        .cargo-bin {
+            flex: 1;
+            height: 100%;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        .cargo-bin.type-a {
+            background: var(--type-a-color);
+            border-color: #b91c1c;
+            box-shadow: 0 0 5px rgba(239, 68, 68, 0.6);
+        }
+        .cargo-bin.type-b {
+            background: var(--type-b-color);
+            border-color: #0369a1;
+            box-shadow: 0 0 5px rgba(34, 211, 238, 0.6);
+        }
+        .cargo-bin.empty {
+            background: rgba(0, 0, 0, 0.3);
+        }
+        .handling-area {
+            height: 34px;
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--accent-orange);
+            font-weight: bold;
+            text-align: right;
+            opacity: 0;
+            transition: opacity 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+        .handling-area.active {
+            opacity: 1;
+        }
+        .handling-box {
+            background: var(--type-b-bg);
+            border: 1px dashed var(--type-b-color);
+            color: var(--type-b-color);
+            padding: 4px 8px;
+            border-radius: 4px;
+            animation: moveOutIn 2.5s ease-in-out;
+        }
+        @keyframes moveOutIn {
+            0% { transform: translateY(0) translateX(0); opacity: 1; }
+            15% { transform: translateY(25px) translateX(0); opacity: 1; }
+            40% { transform: translateY(25px) translateX(-30px); opacity: 1; }
+            60% { transform: translateY(25px) translateX(-30px); opacity: 1; }
+            85% { transform: translateY(0) translateX(0); opacity: 1; }
+            100% { transform: translateY(0) translateX(0); opacity: 1; }
+        }
+
+        /* ===== OPERATION LOG ===== */
+        .operation-section {
+            padding: 16px 20px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        .operation-title {
+            font-size: 13px; font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+        .operation-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+            opacity: 0.4;
+            transform: scale(0.97);
+        }
+        .operation-card.active {
+            opacity: 1;
+            transform: scale(1);
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 20px rgba(79, 143, 247, 0.1);
+        }
+        .operation-card.completed {
+            opacity: 0.6;
+            transform: scale(0.97);
+        }
+        .op-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .op-step-num {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            background: var(--accent-blue);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+        .op-distance {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--accent-orange);
+        }
+        .op-route {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .op-route .arrow { color: var(--accent-blue); font-size: 16px; }
+        .op-actions {
+            display: flex; gap: 8px; flex-wrap: wrap;
+        }
+        .op-action {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 500;
+            display: flex; align-items: center; gap: 4px;
+        }
+        .op-action.deliver {
+            background: var(--type-a-bg);
+            color: var(--type-a-color);
+            border: 1px solid rgba(239,68,68,0.3);
+        }
+        .op-action.pickup {
+            background: var(--type-b-bg);
+            color: var(--type-b-color);
+            border: 1px solid rgba(34,211,238,0.3);
+        }
+
+        /* ===== EXPLANATION PANEL ===== */
+        .explanation-panel {
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+            padding: 16px 20px;
+            min-height: 100px;
+            flex-shrink: 0;
+        }
+        .explanation-panel .title {
+            font-size: 11px; font-weight: 600;
+            color: var(--accent-purple);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .explanation-panel .text {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        .explanation-panel .text strong { color: var(--text-primary); }
+        .explanation-panel .text .highlight-a { color: var(--type-a-color); font-weight: 600; }
+        .explanation-panel .text .highlight-b { color: var(--type-b-color); font-weight: 600; }
+
+        /* ===== FLOATING ACTION EVENT ===== */
+        .float-event {
+            position: fixed;
+            top: 50%; left: 35%;
+            transform: translate(-50%, -50%);
+            background: rgba(33, 36, 47, 0.95);
+            backdrop-filter: blur(16px);
+            border: 2px solid var(--accent-blue);
+            border-radius: 20px;
+            padding: 28px 40px;
+            z-index: 100;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .float-event.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .float-event .event-icon { font-size: 40px; margin-bottom: 8px; }
+        .float-event .event-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+        .float-event .event-desc { font-size: 13px; color: var(--text-secondary); }
+
+        /* ===== INTRO OVERLAY ===== */
+        .intro-overlay {
+            position: fixed; inset: 0;
+            background: rgba(15, 17, 23, 0.95);
+            backdrop-filter: blur(20px);
+            z-index: 200;
+            display: flex; align-items: center; justify-content: center;
+            transition: opacity 0.5s;
+        }
+        .intro-overlay.hidden { opacity: 0; pointer-events: none; }
+        .intro-content {
+            text-align: center; max-width: 600px; padding: 40px;
+        }
+        .intro-content h2 {
+            font-size: 32px; font-weight: 800;
+            background: linear-gradient(to right, var(--accent-blue), var(--accent-purple), var(--accent-orange));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 16px;
+        }
+        .intro-content p {
+            font-size: 15px; color: var(--text-secondary); line-height: 1.8;
+            margin-bottom: 24px;
+        }
+        .intro-content .legend-box {
+            display: flex; gap: 24px; justify-content: center; margin-bottom: 28px;
+            flex-wrap: wrap;
+        }
+        .intro-content .legend-entry {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 13px;
+        }
+        .intro-content .legend-entry .dot {
+            width: 14px; height: 14px; border-radius: 50%;
+        }
+        .start-btn {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: white;
+            border: none;
+            padding: 14px 40px;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(79, 143, 247, 0.3);
+        }
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* ===== ANIMATIONS ===== */
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 5px rgba(79,143,247,0.3); }
+            50% { box-shadow: 0 0 20px rgba(79,143,247,0.6); }
+        }
+        @keyframes deliverAnim {
+            0% { transform: translateY(-20px); opacity: 0; }
+            50% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(20px); opacity: 0; }
+        }
+        @keyframes pickupAnim {
+            0% { transform: translateY(20px); opacity: 0; }
+            50% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-20px); opacity: 0; }
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: 400px auto;
+            }
+            .graph-panel { grid-row: auto; border-right: none; border-bottom: 1px solid var(--border); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- INTRO OVERLAY -->
+<div class="intro-overlay" id="introOverlay">
+    <div class="intro-content">
+        <div style="font-size:60px; margin-bottom: 16px;">🚛</div>
+        <h2>TSPPD-H: Solución Óptima</h2>
+        <p>
+            Visualización interactiva del <strong>Travelling Salesman Problem with Pickup and Delivery 
+            with Handling costs (TSPPD-H)</strong>.<br><br>
+            El camión parte del <strong>depósito</strong> cargado con todas las comodidades tipo <strong style="color:var(--type-a-color)">α (entrega)</strong>, 
+            visita cada cliente para <strong style="color:var(--type-a-color)">descargar</strong> sus pedidos y 
+            <strong style="color:var(--type-b-color)">recolectar</strong> comodidades tipo <strong style="color:var(--type-b-color)">β</strong>, 
+            respetando la política <strong>LIFO</strong> y la capacidad del vehículo.
+        </p>
+        <div class="legend-box">
+            <div class="legend-entry"><div class="dot" style="background:var(--depot-color)"></div> Depósito</div>
+            <div class="legend-entry"><div class="dot" style="background:var(--customer-color)"></div> Clientes</div>
+            <div class="legend-entry"><div class="dot" style="background:var(--type-a-color)"></div> Tipo α (Entrega)</div>
+            <div class="legend-entry"><div class="dot" style="background:var(--type-b-color)"></div> Tipo β (Recolección)</div>
+        </div>
+        <p style="font-size:12px; color:var(--text-muted)">
+            Instancia: <strong>IA_generated_5</strong> · 5 Clientes · Capacidad: 45 · Valor Óptimo: 245.4
+        </p>
+        <button class="start-btn" onclick="startVisualization()">▶ Iniciar Visualización</button>
+    </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+    <div class="header-left">
+        <div class="header-icon">🚛</div>
+        <div>
+            <h1>TSPPD-H · Solución Óptima</h1>
+            <p>Instancia IA_generated_5 — 5 clientes + depósito</p>
+        </div>
+    </div>
+    <div class="header-stats">
+        <div class="stat-badge optimal">
+            <div class="value">245.4</div>
+            <div class="label">Valor Óptimo</div>
+        </div>
+        <div class="stat-badge distance">
+            <div class="value">236</div>
+            <div class="label">Distancia</div>
+        </div>
+        <div class="stat-badge handling">
+            <div class="value">9.4</div>
+            <div class="label">Costo Manejo</div>
+        </div>
+        <div class="stat-badge capacity">
+            <div class="value">45</div>
+            <div class="label">Capacidad</div>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main-container">
+    <!-- GRAPH -->
+    <div class="graph-panel">
+        <canvas id="graphCanvas"></canvas>
+        <div class="graph-legend">
+            <div class="legend-item">
+                <div class="legend-dot" style="background:var(--depot-color)"></div>
+                <span>Depósito (Nodo 0)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:var(--customer-color)"></div>
+                <span>Clientes</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-line" style="background:var(--accent-blue)"></div>
+                <span>Ruta óptima</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:var(--truck-color);animation:pulse 1.5s infinite"></div>
+                <span>Camión</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+        <!-- CONTROLS -->
+        <div class="controls-bar">
+            <div class="controls-row">
+                <button class="ctrl-btn" onclick="goToStart()" title="Ir al inicio">⏮</button>
+                <button class="ctrl-btn" onclick="prevStep()" title="Paso anterior">⏪</button>
+                <button class="ctrl-btn play-btn" id="playBtn" onclick="togglePlay()" title="Reproducir/Pausar">▶</button>
+                <button class="ctrl-btn" onclick="nextStep()" title="Siguiente paso">⏩</button>
+                <button class="ctrl-btn" onclick="goToEnd()" title="Ir al final">⏭</button>
+            </div>
+            <div class="controls-row">
+                <div class="speed-control">
+                    <span>🐢</span>
+                    <input type="range" id="speedSlider" min="0.5" max="3" step="0.25" value="1"
+                           oninput="updateSpeed(this.value)">
+                    <span>🐇</span>
+                    <span id="speedLabel" style="min-width:35px;text-align:center">1×</span>
+                </div>
+            </div>
+            <div class="step-indicator">
+                Paso <span id="currentStepDisplay">0</span> de <span>6</span>
+            </div>
+        </div>
+
+        <!-- CARGO VISUALIZATION -->
+        <div class="cargo-section">
+            <div class="cargo-title" title="Representación según Política LIFO">🚛 Carga del Camión (Bins LIFO)</div>
+            <div class="cargo-truck">
+                <div class="truck-labels">
+                    <span class="truck-front">FRENTE</span>
+                    <span class="truck-rear">PUERTA (TRASERA)</span>
+                </div>
+                <div class="single-track" id="mainCargoTrack">
+                    <!-- Bins generados por JS -->
+                </div>
+                <div class="cargo-capacity-marker" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="font-size:12px;">
+                        <span style="color:var(--type-a-color); font-weight:bold;">α: <span id="textA">39</span></span> &nbsp;|&nbsp; 
+                        <span style="color:var(--type-b-color); font-weight:bold;">β: <span id="textB">0</span></span>
+                    </div>
+                    <div>
+                        Ocupación: <span id="totalLoad">39</span> / 45
+                    </div>
+                </div>
+                <div id="handlingArea" class="handling-area"></div>
+            </div>
+        </div>
+
+        <!-- OPERATION STEPS -->
+        <div class="operation-section" id="operationSection">
+            <div class="operation-title">📋 Pasos de la Ruta</div>
+            <div id="operationCards"></div>
+        </div>
+
+        <!-- EXPLANATION -->
+        <div class="explanation-panel">
+            <div class="title">💡 Explicación</div>
+            <div class="text" id="explanationText">
+                Presiona <strong>▶ Iniciar</strong> para comenzar la animación de la ruta óptima.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FLOAT EVENT -->
+<div class="float-event" id="floatEvent">
+    <div class="event-icon" id="eventIcon"></div>
+    <div class="event-title" id="eventTitle"></div>
+    <div class="event-desc" id="eventDesc"></div>
+</div>
+
+<script>
+// ===== SOLUTION DATA =====
+const SOLUTION = {
+    instance: "IA_generated_5",
+    capacity: 45,
+    objectiveValue: 245.4,
+    totalDistance: 236,
+    handlingCost: 9.4,
+    h_a: 0.1,
+    h_b: 0.1,
+    tour: [0, 1, 3, 5, 2, 4, 0],
+    nodes: [
+        { id: 0, alpha: 0, beta: 0, isDepot: true, label: "Depósito" },
+        { id: 1, alpha: 8, beta: 14, isDepot: false, label: "Cliente 1" },
+        { id: 2, alpha: 12, beta: 5, isDepot: false, label: "Cliente 2" },
+        { id: 3, alpha: 9, beta: 5, isDepot: false, label: "Cliente 3" },
+        { id: 4, alpha: 2, beta: 12, isDepot: false, label: "Cliente 4" },
+        { id: 5, alpha: 8, beta: 9, isDepot: false, label: "Cliente 5" }
+    ],
+    steps: [
+        { from: 0, to: 1, distance: 16, aOnTruck: 39, bOnTruck: 0, deliverA: 8, pickupB: 14 },
+        { from: 1, to: 3, distance: 51, aOnTruck: 31, bOnTruck: 14, deliverA: 9, pickupB: 5 },
+        { from: 3, to: 5, distance: 4,  aOnTruck: 22, bOnTruck: 19, deliverA: 8, pickupB: 9 },
+        { from: 5, to: 2, distance: 76, aOnTruck: 14, bOnTruck: 28, deliverA: 12, pickupB: 5 },
+        { from: 2, to: 4, distance: 12, aOnTruck: 2,  bOnTruck: 33, deliverA: 2, pickupB: 12 },
+        { from: 4, to: 0, distance: 77, aOnTruck: 0,  bOnTruck: 45, deliverA: 0, pickupB: 0 }
+    ],
+    distMatrix: [
+        [10000000, 16, 72, 66, 77, 69],
+        [16, 10000000, 64, 51, 70, 53],
+        [72, 64, 10000000, 77, 12, 76],
+        [66, 51, 77, 10000000, 89, 4],
+        [77, 70, 12, 89, 10000000, 88],
+        [69, 53, 76, 4, 88, 10000000]
+    ]
+};
+
+// ===== STATE =====
+let currentStep = -1; // -1 = initial state at depot
+let isPlaying = false;
+let playInterval = null;
+let animSpeed = 1;
+let truckAnimProgress = 0;
+let truckAnimating = false;
+let truckAnimFrame = null;
+let canvas, ctx;
+let nodePositions = [];
+let canvasW, canvasH;
+
+// ===== EXPLANATIONS =====
+const explanations = [
+    `<strong>Estado Inicial:</strong> El camión se encuentra en el <strong>Depósito (Nodo 0)</strong> cargado con <span class="highlight-a">39 unidades tipo α</span> que debe entregar a los clientes. El compartimiento β está <span class="highlight-b">vacío (0 unidades)</span>. La carga ocupa una sola fila, respetando la política <strong>LIFO</strong>.`,
+
+    `<strong>Paso 1 — Depósito → Cliente 1:</strong> Al llegar, <span class="highlight-a">descarga 8 unidades tipo α</span> (pedido del cliente) de la parte trasera. Como no hay unidades β, no hay operaciones de manejo. Luego <span class="highlight-b">recoge 14 unidades tipo β</span>, que se colocan al final.`,
+
+    `<strong>Paso 2 — Cliente 1 → Cliente 3:</strong> <span class="highlight-a">Entrega 9 unidades tipo α</span>. ⚠️ <strong>Handling Operation:</strong> Las 14 unidades β recolectadas anteriormente obstruyen la salida. Se deben descargar temporalmente y luego volver a cargar (14 operaciones). Luego <span class="highlight-b">recoge 5 tipo β</span>.`,
+
+    `<strong>Paso 3 — Cliente 3 → Cliente 5:</strong> <span class="highlight-a">Descarga 8α</span>. ⚠️ <strong>Handling Operation:</strong> Se remueven temporalmente las 19 unidades β que bloquean la salida (19 operaciones). Finalmente, <span class="highlight-b">recoge 9β</span>.`,
+
+    `<strong>Paso 4 — Cliente 5 → Cliente 2:</strong> <span class="highlight-a">Entrega 12 unidades tipo α</span>. ⚠️ <strong>Handling Operation:</strong> Hay 28 unidades β obstruyendo, por lo que se descargan y recargan (28 operaciones). Después <span class="highlight-b">recoge 5β</span>.`,
+
+    `<strong>Paso 5 — Cliente 2 → Cliente 4:</strong> <span class="highlight-a">Entrega las últimas 2 unidades tipo α</span>. ⚠️ <strong>Handling Operation:</strong> Se mueven temporalmente 33 unidades β (33 operaciones). Luego <span class="highlight-b">recoge 12β</span>. Ahora el camión lleva exclusivamente tipo β.`,
+
+    `<strong>Paso 6 — Cliente 4 → Depósito:</strong> Regreso al depósito con la carga completa de <span class="highlight-b">45 unidades tipo β</span>. <strong>¡Ruta completada!</strong> (Total de operaciones de manejo: 94).`
+];
+
+// ===== INITIALIZATION =====
+function init() {
+    canvas = document.getElementById('graphCanvas');
+    ctx = canvas.getContext('2d');
+
+    resizeCanvas();
+    window.addEventListener('resize', () => {
+        resizeCanvas();
+        draw();
+    });
+
+    calculateNodePositions();
+    buildOperationCards();
+    updateState(-1);
+    draw();
+}
+
+function resizeCanvas() {
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvasW = rect.width;
+    canvasH = rect.height;
+    canvas.width = canvasW * dpr;
+    canvas.height = canvasH * dpr;
+    canvas.style.width = canvasW + 'px';
+    canvas.style.height = canvasH + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    calculateNodePositions();
+}
+
+function calculateNodePositions() {
+    const cx = canvasW / 2;
+    const cy = canvasH / 2;
+    const radius = Math.min(canvasW, canvasH) * 0.32;
+
+    nodePositions = [];
+    const n = SOLUTION.nodes.length;
+
+    // Place depot at top, customers in a circle
+    for (let i = 0; i < n; i++) {
+        if (i === 0) {
+            // Depot at top-center
+            nodePositions.push({ x: cx, y: cy - radius * 1.05 });
+        } else {
+            const angle = -Math.PI/2 + (2 * Math.PI * i / n);
+            nodePositions.push({
+                x: cx + radius * Math.cos(angle),
+                y: cy + radius * Math.sin(angle)
+            });
+        }
+    }
+}
+
+// ===== DRAWING =====
+function draw() {
+    ctx.clearRect(0, 0, canvasW, canvasH);
+
+    // Draw background grid
+    drawGrid();
+
+    // Draw all edges (faint)
+    drawAllEdges();
+
+    // Draw route edges (highlighted)
+    drawRouteEdges();
+
+    // Draw nodes
+    drawNodes();
+
+    // Draw truck
+    drawTruck();
+
+    // Draw floating particles for active operations
+    if (currentStep >= 0 && currentStep < SOLUTION.steps.length && !truckAnimating) {
+        drawOperationParticles();
+    }
+}
+
+function drawGrid() {
+    ctx.strokeStyle = 'rgba(45, 51, 72, 0.3)';
+    ctx.lineWidth = 0.5;
+    const spacing = 40;
+    for (let x = 0; x < canvasW; x += spacing) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvasH);
+        ctx.stroke();
+    }
+    for (let y = 0; y < canvasH; y += spacing) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvasW, y);
+        ctx.stroke();
+    }
+}
+
+function drawAllEdges() {
+    ctx.strokeStyle = 'rgba(45, 51, 72, 0.2)';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i < SOLUTION.nodes.length; i++) {
+        for (let j = i + 1; j < SOLUTION.nodes.length; j++) {
+            if (SOLUTION.distMatrix[i][j] < 10000000) {
+                ctx.beginPath();
+                ctx.moveTo(nodePositions[i].x, nodePositions[i].y);
+                ctx.lineTo(nodePositions[j].x, nodePositions[j].y);
+                ctx.stroke();
+            }
+        }
+    }
+}
+
+function drawRouteEdges() {
+    const tour = SOLUTION.tour;
+    for (let s = 0; s < tour.length - 1; s++) {
+        const i = tour[s];
+        const j = tour[s + 1];
+        const from = nodePositions[i];
+        const to = nodePositions[j];
+
+        let isCompleted = s < currentStep || (s === currentStep && !truckAnimating);
+        let isActive = s === currentStep && truckAnimating;
+        let isFuture = s > currentStep;
+
+        if (isFuture && currentStep >= 0) {
+            // Draw dashed future route
+            ctx.save();
+            ctx.strokeStyle = 'rgba(79, 143, 247, 0.15)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([8, 6]);
+            ctx.beginPath();
+            ctx.moveTo(from.x, from.y);
+            ctx.lineTo(to.x, to.y);
+            ctx.stroke();
+            ctx.restore();
+        } else if (isActive) {
+            // Animated edge
+            const progress = truckAnimProgress;
+            const midX = from.x + (to.x - from.x) * progress;
+            const midY = from.y + (to.y - from.y) * progress;
+
+            // Completed portion
+            ctx.strokeStyle = '#4f8ff7';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = 'rgba(79, 143, 247, 0.5)';
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            ctx.moveTo(from.x, from.y);
+            ctx.lineTo(midX, midY);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // Remaining portion
+            ctx.strokeStyle = 'rgba(79, 143, 247, 0.25)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6, 4]);
+            ctx.beginPath();
+            ctx.moveTo(midX, midY);
+            ctx.lineTo(to.x, to.y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw distance label
+            const labelX = (from.x + to.x) / 2;
+            const labelY = (from.y + to.y) / 2 - 12;
+            ctx.fillStyle = 'rgba(33, 36, 47, 0.9)';
+            ctx.beginPath();
+            const dist = SOLUTION.steps[s].distance;
+            const textW = ctx.measureText(`${dist}`).width + 16;
+            roundRect(ctx, labelX - textW/2, labelY - 10, textW, 20, 6);
+            ctx.fill();
+            ctx.fillStyle = '#f7944f';
+            ctx.font = '600 11px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`${dist}`, labelX, labelY);
+        } else if (isCompleted) {
+            // Completed edge
+            ctx.strokeStyle = '#4f8ff7';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = 'rgba(79, 143, 247, 0.3)';
+            ctx.shadowBlur = 6;
+            ctx.beginPath();
+            ctx.moveTo(from.x, from.y);
+            ctx.lineTo(to.x, to.y);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // Arrow
+            drawArrow(from, to);
+
+            // Distance label
+            const labelX = (from.x + to.x) / 2;
+            const labelY = (from.y + to.y) / 2 - 12;
+            ctx.fillStyle = 'rgba(33, 36, 47, 0.9)';
+            ctx.beginPath();
+            const dist = SOLUTION.steps[s].distance;
+            const textW = ctx.measureText(`${dist}`).width + 16;
+            roundRect(ctx, labelX - textW/2, labelY - 10, textW, 20, 6);
+            ctx.fill();
+            ctx.fillStyle = '#f7944f';
+            ctx.font = '600 11px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`${dist}`, labelX, labelY);
+        } else {
+            // Default (before animation starts)
+            ctx.strokeStyle = 'rgba(79, 143, 247, 0.4)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(from.x, from.y);
+            ctx.lineTo(to.x, to.y);
+            ctx.stroke();
+        }
+    }
+}
+
+function drawArrow(from, to) {
+    const headlen = 10;
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    const angle = Math.atan2(dy, dx);
+    const len = Math.sqrt(dx*dx + dy*dy);
+    const arrowPos = 0.65;
+    const ax = from.x + dx * arrowPos;
+    const ay = from.y + dy * arrowPos;
+
+    ctx.fillStyle = '#4f8ff7';
+    ctx.beginPath();
+    ctx.moveTo(ax, ay);
+    ctx.lineTo(ax - headlen * Math.cos(angle - Math.PI / 7), ay - headlen * Math.sin(angle - Math.PI / 7));
+    ctx.lineTo(ax - headlen * Math.cos(angle + Math.PI / 7), ay - headlen * Math.sin(angle + Math.PI / 7));
+    ctx.closePath();
+    ctx.fill();
+}
+
+function drawNodes() {
+    for (let i = 0; i < SOLUTION.nodes.length; i++) {
+        const node = SOLUTION.nodes[i];
+        const pos = nodePositions[i];
+        const isCurrentDest = currentStep >= 0 && currentStep < SOLUTION.steps.length &&
+                              SOLUTION.steps[currentStep].to === i && !truckAnimating;
+        const isVisited = isNodeVisited(i);
+
+        const radius = node.isDepot ? 28 : 22;
+
+        // Glow for active destination
+        if (isCurrentDest) {
+            ctx.shadowColor = node.isDepot ? 'rgba(245, 158, 11, 0.6)' : 'rgba(59, 130, 246, 0.6)';
+            ctx.shadowBlur = 20;
+        }
+
+        // Node circle
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
+
+        if (node.isDepot) {
+            const gradient = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, radius);
+            gradient.addColorStop(0, '#fbbf24');
+            gradient.addColorStop(1, '#d97706');
+            ctx.fillStyle = gradient;
+        } else if (isVisited) {
+            const gradient = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, radius);
+            gradient.addColorStop(0, '#60a5fa');
+            gradient.addColorStop(1, '#2563eb');
+            ctx.fillStyle = gradient;
+        } else {
+            const gradient = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, radius);
+            gradient.addColorStop(0, '#475569');
+            gradient.addColorStop(1, '#334155');
+            ctx.fillStyle = gradient;
+        }
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Border
+        ctx.strokeStyle = isCurrentDest ? '#fff' : 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = isCurrentDest ? 3 : 1.5;
+        ctx.stroke();
+
+        // Label
+        ctx.fillStyle = '#fff';
+        ctx.font = node.isDepot ? '700 13px Inter' : '600 12px Inter';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(node.isDepot ? '🏭' : node.id, pos.x, pos.y);
+
+        // Node name below
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        ctx.font = '500 10px Inter';
+        ctx.fillText(node.label, pos.x, pos.y + radius + 14);
+
+        // Demand info
+        if (!node.isDepot) {
+            const demandText = `α:${node.alpha} β:${node.beta}`;
+            ctx.font = '400 9px "JetBrains Mono", monospace';
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            ctx.fillText(demandText, pos.x, pos.y + radius + 26);
+        }
+    }
+}
+
+function drawTruck() {
+    let truckX, truckY;
+
+    if (currentStep < 0) {
+        // At depot
+        const depot = nodePositions[0];
+        truckX = depot.x + 35;
+        truckY = depot.y - 10;
+    } else if (truckAnimating && currentStep < SOLUTION.steps.length) {
+        // Moving along edge
+        const step = SOLUTION.steps[currentStep];
+        const from = nodePositions[step.from];
+        const to = nodePositions[step.to];
+        truckX = from.x + (to.x - from.x) * truckAnimProgress;
+        truckY = from.y + (to.y - from.y) * truckAnimProgress;
+    } else if (currentStep < SOLUTION.steps.length) {
+        // At destination node
+        const step = SOLUTION.steps[currentStep];
+        const dest = nodePositions[step.to];
+        truckX = dest.x + 30;
+        truckY = dest.y - 15;
+    } else {
+        // Tour complete, at depot
+        const depot = nodePositions[0];
+        truckX = depot.x + 35;
+        truckY = depot.y - 10;
+    }
+
+    // Truck glow
+    ctx.shadowColor = 'rgba(168, 85, 247, 0.6)';
+    ctx.shadowBlur = 15;
+
+    // Truck body
+    ctx.font = '24px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🚛', truckX, truckY);
+    ctx.shadowBlur = 0;
+
+    // Cargo mini-indicator
+    if (currentStep >= 0 && currentStep < SOLUTION.steps.length) {
+        const step = SOLUTION.steps[currentStep];
+        const aCount = step.aOnTruck;
+        const bCount = step.bOnTruck;
+        const total = aCount + bCount;
+        const barW = 36;
+        const barH = 5;
+        const barX = truckX - barW/2;
+        const barY = truckY + 16;
+
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        roundRect(ctx, barX - 1, barY - 1, barW + 2, barH + 2, 3);
+        ctx.fill();
+
+        if (aCount > 0) {
+            ctx.fillStyle = '#ef4444';
+            roundRect(ctx, barX, barY, barW * (aCount / SOLUTION.capacity), barH, 2);
+            ctx.fill();
+        }
+        if (bCount > 0) {
+            ctx.fillStyle = '#22d3ee';
+            roundRect(ctx, barX + barW * (aCount / SOLUTION.capacity), barY,
+                     barW * (bCount / SOLUTION.capacity), barH, 2);
+            ctx.fill();
+        }
+    }
+}
+
+function drawOperationParticles() {
+    if (currentStep < 0 || currentStep >= SOLUTION.steps.length) return;
+    const step = SOLUTION.steps[currentStep];
+    const dest = nodePositions[step.to];
+    const time = Date.now() / 1000;
+
+    // Delivery particles (going down into node)
+    if (step.deliverA > 0) {
+        for (let p = 0; p < Math.min(step.deliverA, 5); p++) {
+            const phase = (time * 2 + p * 0.3) % 1;
+            const px = dest.x - 35 + p * 6;
+            const py = dest.y - 40 + phase * 30;
+            const alpha = Math.sin(phase * Math.PI);
+            ctx.fillStyle = `rgba(239, 68, 68, ${alpha * 0.8})`;
+            ctx.beginPath();
+            ctx.arc(px, py, 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        // Down arrow
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.7)';
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('↓α', dest.x - 35, dest.y - 45);
+    }
+
+    // Pickup particles (going up from node)
+    if (step.pickupB > 0) {
+        for (let p = 0; p < Math.min(step.pickupB, 5); p++) {
+            const phase = (time * 2 + p * 0.3) % 1;
+            const px = dest.x + 35 + p * 6;
+            const py = dest.y + 40 - phase * 30;
+            const alpha = Math.sin(phase * Math.PI);
+            ctx.fillStyle = `rgba(34, 211, 238, ${alpha * 0.8})`;
+            ctx.beginPath();
+            ctx.arc(px, py, 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        // Up arrow
+        ctx.fillStyle = 'rgba(34, 211, 238, 0.7)';
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('↑β', dest.x + 50, dest.y + 45);
+    }
+
+    // Keep animating particles
+    requestAnimationFrame(draw);
+}
+
+function isNodeVisited(nodeId) {
+    if (currentStep < 0) return nodeId === 0;
+    for (let s = 0; s <= Math.min(currentStep, SOLUTION.steps.length - 1); s++) {
+        if (SOLUTION.tour[s] === nodeId) return true;
+        if (!truckAnimating && SOLUTION.steps[s].to === nodeId) return true;
+        if (truckAnimating && s < currentStep && SOLUTION.steps[s].to === nodeId) return true;
+    }
+    return false;
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+}
+
+// ===== OPERATION CARDS =====
+function buildOperationCards() {
+    const container = document.getElementById('operationCards');
+    container.innerHTML = '';
+
+    SOLUTION.steps.forEach((step, idx) => {
+        const fromNode = SOLUTION.nodes[step.from];
+        const toNode = SOLUTION.nodes[step.to];
+
+        const card = document.createElement('div');
+        card.className = 'operation-card';
+        card.id = `opCard${idx}`;
+        card.innerHTML = `
+            <div class="op-header">
+                <span class="op-step-num">Paso ${idx + 1}</span>
+                <span class="op-distance">📏 ${step.distance} km</span>
+            </div>
+            <div class="op-route">
+                <span>${fromNode.label}</span>
+                <span class="arrow">→</span>
+                <span>${toNode.label}</span>
+            </div>
+            <div class="op-actions">
+                ${step.deliverA > 0 ? `<span class="op-action deliver">📦 Entrega ${step.deliverA}α</span>` : ''}
+                ${step.pickupB > 0 ? `<span class="op-action pickup">📥 Recoge ${step.pickupB}β</span>` : ''}
+                ${step.deliverA === 0 && step.pickupB === 0 ? `<span class="op-action" style="background:rgba(168,85,247,0.15);color:#a855f7;border:1px solid rgba(168,85,247,0.3)">🏁 Retorno al depósito</span>` : ''}
+            </div>
+        `;
+        card.onclick = () => goToStep(idx);
+        container.appendChild(card);
+    });
+}
+
+// ===== STATE MANAGEMENT =====
+function updateState(step) {
+    currentStep = step;
+
+    // Update step display
+    document.getElementById('currentStepDisplay').textContent = Math.max(0, step + 1);
+
+    // Update cargo state based on post-operation load
+    let aOnTruck, bOnTruck;
+    let prevB = 0;
+    let deliverA = 0;
+    
+    if (step < 0) {
+        aOnTruck = 39; // Initial load
+        bOnTruck = 0;
+    } else if (step < SOLUTION.steps.length - 1) {
+        aOnTruck = SOLUTION.steps[step + 1].aOnTruck;
+        bOnTruck = SOLUTION.steps[step + 1].bOnTruck;
+        prevB = SOLUTION.steps[step].bOnTruck;
+        deliverA = SOLUTION.steps[step].deliverA;
+    } else {
+        // Final step (arrive at depot)
+        aOnTruck = SOLUTION.steps[step].aOnTruck;
+        bOnTruck = SOLUTION.steps[step].bOnTruck;
+        prevB = SOLUTION.steps[step].bOnTruck;
+        deliverA = SOLUTION.steps[step].deliverA;
+    }
+
+    document.getElementById('textA').textContent = aOnTruck;
+    document.getElementById('textB').textContent = bOnTruck;
+    document.getElementById('totalLoad').textContent = aOnTruck + bOnTruck;
+
+    // Render Bins
+    const track = document.getElementById('mainCargoTrack');
+    track.innerHTML = '';
+    for (let i = 0; i < SOLUTION.capacity; i++) {
+        const bin = document.createElement('div');
+        bin.className = 'cargo-bin';
+        if (i < aOnTruck) {
+            bin.classList.add('type-a');
+        } else if (i < aOnTruck + bOnTruck) {
+            bin.classList.add('type-b');
+        } else {
+            bin.classList.add('empty');
+        }
+        track.appendChild(bin);
+    }
+
+    // Handle Animation
+    const handlingArea = document.getElementById('handlingArea');
+    handlingArea.innerHTML = '';
+    handlingArea.classList.remove('active');
+    
+    if (step >= 0 && step < SOLUTION.steps.length) {
+        if (deliverA > 0 && prevB > 0) {
+            handlingArea.classList.add('active');
+            handlingArea.innerHTML = `⚠️ Handling: Moviendo ${prevB}β <div class="handling-box">${prevB}β</div>`;
+        }
+    }
+
+    // Update operation cards
+    SOLUTION.steps.forEach((_, idx) => {
+        const card = document.getElementById(`opCard${idx}`);
+        card.className = 'operation-card';
+        if (idx === step) {
+            card.className += ' active';
+            card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else if (idx < step) {
+            card.className += ' completed';
+        }
+    });
+
+    // Update explanation
+    const expIdx = Math.max(0, step + 1);
+    document.getElementById('explanationText').innerHTML = explanations[Math.min(expIdx, explanations.length - 1)];
+
+    draw();
+}
+
+// ===== TRUCK ANIMATION =====
+function animateTruckToStep(step, callback) {
+    truckAnimating = true;
+    truckAnimProgress = 0;
+    currentStep = step;
+
+    const duration = 1500 / animSpeed; // ms
+    const startTime = Date.now();
+
+    function animate() {
+        const elapsed = Date.now() - startTime;
+        truckAnimProgress = Math.min(elapsed / duration, 1);
+
+        // Ease in-out
+        truckAnimProgress = truckAnimProgress < 0.5
+            ? 2 * truckAnimProgress * truckAnimProgress
+            : 1 - Math.pow(-2 * truckAnimProgress + 2, 2) / 2;
+
+        draw();
+
+        if (elapsed < duration) {
+            truckAnimFrame = requestAnimationFrame(animate);
+        } else {
+            truckAnimating = false;
+            truckAnimProgress = 1;
+            updateState(step);
+            showFloatEvent(step);
+            if (callback) setTimeout(callback, 800 / animSpeed);
+        }
+    }
+
+    animate();
+}
+
+function showFloatEvent(step) {
+    if (step < 0 || step >= SOLUTION.steps.length) return;
+    const s = SOLUTION.steps[step];
+    const toNode = SOLUTION.nodes[s.to];
+    const el = document.getElementById('floatEvent');
+
+    if (s.deliverA === 0 && s.pickupB === 0) {
+        document.getElementById('eventIcon').textContent = '🏁';
+        document.getElementById('eventTitle').textContent = '¡Ruta Completada!';
+        document.getElementById('eventDesc').textContent = `Regreso al depósito con ${s.bOnTruck} unidades β recolectadas`;
+    } else {
+        document.getElementById('eventIcon').textContent = '📍';
+        document.getElementById('eventTitle').textContent = `Llegada a ${toNode.label}`;
+        let desc = [];
+        if (s.deliverA > 0) desc.push(`📦 Entrega ${s.deliverA} tipo α`);
+        if (s.pickupB > 0) desc.push(`📥 Recoge ${s.pickupB} tipo β`);
+        document.getElementById('eventDesc').textContent = desc.join('  ·  ');
+    }
+
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2000 / animSpeed);
+}
+
+// ===== CONTROLS =====
+function togglePlay() {
+    if (isPlaying) {
+        pausePlay();
+    } else {
+        startPlay();
+    }
+}
+
+function startPlay() {
+    isPlaying = true;
+    document.getElementById('playBtn').classList.add('active');
+    document.getElementById('playBtn').textContent = '⏸';
+    playNextStep();
+}
+
+function pausePlay() {
+    isPlaying = false;
+    document.getElementById('playBtn').classList.remove('active');
+    document.getElementById('playBtn').textContent = '▶';
+    if (truckAnimFrame) cancelAnimationFrame(truckAnimFrame);
+    truckAnimating = false;
+}
+
+function playNextStep() {
+    if (!isPlaying) return;
+    const nextIdx = currentStep + 1;
+    if (nextIdx >= SOLUTION.steps.length) {
+        // Animate last step (return to depot)
+        animateTruckToStep(SOLUTION.steps.length - 1, () => {
+            pausePlay();
+        });
+        return;
+    }
+    animateTruckToStep(nextIdx, () => {
+        if (isPlaying) playNextStep();
+    });
+}
+
+function nextStep() {
+    pausePlay();
+    const nextIdx = Math.min(currentStep + 1, SOLUTION.steps.length - 1);
+    animateTruckToStep(nextIdx, null);
+}
+
+function prevStep() {
+    pausePlay();
+    if (truckAnimFrame) cancelAnimationFrame(truckAnimFrame);
+    truckAnimating = false;
+    const prevIdx = Math.max(currentStep - 1, -1);
+    updateState(prevIdx);
+}
+
+function goToStart() {
+    pausePlay();
+    if (truckAnimFrame) cancelAnimationFrame(truckAnimFrame);
+    truckAnimating = false;
+    updateState(-1);
+}
+
+function goToEnd() {
+    pausePlay();
+    if (truckAnimFrame) cancelAnimationFrame(truckAnimFrame);
+    truckAnimating = false;
+    updateState(SOLUTION.steps.length - 1);
+}
+
+function goToStep(idx) {
+    pausePlay();
+    if (truckAnimFrame) cancelAnimationFrame(truckAnimFrame);
+    truckAnimating = false;
+    updateState(idx);
+}
+
+function updateSpeed(val) {
+    animSpeed = parseFloat(val);
+    document.getElementById('speedLabel').textContent = animSpeed + '×';
+}
+
+function startVisualization() {
+    document.getElementById('introOverlay').classList.add('hidden');
+    setTimeout(() => {
+        resizeCanvas();
+        draw();
+    }, 300);
+}
+
+// ===== KEYBOARD SHORTCUTS =====
+document.addEventListener('keydown', (e) => {
+    switch(e.key) {
+        case ' ':
+        case 'k':
+            e.preventDefault();
+            togglePlay();
+            break;
+        case 'ArrowRight':
+        case 'l':
+            e.preventDefault();
+            nextStep();
+            break;
+        case 'ArrowLeft':
+        case 'j':
+            e.preventDefault();
+            prevStep();
+            break;
+        case 'Home':
+            e.preventDefault();
+            goToStart();
+            break;
+        case 'End':
+            e.preventDefault();
+            goToEnd();
+            break;
+    }
+});
+
+// ===== START =====
+window.addEventListener('load', init);
+</script>
+</body>
+</html>

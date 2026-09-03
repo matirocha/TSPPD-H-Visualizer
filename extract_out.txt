@@ -1,0 +1,197 @@
+﻿--- PAGE 1 ---
+This article was downloaded by: [128.122.253.212] On: 08 October 2014, At: 12:02
+Publisher: Institute for Operations Research and the Management Sciences (INFORMS)
+INFORMS is located in Maryland, USA
+Transportation Science
+Publication details, including instructions for authors and subscription information:
+http://pubsonline.informs.org
+The Traveling Salesman Problem with Pickups, Deliveries,
+and Handling Costs
+Maria Battarra, G ├╝ne ┼ƒ Erdo Ãºan, Gilbert Laporte, Daniele Vigo,
+To cite this article:
+Maria Battarra, G ├╝ne ┼ƒ Erdo Ãºan, Gilbert Laporte, Daniele Vigo,  (2010) The Traveling Salesman Problem with Pickups,
+Deliveries, and Handling Costs. Transportation Science 44(3):383-399.  http://dx.doi.org/10.1287/trsc.1100.0316
+Full terms and conditions of use: http://pubsonline.informs.org/page/terms-and-conditions
+This article may be used only for the purposes of research, teaching, and/or private study. Commercial use
+or systematic downloading (by robots or other automatic processes) is prohibited without explicit Publisher
+approval, unless otherwise noted. For more information, contact permissions@informs.org.
+The Publisher does not warrant or guarantee the articleÔÇÖs accuracy, completeness, merchantability, fitness
+for a particular purpose, or non-infringement. Descriptions of, or references to, products or publications, or
+inclusion of an advertisement in this article, neither constitutes nor implies a guarantee, endorsement, or
+support of claims made of that product, publication, or service.
+Copyright ┬® 2010, INFORMS
+Please scroll down for articleÔÇöit is on subsequent pages
+INFORMS is the largest professional society in the world for professionals in the fields of operations research, management
+science, and analytics.
+For more information on INFORMS, its publications, membership, or meetings visit http://www.informs.org
+--- PAGE 2 ---
+Vol.44,No.3,August2010,pp.383ÔÇô399
+issn0041-1655 /barSCeissn1526-5447 /barSC10/barSC4403/barSC0383informs┬«
+doi10.1287/trsc.1100.0316
+┬®2010INFORMS
+TheTravelingSalesmanProblemwithPickups,
+Deliveries,andHandlingCosts
+MariaBattarra
+DipartimentodiElettronica,InformaticaeSistemica,UniversityofBologna,47521Cesena(FC),Italy,
+maria.battarra@unibo.it
+G├╝ne┬©sEr do╦çgan
+DepartmentofIndustrialEngineering,├ûzye╦ç ginUniversity,34662Altunizade, ╦ÖIstanbul,Turkey,
+gunes.erdogan@ozyegin.edu.tr
+GilbertLaporte
+DepartmentofManagementSciences,HECMontr├®al,Montr├®al,Qu├®becJ3T247,Canada,
+gilbert.laporte@cirrelt.ca
+DanieleVigo
+DipartimentodiElettronica,InformaticaeSistemica,UniversityofBologna,47521Cesena(FC),Italy,
+daniele.vigo@unibo.it
+This paper introduces a new variant of the one-to-many-to-one single vehicle pickup and delivery problems
+(SVPDP) that incorporates the handling cost incurred when rearranging the load at the customer locations.
+Thesimultaneousoptimizationofroutingandhandlingcostsisdif´¼ücult,andtheresultingloadingpatternsarehardtoimplementinpractice.However,thisoptionmakeseconomicalsenseincontextswheretheroutingcostdominates the handling cost. We have proposed some simpli´¼üed policies applicable to such contexts. The ´¼ürstis a two-phase heuristic in which the tour having minimum routing cost is initially determined by optimallysolvinganSVPDP,andtheoptimalhandlingpolicyisthendeterminedforthattour.Inaddition,branch-and-cutalgorithms based on integer linear programming formulations are proposed, in which routing and handlingdecisions are simultaneously optimized, but the handling decisions are restricted to three simpli´¼üed policies.Theformulationsarestrengthenedbymeansofproblemspeci´¼ücvalidinequalities.Theproposedmethodshavebeenextensivelytestedoninstancesinvolvingupto25customersandhundredsofitems.Ourresultsshowtheimpact of the handling aspect on the customer sequencing and indicate that the simpli´¼üed handling policiesfavorablycomparewiththeoptimalone.
+Keywords: thetravelingsalesmanproblem;combinatorialoptimization;exactalgorithm
+History: Received:June21,2009;revisionreceived:September12,2009;accepted:December5,2009.Published
+onlineinArticlesinAdvance March18,2010.
+1. Introduction
+Single vehicle pickup and delivery problems
+(SVPDPs) have received considerable attentionin recent years (see Berbeglia et al. 2007). Theseproblems consist of designing an optimal routefor a single vehicle making pickups and deliveriesto a set of customers. Here we are interested inone-to-many-to-one SVPDPs in which each customermay have a supply and a demand; all demandsoriginate from a depot and all supplies are destinedto the depot. A minimum cost circuit for which thevehicle load never exceeds the vehicle capacity hasto be determined. One-to-many-to-one SVPDPs haverecently been reviewed by Gribkovskaia and Laporte(2008), who have de´¼üned two variants: the SVPDPwith single demands (SVPDPÔÇôP/D), i.e., problemsin which customers require only a pickup or only adelivery, and the SVPDP with combined demands
+(SVPDPÔÇôP&D), i.e., problems in which customersmayreceivecombinedpickupanddeliveryservices.
+When the vehicle is rear-loaded, the pickup com-
+modities may obstruct the delivery commodities.Theseobstructionissueshavetraditionallybeentakeninto account by forcing the tour to have a suitableshape. For example, the traveling salesman problemwith backhauls (TSPB) is an SVPDPÔÇôP/D in whichdelivery customers must be served ´¼ürst in the tour,whereas thedouble-path and thelassoare solution
+shapessuitablefortheSVPDPÔÇôP&D.Thedouble-pathSVPDP, proposed by Gribkovskaia et al. (2007), con-sists of visiting each customer but one twice: thedeliveries are ´¼ürst performed, and the pickups arethenmadebytraversingthepathinthereverseorder.The lasso solution shape, proposed by Halskau and
+383
+Downloaded from informs.org by [128.122.253.212] on 08 October 2014, at 12:02 . For personal use only, all rights reserved. 
+--- PAGE 3 ---
+Battarra et al.:TheTravelingSalesmanProblemwithPickups,Deliveries,andHandlingCosts
+384 TransportationScience44(3),pp.383ÔÇô399,┬®2010INFORMS
+L├©kketangen (1998) and further analyzed by Hoff
+and L├©kketangen (2006), Gribkovskaia et al. (2007),andHoffetal.(2009),consistsof´¼ürstdeliveringcom-moditiestoacustomersubset S,thensimultaneously
+picking up and delivering commodities at each oftheremainingcustomers,and´¼ünallyvisitingthecus-tomersof Sinthereverseorderfordeliveries.
+These problem variants do not consider any rear-
+rangement of goods in the vehicle. Solution qualitycan be unsatisfactory whenever the routing cost isdominant with respect to the possible rearrangementcost.Inaddition,anSVPDPÔÇôP&Dinwhichcustomersdo not accept to be visited twice cannot be suitablysolved by adopting any of the tour shapes previ-ously presented. Note that the possibility of rear-ranging goods in the vehicle has not previouslybeen considered in related problems (see, for exam-ple, Ladany and Mehrez 1984; Carrabs, Cerulli, andCordeau2007a;Carrabs,Cordeau,andLaporte2007b;Cordeau et al. 2009; Erdo╦ç gan, Cordeau, and Laporte
+2009; Petersen and Madsen 2009; Petersen, Archetti,andSperanza2010).
+In this paper, we introduce, formulate, and solve
+a one-to-many-to-one pickup and delivery problem,called the traveling salesman problem with pick-ups, deliveries, and handling costs (TSPPD-H) inwhichthehandlingcostsassociatedwithloadingandunloading operations are taken into account in theobjective function. The TSPPD-H can be de´¼üned asfollows.Let G=elparenoriVecommaoriAerparenoribeacompletedirectedgraph,
+whereV=elbraceori0ecommaori1ecommaorieperiodorieperiodorieperiodoriecommaorinerbraceoriis the vertex set and Ais the
+arcset.Vertex0representsthedepot,whereasremain-ing vertices V
+c=V\elbraceori0erbraceoricorrespond to customers. We
+de´¼üneAd=elbraceorielparenori0ecommaoriierparenoriecolonori i ÔêêVcerbraceoriandAr=elbraceorielparenoriiecommaori0erparenoriecolonori iÔêêVcerbraceorias
+the sets of arcs having the depot as their tail andhead, respectively. Each arc elparenoriiecommaorijerparenoriÔêêAhas a nonnega-
+tive travel time c
+ij. Customer iÔêêVcrequires eSLalphaiunits
+of commodity aand supplies eSLbetaiunits of commodity
+b. Both commodities have the same unit dimensions
+(for example, boxes or pallets or full and empty con-tainers of the same goods). A vehicle of capacity Q
+leavesthedepotwithalldeliveryrequests,visitseachcustomer to possibly deliver commodities of type a
+and pick up commodities of type b, and returns to
+the depot with all the pickup requests. Because weconsidered rear-loaded vehicles, we follow a last-in-´¼ürst-out (LIFO) loading policy (Pacheco 1997), whichwenowdescribe.
+Under a LIFO policy, after picking up a type b
+commodity and loading it at the rear of the vehi-cle, the unloading of a type acommodity for the
+next delivery operation is obstructed. In such a case,typebcommodities obstructing the delivery should
+be unloaded ´¼ürst, and reloaded after the delivery oftypeacommodities. We de´¼üne an additional opera-
+tionas unloading and reloading one unit of com-
+modity at a customer location. The time required forone additional operation for commodities aandb
+is denoted by h
+aandhb, respectively. The optimal
+solution for the TSPPD-H is then a Hamiltonian cir-cuit onGthat minimizes the sum of total travel and
+additionaloperationtimes.TheTSPPD-His /Nscript/Pscript-hard
+becauseitgeneralizesthetravelingsalesmanproblem(TSP).AllapplicationspertainingtotheSVPDPÔÇôP/DsandSVPDPÔÇôP&Dswithrear-loadingarevalidfortheTSPPD-H if the vehicle load can be rearranged, andhence a potential for cost reduction is permitted. Aspeci´¼üc example arises in the management of bicy-cle relocations in public bicycle sharing systems. Inthisapplication,functioninganddefectivebicyclesarecollected from parking locations and often put on alinear rack inside a vehicle. These bicycles are thendelivered to other parking locations or to repair cen-ters,respectively.
+Note that we have introduced two types of com-
+modities,oneforpickupandonefordeliveries.How-ever, the models and the algorithms we propose arevalid even if each customer is associated with a spe-ci´¼ücpairofcommodities.
+Theremainderofthispaperisorganizedasfollows.
+In ┬º2, we present an integer linear programming for-mulationfortheTSPPD-H.Next,in┬º3,giventhecom-plexity of the problem, we present some simpler andmore tractable policies for the handling problem andweproposeintegerlinearprogrammingformulationsbasedonthem.In┬º4,wedescribethecomponentsofanexactbranch-and-cutalgorithmfortheproblem,aswellasabranch-and-cutalgorithmbasedonBendersdecomposition. Computational results are presentedin┬º5,followedbyconclusionsin┬º6.
+2. Integer Linear Programming
+Formulation for the TSPPD-H
+As mentioned in the previous section, at each cus-
+tomeriÔêêVc,eSLalphaiunits of commodity ashould be
+unloaded and eSLbetaiunits of commodity bshould be
+loaded. In the objective function, we do not con-sider the contribution of these handling operationsbecause the time required to perform them is con-stant and they are unavoidable. On the other hand,the number of additional unloading and reloadingoperations depends on the handling decisions madeatpreviouslyvisitedcustomers.SolvingtheTSPPD-Hrequires the determination of an optimal sequence ofcustomers and of commodity positions on board oneachtraversedarc.
+Letx
+ijbe a binary variable equal to one if and
+onlyifarc elparenoriiecommaorijerparenoriÔêêAisinthesolution.Numberingthe
+possible loading positions in increasing order, start-ing from the rear of the vehicle, let the binary vari-ablesa
+k
+ijandbk
+ijindicate the absence or presence of
+a typeaandbcommodity at position kÔêêelbraceori1ecommaorieperiodorieperiodorieperiodoriecommaoriQerbraceori
+Downloaded from informs.org by [128.122.253.212] on 08 October 2014, at 12:02 . For personal use only, all rights reserved. 
+--- PAGE 4 ---
+Battarra et al.:TheTravelingSalesmanProblemwithPickups,Deliveries,andHandlingCosts
+TransportationScience44(3),pp.383ÔÇô399,┬®2010INFORMS 385
+within the vehicle, respectively, when the vehicle is
+traversing arc elparenoriiecommaorijerparenori ÔêêA. The variables rk
+iindicate
+whether the commodity at position kis involved in
+the handling operations at customer i. The last set
+of variables vk
+irepresents the unit handling costs
+in position kat customer i. We note that because
+vk
+i=/summationtext
+jÔêêVelparenorihaak
+ji+hbbk
+jierparenorirk
+iis not linear, we will appro-
+priatelylinearizethisrelation.Fornotationalsimplic-ity, we de´¼üne h
+/prime=maxelbraceorihaecommaorihberbraceori. A possible TSPPD-H
+formulationcanbeexpressedasfollows:
+(TSPPD-H)
+minimize/summationdisplay
+elparenoriiecommaorijerparenoriÔêêAcijxij+/summationdisplay
+iÔêêVcQ/summationdisplay
+k=1vk
+iÔêÆ/summationdisplay
+iÔêêVchaeSLalphaiecommaori(1)
+subjectto/summationdisplay
+jÔêêVxij=1ecommaoriiÔêêVecommaori (2)
+/summationdisplay
+iÔêêVxij=1ecommaorijÔêêVecommaori (3)
+/summationdisplay
+jÔêêVQ/summationdisplay
+k=1elparenoriak
+jiÔêÆak
+ijerparenori=eSLalphaiecommaoriiÔêêVecommaori (4)
+/summationdisplay
+jÔêêVQ/summationdisplay
+k=1elparenoribk
+ijÔêÆbk
+jierparenori=eSLbetaiecommaoriiÔêêVecommaori (5)
+rk
+iÔëñrkÔêÆ1
+iecommaoriiÔêêVcecommaorikÔêêelbraceori2ecommaorieperiodorieperiodorieperiodoriecommaoriQerbraceori (6)
+ak
+ij+bk
+ijÔëñxijecommaori
+elparenoriiecommaorijerparenoriÔêêAecommaorikÔêêelbraceori1ecommaorieperiodorieperiodorieperiodoriecommaoriQerbraceori(7)
+/summationdisplay
+jÔêêVak
+ijÔêÆ/summationdisplay
+jÔêêVak
+jiÔëñrk
+iecommaori
+iÔêêVcecommaorikÔêêelbraceori1ecommaorieperiodorieperiodorieperiodoriecommaoriQerbraceori(8)
+/summationdisplay
+jÔêêVak
+jiÔêÆ/summationdisplay
+jÔêêVak
+ijÔëñrk
+iecommaori
+iÔêêVcecommaorikÔêêelbraceori1ecommaorieperiodorieperiodorieperiodoriecommaoriQerbraceori(9)
+/summationdisplay
+jÔêêVbk
+ijÔêÆ/summationdisplay
+jÔêêVbk
+jiÔëñrk
+iecommaori
+iÔêêVcecommaorikÔêêelbraceori1ecommaorieperiodorieperiodorieperiodoriecommaoriQerbraceori(10)
+/summationdisplay
+jÔêêVbk
+jiÔêÆ/summationdisplay
+jÔêêVbk
+ijÔëñrk
+iecommaori
+iÔêêVcecommaorikÔêêelbraceori1ecommaorieperiodorieperiodorieperiodoriecommaoriQerbraceori(11)
+vk
+iÔëÑ/summationdisplay
+jÔêêVelparenorihaak
+ji+hbbk
+jierparenoriÔêÆelparenori1ÔêÆrk
+ierparenorih/primeecommaori
+iÔêêVcecommaorikÔêêelbraceori1ecommaorieperiodorieperiodorieperiodoriecommaoriQerbraceoriecommaor

@@ -1,0 +1,4 @@
+﻿{
+  "name": "token-tracker",
+  "description": "Calcula y muestra un pie de página con el consumo estimado de tokens y estadísticas del modelo al final de cada respuesta relevante."
+}
