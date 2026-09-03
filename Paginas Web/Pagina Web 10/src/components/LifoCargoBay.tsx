@@ -15,7 +15,7 @@ import {
   Info,
   DoorClosed,
 } from 'lucide-react';
-import { SolutionData, StepData, CargoSubStepDef } from '../types/solution';
+import { SolutionData, StepData, CargoSubStepDef, SlotType } from '../types/solution';
 import { formatNumber } from '../lib/utils';
 
 interface LifoCargoBayProps {
@@ -41,10 +41,6 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
   const [subStep, setSubStep] = useState<number>(1); // 1 to 4
 
   const capacity = solution.capacity;
-  const currentSlots = currentStep.slots || [];
-  const nextStep = solution.steps[currentStepIndex + 1];
-  const nextSlots = nextStep ? nextStep.slots : currentSlots;
-
   const deliverA = currentStep.deliverA;
   const pickupB = currentStep.pickupB;
   const handlingCount = currentStep.handlingCount;
@@ -55,6 +51,7 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
     label: currentStep.to === 0 ? 'Depósito' : `Cliente ${currentStep.to}`,
     isDepot: currentStep.to === 0,
   };
+  const isDepot = destinationNode.isDepot;
   const isLastStep = currentStepIndex >= solution.steps.length - 1;
 
   // Reset sub-step when step or arrived status changes
@@ -63,48 +60,130 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
     setSelectedSlotIdx(null);
   }, [isArrived, currentStepIndex]);
 
-  // Identify handling blockers (beta items near the door in currentSlots)
-  const handledBetaIndices = useMemo(() => {
+  // Arrival slots for the current step (before operations at this node)
+  const arrivalSlots: SlotType[] = useMemo(() => {
+    return currentStep.slotsArrival || currentStep.slots || Array(capacity).fill('EMPTY');
+  }, [currentStep, capacity]);
+
+  // Departure slots for the current step (after all operations at this node)
+  const departureSlots: SlotType[] = useMemo(() => {
+    if (currentStep.slotsDeparture && currentStep.slotsDeparture.length > 0) {
+      return currentStep.slotsDeparture;
+    }
+    if (isDepot) {
+      return Array(capacity).fill('EMPTY');
+    }
+    const nextStep = solution.steps[currentStepIndex + 1];
+    if (nextStep && (nextStep.slotsArrival || nextStep.slots)) {
+      return nextStep.slotsArrival || nextStep.slots;
+    }
+    return arrivalSlots;
+  }, [currentStep, isDepot, capacity, solution.steps, currentStepIndex, arrivalSlots]);
+
+  // 1. Identify delivered Alpha slots (unloaded in sub-step 2)
+  const deliveredAlphaIndices = useMemo<number[]>(() => {
+    if (isDepot) return [];
+    if (currentStep.deliveredSlots && currentStep.deliveredSlots.length > 0) {
+      return currentStep.deliveredSlots.map((s) => s - 1);
+    }
     const indices: number[] = [];
-    if (handlingCount > 0) {
-      let count = handlingCount;
-      for (let i = 0; i < currentSlots.length && count > 0; i++) {
-        if (currentSlots[i] === 'B') {
+    let count = deliverA;
+    // Slots that had 'A' in arrivalSlots and are no longer 'A' in departureSlots
+    for (let i = 0; i < arrivalSlots.length && count > 0; i++) {
+      if (arrivalSlots[i] === 'A' && departureSlots[i] !== 'A') {
+        indices.push(i);
+        count--;
+      }
+    }
+    // Fallback if needed: any remaining 'A' slots in arrival
+    if (count > 0) {
+      for (let i = 0; i < arrivalSlots.length && count > 0; i++) {
+        if (arrivalSlots[i] === 'A' && !indices.includes(i)) {
           indices.push(i);
           count--;
         }
       }
     }
     return indices;
-  }, [currentSlots, handlingCount]);
+  }, [currentStep, isDepot, deliverA, arrivalSlots, departureSlots]);
 
-  // Identify alpha deliveries in currentSlots
-  const deliveredAlphaIndices = useMemo(() => {
+  // 2. Identify evacuated / rehandled Beta slots (evacuated in sub-step 1)
+  const handledBetaIndices = useMemo<number[]>(() => {
+    if (isDepot || handlingCount <= 0) return [];
+    if (currentStep.rehandledB && currentStep.rehandledB.length > 0) {
+      return currentStep.rehandledB.map((s) => s - 1);
+    }
     const indices: number[] = [];
-    let count = deliverA;
-    for (let i = 0; i < currentSlots.length && count > 0; i++) {
-      if (currentSlots[i] === 'A') {
+    const maxDeliveredIdx = deliveredAlphaIndices.length > 0
+      ? Math.max(...deliveredAlphaIndices)
+      : -1;
+    
+    // In LIFO, any B slot in front of (idx <= maxDeliveredIdx) the deepest delivered A is rehandled
+    let count = handlingCount;
+    for (let i = 0; i <= maxDeliveredIdx && i < arrivalSlots.length && count > 0; i++) {
+      if (arrivalSlots[i] === 'B') {
+        indices.push(i);
+        count--;
+      }
+    }
+    // Fallback if count still > 0
+    for (let i = 0; i < arrivalSlots.length && count > 0; i++) {
+      if (arrivalSlots[i] === 'B' && !indices.includes(i)) {
         indices.push(i);
         count--;
       }
     }
     return indices;
-  }, [currentSlots, deliverA]);
+  }, [currentStep, isDepot, handlingCount, deliveredAlphaIndices, arrivalSlots]);
 
-  // Identify newly loaded beta indices in nextSlots
-  const newBetaIndices = useMemo(() => {
+  // 3. Identify newly loaded Beta slots (loaded in sub-step 4)
+  const newBetaIndices = useMemo<number[]>(() => {
+    if (isDepot || pickupB <= 0) return [];
+    if (currentStep.newBSlots && currentStep.newBSlots.length > 0) {
+      return currentStep.newBSlots.map((s) => s - 1);
+    }
     const indices: number[] = [];
-    if (pickupB > 0) {
-      let count = pickupB;
-      for (let i = 0; i < nextSlots.length && count > 0; i++) {
-        if (nextSlots[i] === 'B' && !handledBetaIndices.includes(i)) {
+    let count = pickupB;
+    // Primary candidates: slots that are 'B' in departureSlots but were NOT 'B' in arrivalSlots
+    for (let i = 0; i < departureSlots.length && count > 0; i++) {
+      if (departureSlots[i] === 'B' && arrivalSlots[i] !== 'B') {
+        indices.push(i);
+        count--;
+      }
+    }
+    // If more needed (e.g. if rehandled B took other slots), take slots with B in departure starting near door
+    if (count > 0) {
+      for (let i = 0; i < departureSlots.length && count > 0; i++) {
+        if (departureSlots[i] === 'B' && !indices.includes(i)) {
           indices.push(i);
           count--;
         }
       }
     }
     return indices;
-  }, [nextSlots, pickupB, handledBetaIndices]);
+  }, [currentStep, isDepot, pickupB, departureSlots, arrivalSlots]);
+
+  // 4. Identify slots that were unhandled B (stayed in the truck without moving)
+  const unhandledBetaIndices = useMemo<number[]>(() => {
+    const indices: number[] = [];
+    for (let i = 0; i < arrivalSlots.length; i++) {
+      if (arrivalSlots[i] === 'B' && !handledBetaIndices.includes(i)) {
+        indices.push(i);
+      }
+    }
+    return indices;
+  }, [arrivalSlots, handledBetaIndices]);
+
+  // 5. Identify slots where evacuated B RE-ENTER the truck in sub-step 3
+  const reenteringBetaIndices = useMemo<number[]>(() => {
+    const indices: number[] = [];
+    for (let i = 0; i < departureSlots.length; i++) {
+      if (departureSlots[i] === 'B' && !newBetaIndices.includes(i) && !unhandledBetaIndices.includes(i)) {
+        indices.push(i);
+      }
+    }
+    return indices;
+  }, [departureSlots, newBetaIndices, unhandledBetaIndices]);
 
   // Stage derived from isArrived & subStep
   const stage = useMemo<'transit' | 'handling-out' | 'unloading-alpha' | 'handling-in' | 'loading-beta' | 'settled'>(() => {
@@ -122,7 +201,7 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
 
     const subStepDurations = [
       handlingCount > 0 ? 3200 / speed : 1400 / speed, // Sub-step 1: Handling out
-      deliverA > 0 ? 3200 / speed : 1400 / speed,       // Sub-step 2: Unloading alpha
+      deliverA > 0 || isDepot ? 3200 / speed : 1400 / speed, // Sub-step 2: Unloading alpha / depot
       handlingCount > 0 ? 2800 / speed : 1200 / speed, // Sub-step 3: Handling in
       pickupB > 0 ? 3400 / speed : 1600 / speed,        // Sub-step 4: Loading beta
     ];
@@ -139,89 +218,137 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
     }, currentDuration);
 
     return () => clearTimeout(timer);
-  }, [isArrived, isContinuousMode, subStep, handlingCount, deliverA, pickupB, speed, onContinueJourney]);
+  }, [isArrived, isContinuousMode, subStep, handlingCount, deliverA, pickupB, isDepot, speed, onContinueJourney]);
 
   // Display slot states mapped dynamically by sub-step
-  const displaySlots = useMemo(() => {
+  const displaySlots = useMemo<SlotType[]>(() => {
     if (!isArrived || stage === 'transit') {
-      return currentSlots;
+      return arrivalSlots;
     }
 
+    if (isDepot) {
+      if (subStep === 1) return arrivalSlots;
+      return Array(capacity).fill('EMPTY');
+    }
+
+    // Sub-step 1: Evacuate blocking B items
     if (stage === 'handling-out') {
-      return currentSlots.map((item, idx) => {
+      return arrivalSlots.map((item, idx) => {
         if (handledBetaIndices.includes(idx)) return 'EMPTY';
         return item;
       });
     }
 
+    // Sub-step 2: Unload alpha items
     if (stage === 'unloading-alpha') {
-      return currentSlots.map((item, idx) => {
+      return arrivalSlots.map((item, idx) => {
         if (handledBetaIndices.includes(idx) || deliveredAlphaIndices.includes(idx)) return 'EMPTY';
         return item;
       });
     }
 
+    // Sub-step 3: Handling-in (rehandled B enter their departure positions, new B are not yet loaded)
     if (stage === 'handling-in') {
-      return nextSlots.map((item, idx) => {
-        if (item === 'B' && newBetaIndices.includes(idx)) return 'EMPTY';
+      return departureSlots.map((item, idx) => {
+        if (newBetaIndices.includes(idx)) return 'EMPTY';
         return item;
       });
     }
 
-    // stage === 'loading-beta' or 'settled'
-    return nextSlots;
-  }, [isArrived, stage, currentSlots, nextSlots, handledBetaIndices, deliveredAlphaIndices, newBetaIndices]);
+    // Sub-step 4: Loading-beta (new B items enter the truck) -> complete departure state
+    return departureSlots;
+  }, [isArrived, stage, isDepot, subStep, arrivalSlots, departureSlots, handledBetaIndices, deliveredAlphaIndices, newBetaIndices, capacity]);
 
-  // Counts
+  // Live counts
   const alphaInBay = displaySlots.filter((s) => s === 'A').length;
   const betaInBay = displaySlots.filter((s) => s === 'B').length;
   const emptyInBay = Math.max(0, capacity - alphaInBay - betaInBay);
 
-  // Sub-step definitions
-  const subStepDefs: CargoSubStepDef[] = [
-    {
-      id: 1,
-      title: 'Paso 1: Evacuación LIFO (Handling)',
-      shortTitle: '1. Evacuación',
-      statusText: handlingCount > 0
-        ? `⚠️ Conflicto LIFO: Se extraen ${handlingCount} unidades β por la compuerta trasera hacia la dársena temporal (Costo: +${currentStep.handlingCost.toFixed(2)}).`
-        : '✅ Sin conflicto LIFO: La compuerta trasera está despejada para la entrega.',
-      color: 'amber',
-      hasAction: handlingCount > 0,
-    },
-    {
-      id: 2,
-      title: 'Paso 2: Descarga de Mercancía α (Entrega)',
-      shortTitle: '2. Descarga α',
-      statusText: deliverA > 0
-        ? `📦 Descarga en proceso: ${deliverA} unidades α salen por la compuerta trasera hacia el almacén de ${destinationNode.label}.`
-        : `ℹ️ Sin entregas α requeridas en ${destinationNode.label}.`,
-      color: 'rose',
-      hasAction: deliverA > 0,
-    },
-    {
-      id: 3,
-      title: 'Paso 3: Reingreso y Reordenamiento LIFO',
-      shortTitle: '3. Reingreso',
-      statusText: handlingCount > 0
-        ? `🔄 Reingreso LIFO: Las ${handlingCount} unidades β del buffer temporal vuelven a entrar y se asientan en las posiciones internas.`
-        : '✅ Compartimento ordenado: No se requirió reacomodo de mercancía.',
-      color: 'amber',
-      hasAction: handlingCount > 0,
-    },
-    {
-      id: 4,
-      title: 'Paso 4: Carga y Recolección de Mercancía β',
-      shortTitle: '4. Carga β',
-      statusText: pickupB > 0
-        ? `📥 Recolección en curso: ${pickupB} nuevas unidades β entran por la compuerta trasera y ocupan los slots del camión.`
-        : `ℹ️ Sin recolecciones β requeridas en ${destinationNode.label}.`,
-      color: 'cyan',
-      hasAction: pickupB > 0,
-    },
-  ];
+  // Sub-step definitions with precise wording
+  const subStepDefs: CargoSubStepDef[] = useMemo(() => {
+    if (isDepot) {
+      const totalDepotB = arrivalSlots.filter((s) => s === 'B').length;
+      return [
+        {
+          id: 1,
+          title: 'Paso 1: Arribo al Depósito Central',
+          shortTitle: '1. Arribo',
+          statusText: `🏁 El camión arriba al depósito con ${totalDepotB} unidades β recolectadas durante el recorrido.`,
+          color: 'amber',
+          hasAction: false,
+        },
+        {
+          id: 2,
+          title: 'Paso 2: Descarga Completa de Mercancía β',
+          shortTitle: '2. Descarga Total',
+          statusText: `📦 Descarga final: Se descargan las ${totalDepotB} unidades β hacia el almacén central.`,
+          color: 'rose',
+          hasAction: true,
+        },
+        {
+          id: 3,
+          title: 'Paso 3: Verificación de Bahía de Carga',
+          shortTitle: '3. Verificación',
+          statusText: '✅ Bahía de carga completamente vacía y disponible.',
+          color: 'amber',
+          hasAction: false,
+        },
+        {
+          id: 4,
+          title: 'Paso 4: Fin del Recorrido',
+          shortTitle: '4. Fin del Tour',
+          statusText: '🎉 ¡Tour completado con éxito! Todas las demandas de los clientes fueron satisfechas.',
+          color: 'cyan',
+          hasAction: false,
+        },
+      ];
+    }
 
-  const currentSubStepDef = subStepDefs[subStep - 1];
+    return [
+      {
+        id: 1,
+        title: 'Paso 1: Evacuación LIFO (Handling)',
+        shortTitle: '1. Evacuación',
+        statusText: handlingCount > 0
+          ? `⚠️ Conflicto LIFO: Se evacúan temporalmente ${handlingCount} unidades β para despejar el acceso a las unidades α (Costo: +${formatNumber(currentStep.handlingCost, 2)}).`
+          : '✅ Sin conflicto LIFO: La compuerta trasera está despejada para la entrega.',
+        color: 'amber',
+        hasAction: handlingCount > 0,
+      },
+      {
+        id: 2,
+        title: 'Paso 2: Descarga de Mercancía α (Entrega)',
+        shortTitle: '2. Descarga α',
+        statusText: deliverA > 0
+          ? `📦 Descarga en proceso: ${deliverA} unidades α salen por la compuerta trasera hacia el cliente ${destinationNode.label}.`
+          : `ℹ️ Sin entregas α requeridas en ${destinationNode.label}.`,
+        color: 'rose',
+        hasAction: deliverA > 0,
+      },
+      {
+        id: 3,
+        title: 'Paso 3: Reingreso y Reordenamiento LIFO',
+        shortTitle: '3. Reingreso',
+        statusText: handlingCount > 0
+          ? `🔄 Reingreso LIFO: Las ${handlingCount} unidades β evacuadas vuelven a ingresar y se asientan en sus slots correspondientes.`
+          : '✅ Compartimento ordenado: No se requirió reacomodo de mercancía.',
+        color: 'amber',
+        hasAction: handlingCount > 0,
+      },
+      {
+        id: 4,
+        title: 'Paso 4: Carga y Recolección de Mercancía β',
+        shortTitle: '4. Carga β',
+        statusText: pickupB > 0
+          ? `📥 Recolección en curso: ${pickupB} nuevas unidades β ingresan por la compuerta trasera y ocupan los slots del camión.`
+          : `ℹ️ Sin recolecciones β requeridas en ${destinationNode.label}.`,
+        color: 'cyan',
+        hasAction: pickupB > 0,
+      },
+    ];
+  }, [isDepot, arrivalSlots, handlingCount, currentStep.handlingCost, deliverA, destinationNode.label, pickupB]);
+
+  const currentSubStepDef = subStepDefs[subStep - 1] || subStepDefs[0];
   const animDuration = Math.max(0.4, 1.0 / speed);
 
   return (
@@ -407,10 +534,11 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
                 const isSelected = selectedSlotIdx === slotNum;
                 const isNearDoor = slotNum <= 3;
 
-                const isHandlingExiting = stage === 'handling-out' && handledBetaIndices.includes(idx);
-                const isDeliveringExiting = stage === 'unloading-alpha' && deliveredAlphaIndices.includes(idx);
-                const isHandlingEntering = stage === 'handling-in' && idx < handledBetaIndices.length;
-                const isLoadingEntering = stage === 'loading-beta' && newBetaIndices.includes(idx);
+                const isDeliveringExiting = !isDepot && stage === 'unloading-alpha' && deliveredAlphaIndices.includes(idx);
+                const isDepotUnloading = isDepot && (stage === 'unloading-alpha' || stage === 'handling-out') && arrivalSlots[idx] === 'B';
+                const isHandlingExiting = !isDepot && stage === 'handling-out' && handledBetaIndices.includes(idx);
+                const isHandlingEntering = !isDepot && stage === 'handling-in' && reenteringBetaIndices.includes(idx);
+                const isLoadingEntering = !isDepot && stage === 'loading-beta' && newBetaIndices.includes(idx);
 
                 return (
                   <motion.div
@@ -420,7 +548,7 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setSelectedSlotIdx(isSelected ? null : slotNum)}
                     className={`relative rounded-xl p-2.5 flex flex-col items-center justify-between min-h-[82px] border transition-colors duration-300 cursor-pointer select-none ${
-                      isDeliveringExiting
+                      isDeliveringExiting || isDepotUnloading
                         ? 'bg-rose-900/80 border-rose-400 text-white ring-2 ring-rose-500/60 shadow-lg shadow-rose-950/60 scale-105'
                         : isHandlingExiting || isHandlingEntering
                         ? 'bg-amber-900/80 border-amber-400 text-white ring-2 ring-amber-500/60 shadow-lg shadow-amber-950/60 scale-105'
@@ -497,10 +625,12 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
                     <div className="text-[8px] font-mono font-bold text-center w-full truncate mt-1">
                       {isDeliveringExiting ? (
                         <span className="text-rose-300 font-black">SALE α</span>
+                      ) : isDepotUnloading ? (
+                        <span className="text-rose-300 font-black">DESCARGA β</span>
                       ) : isHandlingExiting ? (
                         <span className="text-amber-300 font-black">EVAC β</span>
                       ) : isHandlingEntering ? (
-                        <span className="text-amber-300 font-black">REINGR</span>
+                        <span className="text-amber-300 font-black">REINGR β</span>
                       ) : isLoadingEntering ? (
                         <span className="text-cyan-300 font-black">ENTRA β</span>
                       ) : isAlpha ? (
@@ -573,24 +703,28 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
               </span>
             </div>
 
-            {/* Delivery Requirements (Alpha) */}
+            {/* Delivery Requirements (Alpha or Depot Beta) */}
             <div className="bg-rose-950/30 border border-rose-500/30 rounded-xl p-3 flex flex-col gap-1.5">
               <div className="flex items-center justify-between text-xs font-semibold text-rose-300">
                 <span className="flex items-center gap-1.5">
                   <ArrowLeft className="w-3.5 h-3.5 text-rose-400" />
-                  Entrega Requerida (α)
+                  {isDepot ? 'Descarga Final en Depósito (β)' : 'Entrega Requerida (α)'}
                 </span>
                 <span className="font-mono text-sm font-bold text-rose-400">
-                  {deliverA} unidades
+                  {isDepot ? `${arrivalSlots.filter((s) => s === 'B').length} unidades` : `${deliverA} unidades`}
                 </span>
               </div>
               <p className="text-[11px] text-zinc-400 leading-snug">
-                Mercancía proveniente del depósito central entregada en este nodo.
+                {isDepot
+                  ? 'Totalidad de mercancía β recolectada durante la ruta entregada en el almacén central.'
+                  : 'Mercancía proveniente del depósito central entregada en este nodo.'}
               </p>
               {stage === 'unloading-alpha' && (
                 <div className="mt-1 text-[11px] font-mono text-rose-300 flex items-center gap-1.5 bg-rose-500/10 px-2 py-1 rounded">
                   <CheckCircle2 className="w-3.5 h-3.5 text-rose-400" />
-                  Descargando {deliverA} cajas α en el cliente...
+                  {isDepot
+                    ? `Descargando ${arrivalSlots.filter((s) => s === 'B').length} cajas β en el almacén central...`
+                    : `Descargando ${deliverA} cajas α en el cliente...`}
                 </div>
               )}
             </div>
@@ -600,16 +734,18 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
               <div className="flex items-center justify-between text-xs font-semibold text-cyan-300">
                 <span className="flex items-center gap-1.5">
                   <ArrowRight className="w-3.5 h-3.5 text-cyan-400" />
-                  Recolección Requerida (β)
+                  {isDepot ? 'Recolección en Depósito' : 'Recolección Requerida (β)'}
                 </span>
                 <span className="font-mono text-sm font-bold text-cyan-400">
-                  {pickupB} unidades
+                  {isDepot ? '0 unidades' : `${pickupB} unidades`}
                 </span>
               </div>
               <p className="text-[11px] text-zinc-400 leading-snug">
-                Mercancía generada en el cliente que se transporta de retorno al depósito.
+                {isDepot
+                  ? 'El depósito es el fin del recorrido; no se recogen nuevas mercancías.'
+                  : 'Mercancía generada en el cliente que se transporta de retorno al depósito.'}
               </p>
-              {stage === 'loading-beta' && (
+              {stage === 'loading-beta' && !isDepot && (
                 <div className="mt-1 text-[11px] font-mono text-cyan-300 flex items-center gap-1.5 bg-cyan-500/10 px-2 py-1 rounded">
                   <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" />
                   Cargando {pickupB} cajas β en el camión...
