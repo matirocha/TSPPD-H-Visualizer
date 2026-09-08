@@ -1,4 +1,4 @@
-﻿# Reglas de Componentes shadcn/ui
+# Reglas de Componentes shadcn/ui
 
 - **Ubicación estándar:** Todos los componentes UI reutilizables viven en `src/components/ui/` (ejemplo: `button.tsx`, `card.tsx`, `dialog.tsx`).
 - **Función `cn()` obligatoria:** Usar siempre `cn(...)` de `@/lib/utils` (combinando `clsx` y `tailwind-merge`) para mezclar clases fijas con propiedades `className` externas.

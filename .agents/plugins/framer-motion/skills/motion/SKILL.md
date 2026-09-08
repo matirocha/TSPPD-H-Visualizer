@@ -1,4 +1,4 @@
-﻿---
+---
 name: motion
 description: Directrices maestras para implementar microinteracciones, físicas de resorte, animaciones de layout y transiciones fluidas con Motion / Framer Motion.
 ---

@@ -1,4 +1,4 @@
-﻿---
+---
 name: playwright
 description: Automatiza navegadores web, toma capturas de pantalla, prueba responsividad móvil/escritorio y realiza pruebas E2E con Playwright CLI.
 ---

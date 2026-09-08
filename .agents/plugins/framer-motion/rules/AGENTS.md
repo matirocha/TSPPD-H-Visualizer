@@ -1,4 +1,4 @@
-﻿# Reglas de Animación con Motion (Framer Motion)
+# Reglas de Animación con Motion (Framer Motion)
 
 - **Importación estándar:** Siempre importar desde `motion/react` (`import { motion, AnimatePresence } from "motion/react"`).
 - **Física de resortes (Springs):** Usar animaciones basadas en física con `type: "spring"`, `stiffness: 300-400`, `damping: 25-35` en lugar de transiciones mecánicas lineales.

@@ -1,4 +1,4 @@
-﻿# Regla de Monitoreo de Tokens (Token Tracker)
+# Regla de Monitoreo de Tokens (Token Tracker)
 
 - **Pie de métricas opcional:** Al responder consultas de desarrollo, arquitectura o generación de código, incluir al final un pie de página sutil con el desglose de tokens aproximados y el modelo activo.
 - **Formato del pie:**

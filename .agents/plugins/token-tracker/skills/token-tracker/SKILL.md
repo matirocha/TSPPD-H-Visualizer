@@ -1,4 +1,4 @@
-﻿---
+---
 name: token-tracker
 description: Analiza los registros de conversación (transcript.jsonl), calcula tokens de entrada, pensamiento y salida, y genera reportes de consumo.
 ---

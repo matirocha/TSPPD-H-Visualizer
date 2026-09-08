@@ -1,4 +1,4 @@
-﻿# Reglas de Componentes 21st.dev & Design Engineering
+# Reglas de Componentes 21st.dev & Design Engineering
 
 - **Uso de Bloques Prémium:** Cuando el usuario solicite interfaces de alto impacto visual, aprovechar los patrones de 21st.dev (tarjetas spotlight, fondos de aurora, textos cinéticos, grids bento interactivos).
 - **Compatibilidad con shadcn:** Todos los componentes de 21st.dev deben integrarse armónicamente con los tokens de color y la estructura de `src/components/ui/`.

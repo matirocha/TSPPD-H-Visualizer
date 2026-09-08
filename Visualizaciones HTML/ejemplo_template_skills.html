@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demostración de Ecosistema Frontend: Tasteskill + shadcn/ui + Framer Motion + 21st.dev</title>
+  
+  <!-- Tipografía Geist (Tasteskill) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Geist', 'sans-serif'],
+            mono: ['Geist Mono', 'monospace']
+          },
+          colors: {
+            background: '#09090b',
+            card: '#18181b',
+            border: '#27272a'
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Motion for JavaScript (Framer Motion Engine) -->
+  <script src="https://cdn.jsdelivr.net/npm/motion@latest/dist/motion.js"></script>
+
+  <style>
+    body { font-family: 'Geist', sans-serif; }
+  </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen antialiased selection:bg-zinc-800 selection:text-white relative overflow-x-hidden">
+
+  <!-- Fondo Aurora Mesh (21st.dev) -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+    <div class="absolute -top-40 left-1/2 -translate-x-1/2 w-[750px] h-[380px] bg-gradient-to-tr from-indigo-500/10 via-emerald-500/10 to-blue-500/10 blur-[130px] rounded-full"></div>
+  </div>
+
+  <div class="max-w-5xl mx-auto px-6 py-16">
+    
+    <!-- Header / Hero (Tasteskill & shadcn/ui) -->
+    <header class="motion-entry opacity-0 text-center max-w-2xl mx-auto mb-16">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-zinc-800 bg-zinc-900/60 text-xs font-mono text-zinc-400 mb-6">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        Skills y Plugins Configurados en .agents
+      </div>
+      <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-white leading-tight">
+        Frontend de Alto Nivel con <span class="bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent">Plugins de Agente</span>
+      </h1>
+      <p class="mt-4 text-zinc-400 text-base leading-relaxed">
+        Plantilla canónica que integra la tipografía y diales de Tasteskill, la sobriedad de shadcn/ui, las físicas suaves de Framer Motion y los bloques visuales de 21st.dev.
+      </p>
+      
+      <!-- Botones shadcn/ui con feedback táctil Motion -->
+      <div class="mt-8 flex items-center justify-center gap-4">
+        <button class="motion-btn inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-medium text-zinc-950 shadow transition-all hover:bg-zinc-200 active:scale-[0.98]">
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+          Explorar Componentes
+        </button>
+        <button class="motion-btn inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900/40 px-5 py-2.5 text-sm font-medium text-zinc-200 transition-all hover:bg-zinc-800 active:scale-[0.98]">
+          Ver Documentación
+        </button>
+      </div>
+    </header>
+
+    <!-- Bento Grid Asimétrica (21st.dev & shadcn/ui) -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      
+      <!-- Tarjeta 1: Spotlight Card (21st.dev) -->
+      <div class="motion-entry opacity-0 md:col-span-2 spotlight-card relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/40 p-8 shadow-xl">
+        <div class="spotlight-glow pointer-events-none absolute -inset-px opacity-0 transition-opacity duration-300"></div>
+        <div class="relative z-10">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-wider text-emerald-400 font-mono">21st.dev + Framer Motion</span>
+            <span class="rounded-md border border-zinc-800 bg-zinc-950 px-2 py-0.5 text-xs text-zinc-400 font-mono">Spotlight Effect</span>
+          </div>
+          <h3 class="text-2xl font-bold text-white mt-4 tracking-tight">Interacciones Dinámicas con Resplandor</h3>
+          <p class="text-zinc-400 text-sm mt-2 max-w-md leading-relaxed">
+            Mueve el cursor sobre esta tarjeta para apreciar el resplandor radial suave calculado en tiempo real con micro-físicas.
+          </p>
+        </div>
+      </div>
+
+      <!-- Tarjeta 2: Tasteskill Dial -->
+      <div class="motion-entry opacity-0 spotlight-card relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/40 p-8 shadow-xl">
+        <div class="spotlight-glow pointer-events-none absolute -inset-px opacity-0 transition-opacity duration-300"></div>
+        <div class="relative z-10">
+          <div class="w-10 h-10 rounded-xl bg-zinc-800/80 border border-zinc-700/60 flex items-center justify-center text-zinc-300 mb-4">
+            <i data-lucide="palette" class="w-5 h-5"></i>
+          </div>
+          <h4 class="text-lg font-semibold text-white tracking-tight">Tasteskill Anti-Slop</h4>
+          <p class="text-zinc-400 text-xs mt-2 leading-relaxed">
+            Sin clichés de IA. Tipografía calibrada, paleta Zinc neutral y acentos con propósito.
+          </p>
+        </div>
+      </div>
+
+      <!-- Tarjeta 3: shadcn/ui Componentes -->
+      <div class="motion-entry opacity-0 spotlight-card relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/40 p-8 shadow-xl">
+        <div class="spotlight-glow pointer-events-none absolute -inset-px opacity-0 transition-opacity duration-300"></div>
+        <div class="relative z-10">
+          <div class="w-10 h-10 rounded-xl bg-zinc-800/80 border border-zinc-700/60 flex items-center justify-center text-zinc-300 mb-4">
+            <i data-lucide="layout" class="w-5 h-5"></i>
+          </div>
+          <h4 class="text-lg font-semibold text-white tracking-tight">shadcn/ui Tokens</h4>
+          <p class="text-zinc-400 text-xs mt-2 leading-relaxed">
+            Tokens semánticos listos para dark mode con bordes milimétricos y radios armonizados.
+          </p>
+        </div>
+      </div>
+
+      <!-- Tarjeta 4: Motion Springs -->
+      <div class="motion-entry opacity-0 md:col-span-2 spotlight-card relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/40 p-8 shadow-xl">
+        <div class="spotlight-glow pointer-events-none absolute -inset-px opacity-0 transition-opacity duration-300"></div>
+        <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div>
+            <div class="w-10 h-10 rounded-xl bg-zinc-800/80 border border-zinc-700/60 flex items-center justify-center text-zinc-300 mb-4">
+              <i data-lucide="activity" class="w-5 h-5"></i>
+            </div>
+            <h4 class="text-xl font-semibold text-white tracking-tight">Framer Motion Springs</h4>
+            <p class="text-zinc-400 text-sm mt-1 max-w-sm leading-relaxed">
+              Físicas de resorte en cascada (`stiffness: 280`, `damping: 24`) sin saltos de layout.
+            </p>
+          </div>
+          <div class="rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-xs text-zinc-400 w-full md:w-auto">
+            <code>delay: stagger(0.08)</code>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <script>
+    // Inicializar iconos de Lucide
+    lucide.createIcons();
+
+    // Framer Motion: Animación escalonada al entrar
+    const { animate, spring, stagger } = Motion;
+    
+    document.addEventListener("DOMContentLoaded", () => {
+      animate(
+        ".motion-entry",
+        { opacity: [0, 1], y: [24, 0] },
+        { delay: stagger(0.1), duration: 0.6, easing: spring({ stiffness: 260, damping: 22 }) }
+      );
+    });
+
+    // 21st.dev: Spotlight Card Effect
+    document.querySelectorAll('.spotlight-card').forEach(card => {
+      const glow = card.querySelector('.spotlight-glow');
+      if (!glow) return;
+      card.addEventListener('mousemove', e => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        glow.style.opacity = '1';
+        glow.style.background = `radial-gradient(400px circle at ${x}px ${y}px, rgba(255, 255, 255, 0.08), transparent 80%)`;
+      });
+      card.addEventListener('mouseleave', () => {
+        glow.style.opacity = '0';
+      });
+    });
+
+    // Framer Motion: Tactile Buttons
+    document.querySelectorAll('.motion-btn').forEach(btn => {
+      btn.addEventListener('mouseenter', () => {
+        animate(btn, { y: -2 }, { duration: 0.15, easing: "ease-out" });
+      });
+      btn.addEventListener('mouseleave', () => {
+        animate(btn, { y: 0 }, { duration: 0.15, easing: "ease-out" });
+      });
+    });
+  </script>
+</body>
+</html>

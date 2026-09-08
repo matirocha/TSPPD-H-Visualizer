@@ -19,8 +19,12 @@ if sys.stderr and hasattr(sys.stderr, 'reconfigure'):
         pass
 
 # =====================================================================
-# CONFIGURACIÓN DE PARÁMETROS PARA REPLICAR EL PAPER (POLÍTICA 1)
+# CONFIGURACIÓN DE PARÁMETROS DE EJECUCIÓN (MODIFICABLE AQUÍ)
 # =====================================================================
+NUM_CUSTOMERS = 5      # Número de clientes a resolver (e.g. 5, 10, 15, 20, 50)
+INSTANCE_ID = 1        # ID de la instancia de datos (1 a 10)
+H_VALUE = 0.1          # Costo unitario de manipulación h (default: 0.1)
+
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 COST_FILE = os.path.join(BASE_DIR, "e_vigo", "ecosti.dat")
 DATA_FILE = os.path.join(BASE_DIR, "e_vigo", "edati.dat")
@@ -246,7 +250,7 @@ def print_detailed_schedule(tour, c, alpha, beta, Q, positions, h_val, steps, to
     print(f"• Total β recolectadas:     {total_b} unidades")
     print("="*80 + "\n")
 
-def solve_instance(num_customers=5, instance_id=1, h_val=0.1, output_dir=OUTPUTS_DIR, verbose=True, gurobi_log=False):
+def solve_instance(num_customers=NUM_CUSTOMERS, instance_id=INSTANCE_ID, h_val=H_VALUE, output_dir=OUTPUTS_DIR, verbose=True, gurobi_log=False):
     """Resuelve una instancia del modelo TSPPD-H_1 (Política 1, Ecs. 17-25) y guarda la solución en Outputs/"""
     if verbose:
         print("\n" + "="*60)
@@ -568,10 +572,10 @@ def solve_instance(num_customers=5, instance_id=1, h_val=0.1, output_dir=OUTPUTS
 
 def main():
     parser = argparse.ArgumentParser(description="Resuelve instancias TSPPD-H_1 (Política 1, Ecs 17-25) con Gurobi y guarda la solución en Outputs/")
-    parser.add_argument("--customers", type=int, default=5, help="Número de clientes (default: 5)")
-    parser.add_argument("--id", type=int, default=1, help="ID de la instancia (1 a 10)")
-    parser.add_argument("--h", type=float, default=0.1, help="Parámetro de costo de manipulación h (default: 0.1)")
-    parser.add_argument("--all-ids", action="store_true", help="Resolver automáticamente las instancias ID 1 hasta 10 para 5 clientes")
+    parser.add_argument("--customers", type=int, default=NUM_CUSTOMERS, help=f"Número de clientes (default: {NUM_CUSTOMERS})")
+    parser.add_argument("--id", type=int, default=INSTANCE_ID, help=f"ID de la instancia 1 a 10 (default: {INSTANCE_ID})")
+    parser.add_argument("--h", type=float, default=H_VALUE, help=f"Parámetro de costo de manipulación h (default: {H_VALUE})")
+    parser.add_argument("--all-ids", action="store_true", help="Resolver automáticamente las instancias ID 1 hasta 10 para los clientes configurados")
     parser.add_argument("--gurobi-log", action="store_true", help="Mostrar logs detallados de Gurobi Optimizer")
     
     args = parser.parse_args()

@@ -1,4 +1,4 @@
-﻿---
+---
 name: 21st-dev
 description: Cómo buscar, descargar e integrar componentes de diseño avanzados y bloques prémium de 21st.dev en proyectos React.
 ---

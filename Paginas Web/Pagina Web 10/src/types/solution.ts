@@ -80,6 +80,6 @@ export interface CargoSubStepDef {
   title: string;
   shortTitle: string;
   statusText: string;
-  color: 'amber' | 'rose' | 'cyan';
+  color: 'amber' | 'rose' | 'cyan' | 'emerald' | 'zinc';
   hasAction: boolean;
 }

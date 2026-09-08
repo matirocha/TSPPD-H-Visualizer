@@ -150,6 +150,7 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
             return (
               <button
                 key={`timeline-step-${idx}`}
+                data-step-btn={idx + 1}
                 onClick={() => onSelectStep(idx)}
                 className={`h-8 rounded-xl font-mono text-xs font-bold transition-all cursor-pointer flex items-center justify-center border ${
                   isCurrent

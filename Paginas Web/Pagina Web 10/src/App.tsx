@@ -101,8 +101,8 @@ export const App: React.FC = () => {
             setActiveModel(data.model);
           }
           setCurrentStepIndex(0);
-          setProgress(0);
-          setIsArrived(false);
+          setProgress(1);
+          setIsArrived(true);
           setPlaybackStatus('idle');
         }
       } catch (err: any) {
@@ -160,14 +160,19 @@ export const App: React.FC = () => {
     if (!currentSolution) return;
     if (currentStepIndex < currentSolution.steps.length - 1) {
       setCurrentStepIndex((prev) => prev + 1);
-      setProgress(0);
-      setIsArrived(false);
+      if (isContinuousMode && playbackStatus === 'playing') {
+        setProgress(0);
+        setIsArrived(false);
+      } else {
+        setProgress(1);
+        setIsArrived(true);
+      }
     } else {
       // Tour completed!
       setPlaybackStatus('idle');
       setIsArrived(true);
     }
-  }, [currentSolution, currentStepIndex]);
+  }, [currentSolution, currentStepIndex, isContinuousMode, playbackStatus]);
 
   // Playback Control Handlers
   const handlePlay = () => {
@@ -187,8 +192,8 @@ export const App: React.FC = () => {
     handlePause();
     if (currentStepIndex > 0) {
       setCurrentStepIndex((prev) => prev - 1);
-      setProgress(0);
-      setIsArrived(false);
+      setProgress(1);
+      setIsArrived(true);
     }
   };
 
@@ -196,23 +201,23 @@ export const App: React.FC = () => {
     handlePause();
     if (currentSolution && currentStepIndex < currentSolution.steps.length - 1) {
       setCurrentStepIndex((prev) => prev + 1);
-      setProgress(0);
-      setIsArrived(false);
+      setProgress(1);
+      setIsArrived(true);
     }
   };
 
   const handleReset = () => {
     handlePause();
     setCurrentStepIndex(0);
-    setProgress(0);
-    setIsArrived(false);
+    setProgress(1);
+    setIsArrived(true);
   };
 
   const handleSelectStep = (idx: number) => {
     handlePause();
     setCurrentStepIndex(idx);
-    setProgress(0);
-    setIsArrived(false);
+    setProgress(1);
+    setIsArrived(true);
   };
 
   const currentStep = currentSolution?.steps[currentStepIndex];
@@ -278,6 +283,7 @@ export const App: React.FC = () => {
               currentStep={currentStep}
               currentStepIndex={currentStepIndex}
               isArrived={isArrived}
+              playbackStatus={playbackStatus}
               isContinuousMode={isContinuousMode}
               speed={speed}
               onContinueJourney={handleContinueJourney}

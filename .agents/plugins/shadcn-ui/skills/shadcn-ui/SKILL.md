@@ -1,4 +1,4 @@
-﻿---
+---
 name: shadcn-ui
 description: Guía y recetas de implementación de componentes shadcn/ui con Tailwind CSS, Radix UI y la utilidad cn.
 ---

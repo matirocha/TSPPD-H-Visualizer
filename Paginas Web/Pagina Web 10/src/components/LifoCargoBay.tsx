@@ -15,7 +15,7 @@ import {
   Info,
   DoorClosed,
 } from 'lucide-react';
-import { SolutionData, StepData, CargoSubStepDef, SlotType } from '../types/solution';
+import { SolutionData, StepData, CargoSubStepDef, SlotType, PlaybackStatus } from '../types/solution';
 import { formatNumber } from '../lib/utils';
 
 interface LifoCargoBayProps {
@@ -23,6 +23,7 @@ interface LifoCargoBayProps {
   currentStep: StepData;
   currentStepIndex: number;
   isArrived: boolean;
+  playbackStatus?: PlaybackStatus;
   isContinuousMode: boolean;
   speed?: number;
   onContinueJourney: () => void;
@@ -33,6 +34,7 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
   currentStep,
   currentStepIndex,
   isArrived,
+  playbackStatus,
   isContinuousMode,
   speed = 1,
   onContinueJourney,
@@ -136,6 +138,15 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
     return indices;
   }, [currentStep, isDepot, handlingCount, deliveredAlphaIndices, arrivalSlots]);
 
+  // 2b. Identify evacuated / rehandled Alpha slots (evacuated in sub-step 1)
+  const handledAlphaIndices = useMemo<number[]>(() => {
+    if (isDepot || handlingCount <= 0) return [];
+    if (currentStep.rehandledA && currentStep.rehandledA.length > 0) {
+      return currentStep.rehandledA.map((s) => s - 1);
+    }
+    return [];
+  }, [currentStep, isDepot, handlingCount]);
+
   // 3. Identify newly loaded Beta slots (loaded in sub-step 4)
   const newBetaIndices = useMemo<number[]>(() => {
     if (isDepot || pickupB <= 0) return [];
@@ -185,15 +196,27 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
     return indices;
   }, [departureSlots, newBetaIndices, unhandledBetaIndices]);
 
-  // Stage derived from isArrived & subStep
+  // 5b. Identify slots where evacuated / relocated Alpha RE-ENTER the truck in sub-step 3
+  const reenteringAlphaIndices = useMemo<number[]>(() => {
+    if (isDepot || handledAlphaIndices.length === 0) return [];
+    const indices: number[] = [];
+    for (let i = 0; i < departureSlots.length; i++) {
+      if (departureSlots[i] === 'A') {
+        indices.push(i);
+      }
+    }
+    return indices;
+  }, [departureSlots, handledAlphaIndices, isDepot]);
+
+  // Stage derived from isArrived, playbackStatus & subStep
   const stage = useMemo<'transit' | 'handling-out' | 'unloading-alpha' | 'handling-in' | 'loading-beta' | 'settled'>(() => {
-    if (!isArrived) return 'transit';
+    if (!isArrived && playbackStatus === 'playing') return 'transit';
     if (subStep === 1) return 'handling-out';
     if (subStep === 2) return 'unloading-alpha';
     if (subStep === 3) return 'handling-in';
     if (subStep === 4) return 'loading-beta';
     return 'settled';
-  }, [isArrived, subStep]);
+  }, [isArrived, playbackStatus, subStep]);
 
   // Auto-advance timer between sub-steps ONLY in continuous mode
   useEffect(() => {
@@ -203,7 +226,7 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
       handlingCount > 0 ? 3200 / speed : 1400 / speed, // Sub-step 1: Handling out
       deliverA > 0 || isDepot ? 3200 / speed : 1400 / speed, // Sub-step 2: Unloading alpha / depot
       handlingCount > 0 ? 2800 / speed : 1200 / speed, // Sub-step 3: Handling in
-      pickupB > 0 ? 3400 / speed : 1600 / speed,        // Sub-step 4: Loading beta
+      pickupB > 0 ? 3400 / speed : 1500 / speed,        // Sub-step 4: Loading beta
     ];
 
     const currentDuration = subStepDurations[subStep - 1] || 2500;
@@ -222,7 +245,7 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
 
   // Display slot states mapped dynamically by sub-step
   const displaySlots = useMemo<SlotType[]>(() => {
-    if (!isArrived || stage === 'transit') {
+    if (stage === 'transit') {
       return arrivalSlots;
     }
 
@@ -231,23 +254,21 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
       return Array(capacity).fill('EMPTY');
     }
 
-    // Sub-step 1: Evacuate blocking B items
+    // Sub-step 1: Evacuate blocking B and rehandled A items
+    // (In sub-step 1, items being evacuated are rendered in their arrival positions with EVAC badges)
     if (stage === 'handling-out') {
-      return arrivalSlots.map((item, idx) => {
-        if (handledBetaIndices.includes(idx)) return 'EMPTY';
-        return item;
-      });
+      return arrivalSlots;
     }
 
-    // Sub-step 2: Unload alpha items
+    // Sub-step 2: Unload alpha items (evacuated items are now outside the truck on the dock)
     if (stage === 'unloading-alpha') {
       return arrivalSlots.map((item, idx) => {
-        if (handledBetaIndices.includes(idx) || deliveredAlphaIndices.includes(idx)) return 'EMPTY';
+        if (handledBetaIndices.includes(idx) || handledAlphaIndices.includes(idx)) return 'EMPTY';
         return item;
       });
     }
 
-    // Sub-step 3: Handling-in (rehandled B enter their departure positions, new B are not yet loaded)
+    // Sub-step 3: Handling-in (rehandled B and rehandled A enter their departure positions, new B not yet loaded)
     if (stage === 'handling-in') {
       return departureSlots.map((item, idx) => {
         if (newBetaIndices.includes(idx)) return 'EMPTY';
@@ -257,7 +278,7 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
 
     // Sub-step 4: Loading-beta (new B items enter the truck) -> complete departure state
     return departureSlots;
-  }, [isArrived, stage, isDepot, subStep, arrivalSlots, departureSlots, handledBetaIndices, deliveredAlphaIndices, newBetaIndices, capacity]);
+  }, [stage, isDepot, subStep, arrivalSlots, departureSlots, handledBetaIndices, handledAlphaIndices, newBetaIndices, capacity]);
 
   // Live counts
   const alphaInBay = displaySlots.filter((s) => s === 'A').length;
@@ -304,14 +325,41 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
       ];
     }
 
+    const countBetaHandled = handledBetaIndices.length;
+    const countAlphaHandled = handledAlphaIndices.length;
+
+    let handlingOutText = '✅ Sin conflicto LIFO: La compuerta trasera está despejada para la entrega.';
+    if (handlingCount > 0) {
+      if (countAlphaHandled > 0 && countBetaHandled > 0) {
+        handlingOutText = `⚠️ Conflicto LIFO: Se evacúan temporalmente ${handlingCount} unidades (${countBetaHandled} β y ${countAlphaHandled} α reubicadas) para despejar la compuerta trasera (Costo: +${formatNumber(currentStep.handlingCost, 2)}).`;
+      } else if (countBetaHandled > 0) {
+        handlingOutText = `⚠️ Conflicto LIFO: Se evacúan temporalmente ${countBetaHandled} unidades β para despejar el acceso a las unidades α (Costo: +${formatNumber(currentStep.handlingCost, 2)}).`;
+      } else {
+        handlingOutText = `⚠️ Conflicto LIFO: Se evacúan temporalmente ${countAlphaHandled} unidades α para permitir la entrega (Costo: +${formatNumber(currentStep.handlingCost, 2)}).`;
+      }
+    }
+
+    let handlingInText = '✅ Compartimento ordenado: No se requirió reacomodo de mercancía.';
+    if (handlingCount > 0) {
+      if (countAlphaHandled > 0 && countBetaHandled > 0) {
+        handlingInText = `🔄 Reingreso y Reubicación LIFO: Las ${countAlphaHandled} unidades α se reubican en los slots de partida y las ${countBetaHandled} unidades β vuelven a ingresar a la bahía.`;
+      } else if (countBetaHandled > 0) {
+        handlingInText = `🔄 Reingreso LIFO: Las ${countBetaHandled} unidades β evacuadas vuelven a ingresar y se asientan en sus slots correspondientes.`;
+      } else {
+        handlingInText = `🔄 Reubicación LIFO: Las ${countAlphaHandled} unidades α evacuadas se reincorporan a la bahía.`;
+      }
+    }
+
+    const loadingBetaText = pickupB > 0
+      ? `📥 Recolección en curso: ${pickupB} nuevas unidades β ingresan por la compuerta trasera y ocupan los slots del camión.`
+      : `ℹ️ Sin recolecciones β requeridas en ${destinationNode.label}. El compartimento queda listo para el siguiente tramo.`;
+
     return [
       {
         id: 1,
         title: 'Paso 1: Evacuación LIFO (Handling)',
         shortTitle: '1. Evacuación',
-        statusText: handlingCount > 0
-          ? `⚠️ Conflicto LIFO: Se evacúan temporalmente ${handlingCount} unidades β para despejar el acceso a las unidades α (Costo: +${formatNumber(currentStep.handlingCost, 2)}).`
-          : '✅ Sin conflicto LIFO: La compuerta trasera está despejada para la entrega.',
+        statusText: handlingOutText,
         color: 'amber',
         hasAction: handlingCount > 0,
       },
@@ -320,7 +368,7 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
         title: 'Paso 2: Descarga de Mercancía α (Entrega)',
         shortTitle: '2. Descarga α',
         statusText: deliverA > 0
-          ? `📦 Descarga en proceso: ${deliverA} unidades α salen por la compuerta trasera hacia el cliente ${destinationNode.label}.`
+          ? `📦 Descarga en proceso: ${deliverA} unidades α salen por la compuerta trasera hacia ${destinationNode.label}.`
           : `ℹ️ Sin entregas α requeridas en ${destinationNode.label}.`,
         color: 'rose',
         hasAction: deliverA > 0,
@@ -329,24 +377,30 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
         id: 3,
         title: 'Paso 3: Reingreso y Reordenamiento LIFO',
         shortTitle: '3. Reingreso',
-        statusText: handlingCount > 0
-          ? `🔄 Reingreso LIFO: Las ${handlingCount} unidades β evacuadas vuelven a ingresar y se asientan en sus slots correspondientes.`
-          : '✅ Compartimento ordenado: No se requirió reacomodo de mercancía.',
+        statusText: handlingInText,
         color: 'amber',
         hasAction: handlingCount > 0,
       },
       {
         id: 4,
-        title: 'Paso 4: Carga y Recolección de Mercancía β',
-        shortTitle: '4. Carga β',
-        statusText: pickupB > 0
-          ? `📥 Recolección en curso: ${pickupB} nuevas unidades β ingresan por la compuerta trasera y ocupan los slots del camión.`
-          : `ℹ️ Sin recolecciones β requeridas en ${destinationNode.label}.`,
-        color: 'cyan',
+        title: pickupB > 0 ? 'Paso 4: Carga y Recolección de Mercancía β' : 'Paso 4: Verificación de Carga (Sin Recolección)',
+        shortTitle: pickupB > 0 ? '4. Carga β' : '4. Sin Carga',
+        statusText: loadingBetaText,
+        color: pickupB > 0 ? 'cyan' : 'emerald',
         hasAction: pickupB > 0,
       },
     ];
-  }, [isDepot, arrivalSlots, handlingCount, currentStep.handlingCost, deliverA, destinationNode.label, pickupB]);
+  }, [
+    isDepot,
+    arrivalSlots,
+    handlingCount,
+    handledBetaIndices.length,
+    handledAlphaIndices.length,
+    currentStep.handlingCost,
+    deliverA,
+    destinationNode.label,
+    pickupB,
+  ]);
 
   const currentSubStepDef = subStepDefs[subStep - 1] || subStepDefs[0];
   const animDuration = Math.max(0.4, 1.0 / speed);
@@ -400,6 +454,8 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
                         ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm font-semibold'
                         : sDef.color === 'rose'
                         ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-sm font-semibold'
+                        : sDef.color === 'emerald'
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm font-semibold'
                         : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm font-semibold'
                       : isDone
                       ? 'text-emerald-400 hover:bg-zinc-800'
@@ -451,14 +507,34 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
       {/* Sub-step Explanation Banner */}
       <div className="rounded-2xl bg-zinc-900/70 border border-zinc-800/80 p-3 sm:p-4 flex items-center justify-between gap-3 shadow-inner">
         <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-xl border ${currentSubStepDef.color === 'amber' ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : currentSubStepDef.color === 'rose' ? 'bg-rose-500/10 border-rose-500/30 text-rose-400' : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400'}`}>
+          <div className={`p-2 rounded-xl border ${
+            currentSubStepDef.color === 'amber'
+              ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+              : currentSubStepDef.color === 'rose'
+              ? 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+              : currentSubStepDef.color === 'emerald'
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+              : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400'
+          }`}>
             {subStep === 1 && <ArrowLeft className="w-4 h-4 animate-pulse" />}
             {subStep === 2 && <ArrowLeft className="w-4 h-4 animate-bounce" />}
             {subStep === 3 && <ArrowRight className="w-4 h-4 animate-pulse" />}
-            {subStep === 4 && <ArrowRight className="w-4 h-4 animate-bounce" />}
+            {subStep === 4 && (
+              pickupB > 0
+                ? <ArrowRight className="w-4 h-4 animate-bounce" />
+                : <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            )}
           </div>
           <div>
-            <span className={`text-xs font-bold font-mono block ${currentSubStepDef.color === 'amber' ? 'text-amber-300' : currentSubStepDef.color === 'rose' ? 'text-rose-300' : 'text-cyan-300'}`}>
+            <span className={`text-xs font-bold font-mono block ${
+              currentSubStepDef.color === 'amber'
+                ? 'text-amber-300'
+                : currentSubStepDef.color === 'rose'
+                ? 'text-rose-300'
+                : currentSubStepDef.color === 'emerald'
+                ? 'text-emerald-300'
+                : 'text-cyan-300'
+            }`}>
               {currentSubStepDef.title}
             </span>
             <p className="text-xs text-zinc-300 mt-0.5 leading-snug">
@@ -536,8 +612,15 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
 
                 const isDeliveringExiting = !isDepot && stage === 'unloading-alpha' && deliveredAlphaIndices.includes(idx);
                 const isDepotUnloading = isDepot && (stage === 'unloading-alpha' || stage === 'handling-out') && arrivalSlots[idx] === 'B';
-                const isHandlingExiting = !isDepot && stage === 'handling-out' && handledBetaIndices.includes(idx);
-                const isHandlingEntering = !isDepot && stage === 'handling-in' && reenteringBetaIndices.includes(idx);
+
+                const isHandlingBetaExiting = !isDepot && stage === 'handling-out' && handledBetaIndices.includes(idx);
+                const isHandlingAlphaExiting = !isDepot && stage === 'handling-out' && handledAlphaIndices.includes(idx);
+                const isHandlingExiting = isHandlingBetaExiting || isHandlingAlphaExiting;
+
+                const isHandlingBetaEntering = !isDepot && stage === 'handling-in' && reenteringBetaIndices.includes(idx);
+                const isHandlingAlphaEntering = !isDepot && stage === 'handling-in' && reenteringAlphaIndices.includes(idx);
+                const isHandlingEntering = isHandlingBetaEntering || isHandlingAlphaEntering;
+
                 const isLoadingEntering = !isDepot && stage === 'loading-beta' && newBetaIndices.includes(idx);
 
                 return (
@@ -581,35 +664,35 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
                       <AnimatePresence mode="popLayout">
                         {isAlpha ? (
                           <motion.div
-                            key="alpha-box"
+                            key={`alpha-box-${slotNum}`}
                             initial={{ opacity: 0, x: 30, scale: 0.8 }}
                             animate={{ opacity: 1, x: 0, scale: 1 }}
                             exit={{ opacity: 0, x: 30, scale: 0.8 }}
                             transition={{ duration: animDuration, type: 'spring', bounce: 0.3 }}
                             className="flex flex-col items-center absolute"
                           >
-                            <Box className="w-6 h-6 text-rose-400 drop-shadow" />
-                            <span className="text-[10px] font-bold text-rose-300 font-mono mt-0.5">
-                              α (Ent)
+                            <Box className={`w-6 h-6 ${isHandlingAlphaExiting || isHandlingAlphaEntering ? 'text-amber-300' : 'text-rose-400'} drop-shadow`} />
+                            <span className={`text-[10px] font-bold font-mono mt-0.5 ${isHandlingAlphaExiting || isHandlingAlphaEntering ? 'text-amber-300' : 'text-rose-300'}`}>
+                              α {isHandlingAlphaEntering ? '(Reub)' : isHandlingAlphaExiting ? '(Evac)' : '(Ent)'}
                             </span>
                           </motion.div>
                         ) : isBeta ? (
                           <motion.div
-                            key="beta-box"
+                            key={`beta-box-${slotNum}`}
                             initial={{ opacity: 0, x: 30, scale: 0.8 }}
                             animate={{ opacity: 1, x: 0, scale: 1 }}
                             exit={{ opacity: 0, x: 30, scale: 0.8 }}
                             transition={{ duration: animDuration, type: 'spring', bounce: 0.3 }}
                             className="flex flex-col items-center absolute"
                           >
-                            <Package className={`w-6 h-6 ${isHandlingExiting || isHandlingEntering ? 'text-amber-300' : 'text-cyan-300'} drop-shadow`} />
-                            <span className={`text-[10px] font-bold font-mono mt-0.5 ${isHandlingExiting || isHandlingEntering ? 'text-amber-300' : 'text-cyan-300'}`}>
+                            <Package className={`w-6 h-6 ${isHandlingBetaExiting || isHandlingBetaEntering ? 'text-amber-300' : 'text-cyan-300'} drop-shadow`} />
+                            <span className={`text-[10px] font-bold font-mono mt-0.5 ${isHandlingBetaExiting || isHandlingBetaEntering ? 'text-amber-300' : 'text-cyan-300'}`}>
                               β (Rec)
                             </span>
                           </motion.div>
                         ) : (
                           <motion.div
-                            key="empty-box"
+                            key={`empty-box-${slotNum}`}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
@@ -627,10 +710,14 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
                         <span className="text-rose-300 font-black">SALE α</span>
                       ) : isDepotUnloading ? (
                         <span className="text-rose-300 font-black">DESCARGA β</span>
-                      ) : isHandlingExiting ? (
+                      ) : isHandlingBetaExiting ? (
                         <span className="text-amber-300 font-black">EVAC β</span>
-                      ) : isHandlingEntering ? (
+                      ) : isHandlingAlphaExiting ? (
+                        <span className="text-amber-300 font-black">EVAC α</span>
+                      ) : isHandlingBetaEntering ? (
                         <span className="text-amber-300 font-black">REINGR β</span>
+                      ) : isHandlingAlphaEntering ? (
+                        <span className="text-amber-300 font-black">REUBIC α</span>
                       ) : isLoadingEntering ? (
                         <span className="text-cyan-300 font-black">ENTRA β</span>
                       ) : isAlpha ? (
@@ -745,13 +832,54 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
                   ? 'El depósito es el fin del recorrido; no se recogen nuevas mercancías.'
                   : 'Mercancía generada en el cliente que se transporta de retorno al depósito.'}
               </p>
-              {stage === 'loading-beta' && !isDepot && (
+              {stage === 'loading-beta' && !isDepot && pickupB > 0 && (
                 <div className="mt-1 text-[11px] font-mono text-cyan-300 flex items-center gap-1.5 bg-cyan-500/10 px-2 py-1 rounded">
                   <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" />
                   Cargando {pickupB} cajas β en el camión...
                 </div>
               )}
             </div>
+
+            {/* Evacuation Staging Area on the Dock (Sub-steps 1, 2, 3) */}
+            {!isDepot && handlingCount > 0 && (
+              <div className={`border rounded-xl p-3 flex flex-col gap-1.5 transition-all ${
+                stage === 'handling-out' || stage === 'unloading-alpha'
+                  ? 'bg-amber-950/40 border-amber-500/50 shadow-md shadow-amber-950/40'
+                  : stage === 'handling-in'
+                  ? 'bg-amber-950/20 border-amber-500/30'
+                  : 'bg-zinc-950/40 border-zinc-800 text-zinc-500 opacity-60'
+              }`}>
+                <div className="flex items-center justify-between text-xs font-semibold">
+                  <span className={`flex items-center gap-1.5 ${
+                    stage === 'handling-out' || stage === 'unloading-alpha'
+                      ? 'text-amber-300'
+                      : stage === 'handling-in'
+                      ? 'text-amber-400/80'
+                      : 'text-zinc-400'
+                  }`}>
+                    <RotateCcw className={`w-3.5 h-3.5 ${stage === 'handling-out' || stage === 'unloading-alpha' ? 'text-amber-400 animate-spin' : 'text-zinc-500'}`} />
+                    Andén: Zona de Evacuación LIFO
+                  </span>
+                  <span className="font-mono text-xs font-bold text-amber-300">
+                    {stage === 'handling-out' || stage === 'unloading-alpha'
+                      ? `${handlingCount} uds fuera`
+                      : stage === 'handling-in'
+                      ? 'Reingresando...'
+                      : '0 uds fuera'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-zinc-400 leading-snug">
+                  {handledBetaIndices.length > 0 && `${handledBetaIndices.length} unidades β`}
+                  {handledBetaIndices.length > 0 && handledAlphaIndices.length > 0 && ' y '}
+                  {handledAlphaIndices.length > 0 && `${handledAlphaIndices.length} unidades α`}
+                  {stage === 'handling-out' || stage === 'unloading-alpha'
+                    ? ' descargadas temporalmente al andén para despejar la compuerta trasera.'
+                    : stage === 'handling-in'
+                    ? ' regresando a la bahía de carga en sus nuevas posiciones LIFO.'
+                    : ' ya reubicadas en el compartimiento.'}
+                </p>
+              </div>
+            )}
 
             {/* Step Cost Breakdown */}
             <div className="bg-zinc-950/80 rounded-xl p-3 border border-zinc-800/80 flex flex-col gap-1.5 text-xs font-mono">
