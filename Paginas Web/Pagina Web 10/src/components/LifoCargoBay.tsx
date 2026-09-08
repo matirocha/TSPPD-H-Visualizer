@@ -208,19 +208,22 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
     return indices;
   }, [departureSlots, handledAlphaIndices, isDepot]);
 
+  const isAtDepotInitial = currentStepIndex === 0 && !isArrived;
+
   // Stage derived from isArrived, playbackStatus & subStep
-  const stage = useMemo<'transit' | 'handling-out' | 'unloading-alpha' | 'handling-in' | 'loading-beta' | 'settled'>(() => {
+  const stage = useMemo<'initial-depot' | 'transit' | 'handling-out' | 'unloading-alpha' | 'handling-in' | 'loading-beta' | 'settled'>(() => {
+    if (isAtDepotInitial) return 'initial-depot';
     if (!isArrived && playbackStatus === 'playing') return 'transit';
     if (subStep === 1) return 'handling-out';
     if (subStep === 2) return 'unloading-alpha';
     if (subStep === 3) return 'handling-in';
     if (subStep === 4) return 'loading-beta';
     return 'settled';
-  }, [isArrived, playbackStatus, subStep]);
+  }, [isAtDepotInitial, isArrived, playbackStatus, subStep]);
 
-  // Auto-advance timer between sub-steps ONLY in continuous mode
+  // Auto-advance timer between sub-steps ONLY in continuous mode AND when playing
   useEffect(() => {
-    if (!isArrived || !isContinuousMode) return;
+    if (!isArrived || !isContinuousMode || playbackStatus !== 'playing') return;
 
     const subStepDurations = [
       handlingCount > 0 ? 3200 / speed : 1400 / speed, // Sub-step 1: Handling out
@@ -241,11 +244,11 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
     }, currentDuration);
 
     return () => clearTimeout(timer);
-  }, [isArrived, isContinuousMode, subStep, handlingCount, deliverA, pickupB, isDepot, speed, onContinueJourney]);
+  }, [isArrived, isContinuousMode, playbackStatus, subStep, handlingCount, deliverA, pickupB, isDepot, speed, onContinueJourney]);
 
   // Display slot states mapped dynamically by sub-step
   const displaySlots = useMemo<SlotType[]>(() => {
-    if (stage === 'transit') {
+    if (stage === 'initial-depot' || stage === 'transit') {
       return arrivalSlots;
     }
 
@@ -287,6 +290,44 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
 
   // Sub-step definitions with precise wording
   const subStepDefs: CargoSubStepDef[] = useMemo(() => {
+    if (isAtDepotInitial) {
+      const totalAlphaInit = arrivalSlots.filter((s) => s === 'A').length;
+      return [
+        {
+          id: 1,
+          title: 'Depósito Central: Carga Inicial',
+          shortTitle: '1. Carga Inicial',
+          statusText: `🏁 Camión cargado con ${totalAlphaInit} unidades α en el Depósito Central. Listo para iniciar el tour.`,
+          color: 'emerald',
+          hasAction: false,
+        },
+        {
+          id: 2,
+          title: 'Organización LIFO en Bahía',
+          shortTitle: '2. Organización',
+          statusText: '📦 Mercancía α ubicada en la bahía según secuencia de entregas. Compuerta libre de carga β.',
+          color: 'cyan',
+          hasAction: false,
+        },
+        {
+          id: 3,
+          title: 'Inspección de Compuerta',
+          shortTitle: '3. Compuerta',
+          statusText: '🚪 Compuerta trasera despejada para acceso directo.',
+          color: 'amber',
+          hasAction: false,
+        },
+        {
+          id: 4,
+          title: 'Iniciar Ruta',
+          shortTitle: '4. Iniciar',
+          statusText: '🚀 Presiona "Iniciar Ruta" para arrancar el viaje hacia el primer cliente.',
+          color: 'emerald',
+          hasAction: false,
+        },
+      ];
+    }
+
     if (isDepot) {
       const totalDepotB = arrivalSlots.filter((s) => s === 'B').length;
       return [
@@ -550,22 +591,22 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
         </div>
       </div>
 
-      {/* Main Simulation Layout: Truck Compartment (Left 8 cols) + Logistics Dock (Right 4 cols) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+      {/* Main Simulation Layout: Truck Compartment (Top) + Logistics Dock (Bottom) */}
+      <div className="flex flex-col gap-4">
         
-        {/* Left Side (Lg 8 cols): Physical Truck Trailer & Slots */}
-        <div className="lg:col-span-8 flex flex-col gap-3">
+        {/* Physical Truck Trailer & Slots */}
+        <div className="w-full flex flex-col gap-3">
           
           {/* Truck Header Bar with Cargo Stats */}
           <div className="bg-zinc-900/90 rounded-xl border border-zinc-800 p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2">
               <Truck className="w-4 h-4 text-emerald-400" />
               <span className="font-semibold text-zinc-200">
-                Camión en: <strong className="text-white">{destinationNode.label}</strong>
+                Camión en: <strong className="text-white">{isAtDepotInitial ? 'Depósito Central' : destinationNode.label}</strong>
               </span>
               <span className="text-zinc-600">|</span>
               <span className="text-zinc-400 font-mono">
-                Paso {currentStepIndex + 1}/{solution.steps.length}
+                {isAtDepotInitial ? 'Listo para iniciar ruta' : `Paso ${currentStepIndex + 1}/${solution.steps.length}`}
               </span>
             </div>
 
@@ -585,41 +626,38 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
             </div>
           </div>
 
-          {/* Physical Container Graphic (Design from Pagina Web 3) */}
+          {/* Physical Container Graphic */}
           <div className="relative bg-zinc-900/60 rounded-2xl border-2 border-zinc-700/80 p-4 pt-8 overflow-hidden shadow-inner">
             
-            {/* Front of Truck Cab (Left Side) */}
-            <div className="absolute top-2.5 left-3.5 flex items-center gap-1.5 text-[10px] uppercase font-bold text-zinc-400 font-mono tracking-wider">
-              <div className="w-2 h-2 rounded-full bg-zinc-500" />
-              <span>◀ Cabina / Fondo del Camión (Slot {capacity})</span>
+            {/* Rear Door / Puerta Trasera (Left Side - Slot 1) */}
+            <div className="absolute top-2.5 left-3.5 flex items-center gap-1.5 text-[10px] uppercase font-bold text-amber-400 font-mono tracking-wider">
+              <DoorClosed className="w-3.5 h-3.5 text-amber-400" />
+              <span>◀ Puerta Trasera (Acceso LIFO - Slot 1)</span>
             </div>
 
-            {/* Rear Door / Puerta Trasera (Right Side) */}
-            <div className="absolute top-2.5 right-3.5 flex items-center gap-1.5 text-[10px] uppercase font-bold text-amber-400 font-mono tracking-wider">
-              <span>Puerta Trasera (Acceso LIFO - Slot 1)</span>
-              <DoorClosed className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+            {/* Front of Truck Cab / Fondo (Right Side - Slot Q) */}
+            <div className="absolute top-2.5 right-3.5 flex items-center gap-1.5 text-[10px] uppercase font-bold text-zinc-400 font-mono tracking-wider">
+              <span>Cabina / Fondo del Camión (Slot {capacity}) ▶</span>
+              <div className="w-2 h-2 rounded-full bg-zinc-500" />
             </div>
 
             {/* Slot Matrix Grid */}
-            <div className="mt-2 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2.5 py-2">
+            <div className="mt-2 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 py-2">
               {Array.from({ length: capacity }, (_, idx) => {
                 const slotNum = idx + 1;
                 const slotContent = displaySlots[idx] || 'EMPTY';
                 const isAlpha = slotContent === 'A';
                 const isBeta = slotContent === 'B';
                 const isSelected = selectedSlotIdx === slotNum;
-                const isNearDoor = slotNum <= 3;
 
                 const isDeliveringExiting = !isDepot && stage === 'unloading-alpha' && deliveredAlphaIndices.includes(idx);
                 const isDepotUnloading = isDepot && (stage === 'unloading-alpha' || stage === 'handling-out') && arrivalSlots[idx] === 'B';
 
                 const isHandlingBetaExiting = !isDepot && stage === 'handling-out' && handledBetaIndices.includes(idx);
                 const isHandlingAlphaExiting = !isDepot && stage === 'handling-out' && handledAlphaIndices.includes(idx);
-                const isHandlingExiting = isHandlingBetaExiting || isHandlingAlphaExiting;
 
                 const isHandlingBetaEntering = !isDepot && stage === 'handling-in' && reenteringBetaIndices.includes(idx);
                 const isHandlingAlphaEntering = !isDepot && stage === 'handling-in' && reenteringAlphaIndices.includes(idx);
-                const isHandlingEntering = isHandlingBetaEntering || isHandlingAlphaEntering;
 
                 const isLoadingEntering = !isDepot && stage === 'loading-beta' && newBetaIndices.includes(idx);
 
@@ -630,10 +668,10 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setSelectedSlotIdx(isSelected ? null : slotNum)}
-                    className={`relative rounded-xl p-2.5 flex flex-col items-center justify-between min-h-[82px] border transition-colors duration-300 cursor-pointer select-none ${
+                    className={`relative rounded-xl p-1.5 flex flex-col items-center justify-between min-h-[62px] border transition-colors duration-200 cursor-pointer select-none ${
                       isDeliveringExiting || isDepotUnloading
                         ? 'bg-rose-900/80 border-rose-400 text-white ring-2 ring-rose-500/60 shadow-lg shadow-rose-950/60 scale-105'
-                        : isHandlingExiting || isHandlingEntering
+                        : isHandlingBetaExiting || isHandlingAlphaExiting || isHandlingBetaEntering || isHandlingAlphaEntering
                         ? 'bg-amber-900/80 border-amber-400 text-white ring-2 ring-amber-500/60 shadow-lg shadow-amber-950/60 scale-105'
                         : isLoadingEntering
                         ? 'bg-cyan-900/80 border-cyan-400 text-white ring-2 ring-cyan-500/60 shadow-lg shadow-cyan-950/60 scale-105'
@@ -648,46 +686,46 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
                     <div className="w-full flex items-center justify-between text-[9px] font-mono text-zinc-400">
                       <span>#{slotNum}</span>
                       {slotNum === 1 && (
-                        <span className="text-[8px] px-1 rounded bg-amber-500/20 text-amber-300 font-bold">
+                        <span className="text-[7px] px-1 rounded bg-amber-500/20 text-amber-300 font-bold">
                           PUERTA
                         </span>
                       )}
                       {slotNum === capacity && (
-                        <span className="text-[8px] px-1 rounded bg-zinc-800 text-zinc-400 font-medium">
+                        <span className="text-[7px] px-1 rounded bg-zinc-800 text-zinc-400 font-medium">
                           FONDO
                         </span>
                       )}
                     </div>
 
                     {/* Box Graphic */}
-                    <div className="my-1 flex items-center justify-center relative w-full h-10">
+                    <div className="my-0.5 flex items-center justify-center relative w-full h-6">
                       <AnimatePresence mode="popLayout">
                         {isAlpha ? (
                           <motion.div
                             key={`alpha-box-${slotNum}`}
-                            initial={{ opacity: 0, x: 30, scale: 0.8 }}
-                            animate={{ opacity: 1, x: 0, scale: 1 }}
-                            exit={{ opacity: 0, x: 30, scale: 0.8 }}
-                            transition={{ duration: animDuration, type: 'spring', bounce: 0.3 }}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            transition={{ duration: animDuration }}
                             className="flex flex-col items-center absolute"
                           >
-                            <Box className={`w-6 h-6 ${isHandlingAlphaExiting || isHandlingAlphaEntering ? 'text-amber-300' : 'text-rose-400'} drop-shadow`} />
-                            <span className={`text-[10px] font-bold font-mono mt-0.5 ${isHandlingAlphaExiting || isHandlingAlphaEntering ? 'text-amber-300' : 'text-rose-300'}`}>
-                              α {isHandlingAlphaEntering ? '(Reub)' : isHandlingAlphaExiting ? '(Evac)' : '(Ent)'}
+                            <Box className={`w-4 h-4 ${isHandlingAlphaExiting || isHandlingAlphaEntering ? 'text-amber-300' : 'text-rose-400'} drop-shadow`} />
+                            <span className={`text-[8px] font-bold font-mono ${isHandlingAlphaExiting || isHandlingAlphaEntering ? 'text-amber-300' : 'text-rose-300'}`}>
+                              α {isHandlingAlphaEntering ? '(Reub)' : isHandlingAlphaExiting ? '(Evac)' : ''}
                             </span>
                           </motion.div>
                         ) : isBeta ? (
                           <motion.div
                             key={`beta-box-${slotNum}`}
-                            initial={{ opacity: 0, x: 30, scale: 0.8 }}
-                            animate={{ opacity: 1, x: 0, scale: 1 }}
-                            exit={{ opacity: 0, x: 30, scale: 0.8 }}
-                            transition={{ duration: animDuration, type: 'spring', bounce: 0.3 }}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            transition={{ duration: animDuration }}
                             className="flex flex-col items-center absolute"
                           >
-                            <Package className={`w-6 h-6 ${isHandlingBetaExiting || isHandlingBetaEntering ? 'text-amber-300' : 'text-cyan-300'} drop-shadow`} />
-                            <span className={`text-[10px] font-bold font-mono mt-0.5 ${isHandlingBetaExiting || isHandlingBetaEntering ? 'text-amber-300' : 'text-cyan-300'}`}>
-                              β (Rec)
+                            <Package className={`w-4 h-4 ${isHandlingBetaExiting || isHandlingBetaEntering ? 'text-amber-300' : 'text-cyan-300'} drop-shadow`} />
+                            <span className={`text-[8px] font-bold font-mono ${isHandlingBetaExiting || isHandlingBetaEntering ? 'text-amber-300' : 'text-cyan-300'}`}>
+                              β {isHandlingBetaEntering ? '(Reing)' : isHandlingBetaExiting ? '(Evac)' : ''}
                             </span>
                           </motion.div>
                         ) : (
@@ -696,16 +734,16 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="w-5 h-5 rounded-md border border-dashed border-zinc-700/60 flex items-center justify-center absolute"
+                            className="w-3.5 h-3.5 rounded border border-dashed border-zinc-700/60 flex items-center justify-center absolute"
                           >
-                            <span className="text-[8px] text-zinc-600 font-mono">—</span>
+                            <span className="text-[7px] text-zinc-600 font-mono">—</span>
                           </motion.div>
                         )}
                       </AnimatePresence>
                     </div>
 
                     {/* Status Badge */}
-                    <div className="text-[8px] font-mono font-bold text-center w-full truncate mt-1">
+                    <div className="text-[8px] font-mono font-bold text-center w-full truncate">
                       {isDeliveringExiting ? (
                         <span className="text-rose-300 font-black">SALE α</span>
                       ) : isDepotUnloading ? (
@@ -734,12 +772,12 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
             </div>
 
             {/* Bottom Indicator Bar */}
-            <div className="mt-3 pt-2 border-t border-zinc-800 flex items-center justify-between text-[10px] font-mono text-zinc-500">
-              <span className="flex items-center gap-1">
-                <span>◀ Fondo del Tráiler (Primeras Posiciones)</span>
+            <div className="mt-2 pt-2 border-t border-zinc-800 flex items-center justify-between text-[10px] font-mono text-zinc-500">
+              <span className="flex items-center gap-1 text-amber-400 font-medium">
+                <span>◀ Puerta Trasera (Slots 1..k)</span>
               </span>
-              <span className="text-zinc-400 font-medium">
-                Regla LIFO: Último en entrar, primero en salir por la puerta trasera ▶
+              <span className="text-zinc-400 font-medium text-right">
+                Regla LIFO: Último en entrar, primero en salir ▶
               </span>
             </div>
           </div>
@@ -750,11 +788,11 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-xs flex items-center justify-between shadow-xl"
+              className="px-4 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-xs flex items-center justify-between shadow-xl"
             >
               <div className="flex items-center gap-2.5">
-                <span className="font-mono font-bold text-emerald-400 text-sm">Posición #{selectedSlotIdx}:</span>
-                <span className="text-zinc-200">
+                <span className="font-mono font-bold text-emerald-400 text-xs">Posición #{selectedSlotIdx}:</span>
+                <span className="text-zinc-200 text-xs">
                   {displaySlots[selectedSlotIdx - 1] === 'A'
                     ? 'Mercancía α (Para entregar a clientes en la ruta)'
                     : displaySlots[selectedSlotIdx - 1] === 'B'
@@ -764,155 +802,115 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
               </div>
               <button
                 onClick={() => setSelectedSlotIdx(null)}
-                className="text-zinc-400 hover:text-white text-xs px-3 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 cursor-pointer font-semibold transition-all"
+                className="text-zinc-400 hover:text-white text-xs px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 cursor-pointer font-semibold transition-all"
               >
                 Cerrar
               </button>
             </motion.div>
           )}
-
         </div>
 
-        {/* Right Side (Lg 4 cols): Customer Dock & Demand Breakdown */}
-        <div className="lg:col-span-4 flex flex-col gap-3">
-          
-          {/* Customer Node Card */}
-          <div className="bg-zinc-900/90 rounded-2xl border border-zinc-800 p-4 flex flex-col gap-3 shadow-md">
-            <div className="flex items-center justify-between pb-2.5 border-b border-zinc-800">
-              <div className="flex items-center gap-2">
-                <div className={`w-3 h-3 rounded-full ${destinationNode.isDepot ? 'bg-amber-400' : 'bg-emerald-400'}`} />
-                <span className="font-bold text-sm text-zinc-100">
-                  Muelle de {destinationNode.label}
-                </span>
-              </div>
-              <span className="text-xs font-mono text-zinc-400">
-                Nodo #{destinationNode.id}
+        {/* Customer Dock & Operations: Horizontal Cards Below Trailer */}
+        <div className="w-full bg-zinc-900/90 rounded-2xl border border-zinc-800 p-4 flex flex-col gap-3 shadow-md">
+          <div className="flex items-center justify-between pb-2.5 border-b border-zinc-800">
+            <div className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${destinationNode.isDepot ? 'bg-amber-400' : 'bg-emerald-400'}`} />
+              <span className="font-bold text-sm text-zinc-100">
+                Operaciones en {isAtDepotInitial ? 'Depósito Central' : destinationNode.label}
               </span>
             </div>
+            <span className="text-xs font-mono text-zinc-400">
+              Nodo #{isAtDepotInitial ? 0 : destinationNode.id}
+            </span>
+          </div>
 
-            {/* Delivery Requirements (Alpha or Depot Beta) */}
-            <div className="bg-rose-950/30 border border-rose-500/30 rounded-xl p-3 flex flex-col gap-1.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {/* Delivery Requirements Card */}
+            <div className="bg-rose-950/30 border border-rose-500/30 rounded-xl p-3 flex flex-col justify-between gap-1.5">
               <div className="flex items-center justify-between text-xs font-semibold text-rose-300">
                 <span className="flex items-center gap-1.5">
                   <ArrowLeft className="w-3.5 h-3.5 text-rose-400" />
-                  {isDepot ? 'Descarga Final en Depósito (β)' : 'Entrega Requerida (α)'}
+                  {isDepot ? 'Descarga Final (β)' : 'Entrega Requerida (α)'}
                 </span>
-                <span className="font-mono text-sm font-bold text-rose-400">
-                  {isDepot ? `${arrivalSlots.filter((s) => s === 'B').length} unidades` : `${deliverA} unidades`}
+                <span className="font-mono text-xs font-bold text-rose-400">
+                  {isDepot ? `${arrivalSlots.filter((s) => s === 'B').length} uds` : `${deliverA} uds`}
                 </span>
               </div>
-              <p className="text-[11px] text-zinc-400 leading-snug">
+              <p className="text-[10px] text-zinc-400 leading-snug">
                 {isDepot
-                  ? 'Totalidad de mercancía β recolectada durante la ruta entregada en el almacén central.'
-                  : 'Mercancía proveniente del depósito central entregada en este nodo.'}
+                  ? 'Totalidad de mercancía β descargada en el depósito central.'
+                  : isAtDepotInitial
+                  ? 'Total de mercancía α cargada para distribución.'
+                  : 'Mercancía entregada en este nodo.'}
               </p>
               {stage === 'unloading-alpha' && (
-                <div className="mt-1 text-[11px] font-mono text-rose-300 flex items-center gap-1.5 bg-rose-500/10 px-2 py-1 rounded">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-rose-400" />
-                  {isDepot
-                    ? `Descargando ${arrivalSlots.filter((s) => s === 'B').length} cajas β en el almacén central...`
-                    : `Descargando ${deliverA} cajas α en el cliente...`}
+                <div className="text-[10px] font-mono text-rose-300 flex items-center gap-1.5 bg-rose-500/10 px-2 py-1 rounded mt-1">
+                  <CheckCircle2 className="w-3 h-3 text-rose-400" />
+                  Descargando...
                 </div>
               )}
             </div>
 
-            {/* Pickup Requirements (Beta) */}
-            <div className="bg-cyan-950/30 border border-cyan-500/30 rounded-xl p-3 flex flex-col gap-1.5">
+            {/* Pickup Requirements Card */}
+            <div className="bg-cyan-950/30 border border-cyan-500/30 rounded-xl p-3 flex flex-col justify-between gap-1.5">
               <div className="flex items-center justify-between text-xs font-semibold text-cyan-300">
                 <span className="flex items-center gap-1.5">
                   <ArrowRight className="w-3.5 h-3.5 text-cyan-400" />
-                  {isDepot ? 'Recolección en Depósito' : 'Recolección Requerida (β)'}
+                  {isDepot ? 'Recolección' : 'Recolección Requerida (β)'}
                 </span>
-                <span className="font-mono text-sm font-bold text-cyan-400">
-                  {isDepot ? '0 unidades' : `${pickupB} unidades`}
+                <span className="font-mono text-xs font-bold text-cyan-400">
+                  {isDepot ? '0 uds' : `${pickupB} uds`}
                 </span>
               </div>
-              <p className="text-[11px] text-zinc-400 leading-snug">
+              <p className="text-[10px] text-zinc-400 leading-snug">
                 {isDepot
-                  ? 'El depósito es el fin del recorrido; no se recogen nuevas mercancías.'
-                  : 'Mercancía generada en el cliente que se transporta de retorno al depósito.'}
+                  ? 'Depósito central: fin del recorrido.'
+                  : 'Mercancía recolectada para retorno.'}
               </p>
               {stage === 'loading-beta' && !isDepot && pickupB > 0 && (
-                <div className="mt-1 text-[11px] font-mono text-cyan-300 flex items-center gap-1.5 bg-cyan-500/10 px-2 py-1 rounded">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" />
-                  Cargando {pickupB} cajas β en el camión...
+                <div className="text-[10px] font-mono text-cyan-300 flex items-center gap-1.5 bg-cyan-500/10 px-2 py-1 rounded mt-1">
+                  <CheckCircle2 className="w-3 h-3 text-cyan-400" />
+                  Cargando...
                 </div>
               )}
             </div>
 
-            {/* Evacuation Staging Area on the Dock (Sub-steps 1, 2, 3) */}
-            {!isDepot && handlingCount > 0 && (
-              <div className={`border rounded-xl p-3 flex flex-col gap-1.5 transition-all ${
+            {/* Handling Staging / Step Cost Card */}
+            {!isDepot && handlingCount > 0 ? (
+              <div className={`border rounded-xl p-3 flex flex-col justify-between gap-1.5 transition-all ${
                 stage === 'handling-out' || stage === 'unloading-alpha'
-                  ? 'bg-amber-950/40 border-amber-500/50 shadow-md shadow-amber-950/40'
-                  : stage === 'handling-in'
-                  ? 'bg-amber-950/20 border-amber-500/30'
-                  : 'bg-zinc-950/40 border-zinc-800 text-zinc-500 opacity-60'
+                  ? 'bg-amber-950/40 border-amber-500/50 shadow-sm'
+                  : 'bg-zinc-950/40 border-zinc-800 text-zinc-400'
               }`}>
                 <div className="flex items-center justify-between text-xs font-semibold">
-                  <span className={`flex items-center gap-1.5 ${
-                    stage === 'handling-out' || stage === 'unloading-alpha'
-                      ? 'text-amber-300'
-                      : stage === 'handling-in'
-                      ? 'text-amber-400/80'
-                      : 'text-zinc-400'
-                  }`}>
-                    <RotateCcw className={`w-3.5 h-3.5 ${stage === 'handling-out' || stage === 'unloading-alpha' ? 'text-amber-400 animate-spin' : 'text-zinc-500'}`} />
-                    Andén: Zona de Evacuación LIFO
+                  <span className="flex items-center gap-1.5 text-amber-300">
+                    <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                    Evacuación LIFO
                   </span>
                   <span className="font-mono text-xs font-bold text-amber-300">
-                    {stage === 'handling-out' || stage === 'unloading-alpha'
-                      ? `${handlingCount} uds fuera`
-                      : stage === 'handling-in'
-                      ? 'Reingresando...'
-                      : '0 uds fuera'}
+                    {handlingCount} ops (+{formatNumber(currentStep.handlingCost, 2)})
                   </span>
                 </div>
-                <p className="text-[11px] text-zinc-400 leading-snug">
-                  {handledBetaIndices.length > 0 && `${handledBetaIndices.length} unidades β`}
-                  {handledBetaIndices.length > 0 && handledAlphaIndices.length > 0 && ' y '}
-                  {handledAlphaIndices.length > 0 && `${handledAlphaIndices.length} unidades α`}
+                <p className="text-[10px] text-zinc-400 leading-snug">
                   {stage === 'handling-out' || stage === 'unloading-alpha'
-                    ? ' descargadas temporalmente al andén para despejar la compuerta trasera.'
-                    : stage === 'handling-in'
-                    ? ' regresando a la bahía de carga en sus nuevas posiciones LIFO.'
-                    : ' ya reubicadas en el compartimiento.'}
+                    ? `${handlingCount} uds β descargadas al andén para despejar la compuerta.`
+                    : 'Carga β reincorporada a la compuerta tras la entrega.'}
                 </p>
               </div>
+            ) : (
+              <div className="bg-zinc-950/80 rounded-xl p-3 border border-zinc-800/80 flex flex-col justify-between gap-1.5 text-xs font-mono">
+                <div className="flex items-center justify-between text-zinc-300 text-xs">
+                  <span className="text-zinc-400">Tramo:</span>
+                  <span className="font-semibold text-zinc-100">{currentStep.distance} km</span>
+                </div>
+                <div className="flex items-center justify-between text-zinc-300 text-xs">
+                  <span className="text-zinc-400">Handling:</span>
+                  <span className="font-semibold text-emerald-400">$0.00 (Libre)</span>
+                </div>
+                <p className="text-[10px] text-zinc-500">Sin conflicto LIFO en la compuerta.</p>
+              </div>
             )}
-
-            {/* Step Cost Breakdown */}
-            <div className="bg-zinc-950/80 rounded-xl p-3 border border-zinc-800/80 flex flex-col gap-1.5 text-xs font-mono">
-              <div className="text-[11px] uppercase font-semibold text-zinc-400 font-sans tracking-wider">
-                Desglose de Costo del Paso
-              </div>
-              <div className="flex justify-between text-zinc-300">
-                <span>Distancia ({currentStep.distance} km):</span>
-                <span className="font-semibold text-zinc-100">{currentStep.distance}.00</span>
-              </div>
-              <div className="flex justify-between text-zinc-300">
-                <span>Handling ({currentStep.handlingCount} ops × {solution.h}):</span>
-                <span className="font-semibold text-amber-400">+{formatNumber(currentStep.handlingCost, 2)}</span>
-              </div>
-              <div className="pt-1.5 border-t border-zinc-800 flex justify-between font-bold text-emerald-400 text-sm">
-                <span>Subtotal Paso:</span>
-                <span>{formatNumber(currentStep.distance + currentStep.handlingCost, 2)}</span>
-              </div>
-            </div>
-
           </div>
-
-          {/* Current Sub-Phase Info Tip */}
-          <div className="bg-zinc-900/60 rounded-xl border border-zinc-800 p-3.5 flex items-start gap-2.5 text-xs">
-            <Info className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-            <div className="leading-relaxed text-zinc-300">
-              <strong className="text-zinc-100 font-semibold block mb-0.5">
-                {currentSubStepDef.title}:
-              </strong>
-              {currentSubStepDef.statusText}
-            </div>
-          </div>
-
         </div>
 
       </div>

@@ -9,7 +9,15 @@ export async function fetchSolutionsList(): Promise<SolutionMeta[]> {
     if (response.ok) {
       const data = await response.json();
       if (data.success && Array.isArray(data.solutions) && data.solutions.length > 0) {
-        return data.solutions;
+        return data.solutions.map((s: any) => {
+          const isH1 = (s.model === 'TSPPD-H_1') || s.filename.includes('TSPPD_H1') || s.filename.includes('_H1_');
+          return {
+            ...s,
+            model: isH1 ? 'TSPPD-H_1' : (s.model || 'TSPPD-H'),
+            modelName: s.modelName || (isH1 ? 'TSPPD-H_1 (Política 1, Ecs. 17-25)' : 'TSPPD-H (General, Ecs. 1-16)'),
+            policy: isH1 ? 1 : (s.policy ?? 0),
+          };
+        });
       }
     }
   } catch {

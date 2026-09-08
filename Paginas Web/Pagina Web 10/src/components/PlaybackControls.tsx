@@ -8,6 +8,7 @@ interface PlaybackControlsProps {
   status: PlaybackStatus;
   speed: AnimationSpeed;
   progress: number;
+  isArrived?: boolean;
   isContinuousMode: boolean;
   onPlay: () => void;
   onPause: () => void;
@@ -25,6 +26,7 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
   status,
   speed,
   progress,
+  isArrived = false,
   isContinuousMode,
   onPlay,
   onPause,
@@ -62,7 +64,7 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
             <SkipBack className="w-4 h-4" />
           </button>
 
-          {/* Play / Pause */}
+          {/* Play / Pause / Iniciar */}
           <button
             onClick={isPlaying ? onPause : onPlay}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs font-mono transition-all cursor-pointer shadow-lg ${
@@ -79,7 +81,7 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
             ) : (
               <>
                 <Play className="w-4 h-4 fill-current ml-0.5" />
-                <span>Reproducir Ruta</span>
+                <span>{currentStepIndex === 0 && !isArrived && progress === 0 ? 'Iniciar Ruta' : 'Reanudar Ruta'}</span>
               </>
             )}
           </button>

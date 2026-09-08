@@ -34,8 +34,14 @@ function solutionsApiPlugin() {
                 try {
                   const content = fs.readFileSync(filePath, 'utf-8');
                   const data = JSON.parse(content);
+                  const isH1 = (data.model === 'TSPPD-H_1') || f.includes('TSPPD_H1') || f.includes('_H1_');
+                  const modelType = isH1 ? 'TSPPD-H_1' : 'TSPPD-H';
+                  const modelName = data.modelName || (isH1 ? 'TSPPD-H_1 (Política 1, Ecs. 17-25)' : 'TSPPD-H (General, Ecs. 1-16)');
                   meta = {
                     ...meta,
+                    model: modelType,
+                    modelName: modelName,
+                    policy: isH1 ? 1 : (data.policy ?? 0),
                     instance: data.instance || f.replace(/\.[^/.]+$/, ''),
                     numCustomers: data.numCustomers || 0,
                     instanceId: data.instanceId || 0,

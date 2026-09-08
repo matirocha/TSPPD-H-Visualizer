@@ -101,8 +101,8 @@ export const App: React.FC = () => {
             setActiveModel(data.model);
           }
           setCurrentStepIndex(0);
-          setProgress(1);
-          setIsArrived(true);
+          setProgress(0);
+          setIsArrived(false);
           setPlaybackStatus('idle');
         }
       } catch (err: any) {
@@ -160,32 +160,46 @@ export const App: React.FC = () => {
     if (!currentSolution) return;
     if (currentStepIndex < currentSolution.steps.length - 1) {
       setCurrentStepIndex((prev) => prev + 1);
-      if (isContinuousMode && playbackStatus === 'playing') {
-        setProgress(0);
-        setIsArrived(false);
-      } else {
-        setProgress(1);
-        setIsArrived(true);
+      setProgress(0);
+      setIsArrived(false);
+      lastTimeRef.current = null;
+      if (!isContinuousMode || playbackStatus !== 'playing') {
+        setPlaybackStatus('paused');
       }
     } else {
       // Tour completed!
       setPlaybackStatus('idle');
       setIsArrived(true);
+      setProgress(1);
     }
   }, [currentSolution, currentStepIndex, isContinuousMode, playbackStatus]);
 
   // Playback Control Handlers
   const handlePlay = () => {
-    if (currentSolution && currentStepIndex >= currentSolution.steps.length - 1 && isArrived) {
+    if (!currentSolution) return;
+    // If tour was finished, restart from depot
+    if (currentStepIndex >= currentSolution.steps.length - 1 && isArrived) {
       setCurrentStepIndex(0);
       setProgress(0);
       setIsArrived(false);
+      lastTimeRef.current = null;
+      setPlaybackStatus('playing');
+      return;
     }
+    // If at depot initial state, start route towards first customer
+    if (currentStepIndex === 0 && !isArrived && progress === 0) {
+      lastTimeRef.current = null;
+      setPlaybackStatus('playing');
+      return;
+    }
+    lastTimeRef.current = null;
     setPlaybackStatus('playing');
   };
 
   const handlePause = () => {
     setPlaybackStatus('paused');
+    if (animRef.current) cancelAnimationFrame(animRef.current);
+    lastTimeRef.current = null;
   };
 
   const handlePrev = () => {
@@ -194,6 +208,9 @@ export const App: React.FC = () => {
       setCurrentStepIndex((prev) => prev - 1);
       setProgress(1);
       setIsArrived(true);
+    } else {
+      setProgress(0);
+      setIsArrived(false);
     }
   };
 
@@ -209,8 +226,8 @@ export const App: React.FC = () => {
   const handleReset = () => {
     handlePause();
     setCurrentStepIndex(0);
-    setProgress(1);
-    setIsArrived(true);
+    setProgress(0);
+    setIsArrived(false);
   };
 
   const handleSelectStep = (idx: number) => {
@@ -277,22 +294,10 @@ export const App: React.FC = () => {
               currentStepIndex={currentStepIndex}
             />
 
-            {/* 2. LIFO Cargo Bay Compartment (Design of Pagina Web 3 + Sub-step Functionality of Pagina Web 2) */}
-            <LifoCargoBay
-              solution={currentSolution}
-              currentStep={currentStep}
-              currentStepIndex={currentStepIndex}
-              isArrived={isArrived}
-              playbackStatus={playbackStatus}
-              isContinuousMode={isContinuousMode}
-              speed={speed}
-              onContinueJourney={handleContinueJourney}
-            />
-
-            {/* 3. Map & Step Explanation Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              {/* Left Column: Route Canvas (Map based on Pagina Web 5) & Controls (Col span 7) */}
-              <div className="lg:col-span-7 space-y-4">
+            {/* 2. Command Center: Dual Panel for simultaneous Map & Cargo Bay visualization */}
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+              {/* Left Column (xl:col-span-6): Network Route Map & Controls */}
+              <div className="xl:col-span-6 space-y-4">
                 <RouteCanvas
                   solution={currentSolution}
                   currentStepIndex={currentStepIndex}
@@ -307,6 +312,7 @@ export const App: React.FC = () => {
                   status={playbackStatus}
                   speed={speed}
                   progress={progress}
+                  isArrived={isArrived}
                   isContinuousMode={isContinuousMode}
                   onPlay={handlePlay}
                   onPause={handlePause}
@@ -319,14 +325,28 @@ export const App: React.FC = () => {
                 />
               </div>
 
-              {/* Right Column: Step Explanation & Logistics Detail (Col span 5) */}
-              <div className="lg:col-span-5 space-y-4">
-                <StepExplanation
+              {/* Right Column (xl:col-span-6): Physical LIFO Cargo Bay & Operations */}
+              <div className="xl:col-span-6">
+                <LifoCargoBay
                   solution={currentSolution}
                   currentStep={currentStep}
                   currentStepIndex={currentStepIndex}
+                  isArrived={isArrived}
+                  playbackStatus={playbackStatus}
+                  isContinuousMode={isContinuousMode}
+                  speed={speed}
+                  onContinueJourney={handleContinueJourney}
                 />
               </div>
+            </div>
+
+            {/* 3. Bottom Row: Narrative Step Explanation & Logistics Detail */}
+            <div className="w-full">
+              <StepExplanation
+                solution={currentSolution}
+                currentStep={currentStep}
+                currentStepIndex={currentStepIndex}
+              />
             </div>
           </>
         )}

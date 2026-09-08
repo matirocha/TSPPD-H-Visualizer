@@ -41,6 +41,9 @@ export const RouteCanvas: React.FC<RouteCanvasProps> = ({
   const currentFrom = currentStepData?.from ?? 0;
   const currentTo = currentStepData?.to ?? 0;
 
+  // Initial resting state before the user starts the tour
+  const isAtDepotInitial = currentStepIndex === 0 && !isArrived && progress === 0;
+
   // Truck position along Bézier curve
   const fromPos = nodePositions[currentFrom] || nodePositions[0];
   const toPos = nodePositions[currentTo] || nodePositions[0];
@@ -50,9 +53,20 @@ export const RouteCanvas: React.FC<RouteCanvasProps> = ({
     y: (fromPos.y + toPos.y) / 2 + (toPos.x - fromPos.x) * 0.2,
   };
 
-  const truckPos = isArrived
+  const truckPos = isAtDepotInitial
+    ? (nodePositions[0] || fromPos)
+    : isArrived
     ? toPos
     : interpolateQuadratic(fromPos, controlPos, toPos, progress);
+
+  // Tangential rotation angle along Bézier curve: B'(t) = 2(1-t)(control-from) + 2t(to-control)
+  const truckAngle = useMemo(() => {
+    if (isArrived || isAtDepotInitial) return 0;
+    const t = Math.max(0, Math.min(1, progress));
+    const dx = 2 * (1 - t) * (controlPos.x - fromPos.x) + 2 * t * (toPos.x - controlPos.x);
+    const dy = 2 * (1 - t) * (controlPos.y - fromPos.y) + 2 * t * (toPos.y - controlPos.y);
+    return (Math.atan2(dy, dx) * 180) / Math.PI;
+  }, [isArrived, isAtDepotInitial, progress, fromPos, controlPos, toPos]);
 
   return (
     <div className="rounded-3xl bg-zinc-950/90 border border-zinc-800/90 p-4 lg:p-5 flex flex-col gap-3 shadow-2xl relative overflow-hidden">
@@ -93,7 +107,7 @@ export const RouteCanvas: React.FC<RouteCanvasProps> = ({
       </div>
 
       {/* SVG Canvas Arena */}
-      <div className="relative w-full aspect-[64/54] bg-zinc-950/60 rounded-2xl border border-zinc-900 overflow-hidden flex items-center justify-center">
+      <div className="relative w-full aspect-[16/10] max-h-[360px] bg-zinc-950/60 rounded-2xl border border-zinc-900 overflow-hidden flex items-center justify-center">
         <svg
           viewBox={`0 0 ${width} ${height}`}
           className="w-full h-full overflow-visible select-none"
@@ -149,8 +163,8 @@ export const RouteCanvas: React.FC<RouteCanvasProps> = ({
 
             const path = curvedArcPath(from, to, 0.2);
             const mid = arcMidpoint(from, to, 0.2);
-            const isVisited = step.stepIndex < currentStepIndex || (step.stepIndex === currentStepIndex && isArrived);
-            const isCurrent = step.stepIndex === currentStepIndex && !isArrived;
+            const isVisited = !isAtDepotInitial && (step.stepIndex < currentStepIndex || (step.stepIndex === currentStepIndex && isArrived));
+            const isCurrent = !isAtDepotInitial && step.stepIndex === currentStepIndex && !isArrived;
 
             let strokeClass = 'stroke-zinc-800';
             let markerEnd = 'url(#arrow-future-9)';
@@ -310,9 +324,8 @@ export const RouteCanvas: React.FC<RouteCanvasProps> = ({
           {/* Animated Truck */}
           {truckPos && (
             <g
-              transform={`translate(${truckPos.x}, ${truckPos.y})`}
+              transform={`translate(${truckPos.x}, ${truckPos.y}) rotate(${truckAngle})`}
               filter="url(#glow-emerald)"
-              className="transition-transform duration-75"
             >
               {/* Pulse background circle */}
               <circle
@@ -338,14 +351,18 @@ export const RouteCanvas: React.FC<RouteCanvasProps> = ({
       <div className="flex items-center justify-between text-xs font-mono text-zinc-400 px-1 pt-1 border-t border-zinc-800/60">
         <span className="flex items-center gap-1.5">
           <span className="text-zinc-500">Estado del camión:</span>
-          <strong className={isArrived ? 'text-emerald-400' : 'text-cyan-400'}>
-            {isArrived
+          <strong className={isArrived ? 'text-emerald-400' : isAtDepotInitial ? 'text-amber-400' : 'text-cyan-400'}>
+            {isAtDepotInitial
+              ? 'Estacionado en Depósito Central (Listo para iniciar ruta)'
+              : isArrived
               ? `Estacionado en ${solution.nodes[currentTo]?.label || `Nodo ${currentTo}`}`
               : `En ruta hacia ${solution.nodes[currentTo]?.label || `Nodo ${currentTo}`} (${Math.round(progress * 100)}%)`}
           </strong>
         </span>
         <span className="text-zinc-500 hidden md:inline">
-          Paso {currentStepIndex + 1} de {steps.length} &middot; Tramo: {currentStepData.from} &rarr; {currentStepData.to}
+          {isAtDepotInitial
+            ? 'Listo para iniciar · Depósito Central'
+            : `Paso ${currentStepIndex + 1} de ${steps.length} · Tramo: ${currentStepData.from} → ${currentStepData.to}`}
         </span>
       </div>
     </div>
