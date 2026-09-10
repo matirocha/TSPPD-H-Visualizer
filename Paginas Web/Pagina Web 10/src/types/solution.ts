@@ -28,10 +28,13 @@ export interface StepData {
   newBSlots?: number[];
   handlingCount: number;
   handlingCost: number;
+  wOnTruck?: number;
+  zOnTruck?: number;
+  policyApplied?: number;
   explanation: string;
 }
 
-export type ModelType = 'TSPPD-H' | 'TSPPD-H_1';
+export type ModelType = 'TSPPD-H' | 'TSPPD-H_1' | 'TSPPD-H_2' | 'TSPPD-H_3';
 
 export interface SolutionData {
   instance: string;
@@ -51,6 +54,7 @@ export interface SolutionData {
   nodes: NodeDef[];
   steps: StepData[];
   distMatrix?: number[][];
+  policyDecisions?: Record<string, number>;
 }
 
 export interface SolutionMeta {

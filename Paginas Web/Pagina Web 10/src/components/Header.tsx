@@ -49,9 +49,19 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className={`text-[10px] font-mono font-extrabold uppercase px-2 py-0.5 rounded-md border ${
                   activeModel === 'TSPPD-H_1'
                     ? 'bg-purple-500/10 text-purple-300 border-purple-500/30'
-                    : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
+                    : activeModel === 'TSPPD-H_2'
+                    ? 'bg-sky-500/10 text-sky-300 border-sky-500/30'
+                    : activeModel === 'TSPPD-H_3'
+                    ? 'bg-teal-500/10 text-teal-300 border-teal-500/30'
+                    : 'bg-amber-500/10 text-amber-300 border-amber-500/30'
                 }`}>
-                  {activeModel === 'TSPPD-H_1' ? 'TSPPD-H_1 (Política 1)' : 'TSPPD-H (General)'}
+                  {activeModel === 'TSPPD-H_1'
+                    ? 'TSPPD-H_1 (Pol. 1)'
+                    : activeModel === 'TSPPD-H_2'
+                    ? 'TSPPD-H_2 (Pol. 2)'
+                    : activeModel === 'TSPPD-H_3'
+                    ? 'TSPPD-H_3 (Pol. 3)'
+                    : 'TSPPD-H (General)'}
                 </span>
               </h1>
             </div>
@@ -67,25 +77,47 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="hidden sm:flex items-center bg-zinc-900/90 border border-zinc-700/80 rounded-xl p-0.5 shadow-sm">
             <button
               onClick={() => onSelectModel('TSPPD-H')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
                 activeModel === 'TSPPD-H'
                   ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-xs'
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
               title="Modelo General (Ecuaciones 1-16)"
             >
-              TSPPD-H
+              General
             </button>
             <button
               onClick={() => onSelectModel('TSPPD-H_1')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
                 activeModel === 'TSPPD-H_1'
                   ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-xs'
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
               title="Modelo con Política 1 (Ecuaciones 17-25)"
             >
-              TSPPD-H_1
+              Pol. 1
+            </button>
+            <button
+              onClick={() => onSelectModel('TSPPD-H_2')}
+              className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+                activeModel === 'TSPPD-H_2'
+                  ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-xs'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+              title="Modelo con Política 2 (Ecuaciones 26-27)"
+            >
+              Pol. 2
+            </button>
+            <button
+              onClick={() => onSelectModel('TSPPD-H_3')}
+              className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+                activeModel === 'TSPPD-H_3'
+                  ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40 shadow-xs'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+              title="Modelo con Política 3 (Ecuaciones 31-48)"
+            >
+              Pol. 3
             </button>
           </div>
 

@@ -29,12 +29,31 @@ app.get('/api/solutions', (req, res) => {
         const raw = fs.readFileSync(filePath, 'utf-8');
         const content = JSON.parse(raw);
         const isH1 = (content.model === 'TSPPD-H_1') || file.includes('TSPPD_H1') || file.includes('_H1_');
-        const modelType = isH1 ? 'TSPPD-H_1' : 'TSPPD-H';
-        const modelName = content.modelName || (isH1 ? 'TSPPD-H_1 (Política 1, Ecs. 17-25)' : 'TSPPD-H (General, Ecs. 1-16)');
+        const isH2 = (content.model === 'TSPPD-H_2') || file.includes('TSPPD_H2') || file.includes('_H2_');
+        const isH3 = (content.model === 'TSPPD-H_3') || file.includes('TSPPD_H3') || file.includes('_H3_');
+        
+        let modelType = 'TSPPD-H';
+        let defaultName = 'TSPPD-H (General, Ecs. 1-16)';
+        let policy = content.policy ?? 0;
+        if (isH1) {
+          modelType = 'TSPPD-H_1';
+          defaultName = 'TSPPD-H_1 (Política 1, Ecs. 17-25)';
+          policy = 1;
+        } else if (isH2) {
+          modelType = 'TSPPD-H_2';
+          defaultName = 'TSPPD-H_2 (Política 2, Ecs. 26-27)';
+          policy = 2;
+        } else if (isH3) {
+          modelType = 'TSPPD-H_3';
+          defaultName = 'TSPPD-H_3 (Política 3, Ecs. 31-48)';
+          policy = 3;
+        }
+        const modelName = content.modelName || defaultName;
         meta = {
           ...meta,
           model: modelType,
           modelName: modelName,
+          policy: policy,
           instance: content.instance || file.replace(/\.[^/.]+$/, ''),
           numCustomers: content.numCustomers || 0,
           instanceId: content.instanceId || 0,

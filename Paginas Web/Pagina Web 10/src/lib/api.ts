@@ -1,4 +1,4 @@
-import { SolutionMeta, SolutionData } from '../types/solution';
+import { SolutionMeta, SolutionData, ModelType } from '../types/solution';
 import { DEFAULT_SOLUTIONS } from './defaultSolutions';
 
 const API_BASE = '/api';
@@ -11,11 +11,29 @@ export async function fetchSolutionsList(): Promise<SolutionMeta[]> {
       if (data.success && Array.isArray(data.solutions) && data.solutions.length > 0) {
         return data.solutions.map((s: any) => {
           const isH1 = (s.model === 'TSPPD-H_1') || s.filename.includes('TSPPD_H1') || s.filename.includes('_H1_');
+          const isH2 = (s.model === 'TSPPD-H_2') || s.filename.includes('TSPPD_H2') || s.filename.includes('_H2_');
+          const isH3 = (s.model === 'TSPPD-H_3') || s.filename.includes('TSPPD_H3') || s.filename.includes('_H3_');
+          let modelType: ModelType = 'TSPPD-H';
+          let defaultName = 'TSPPD-H (General, Ecs. 1-16)';
+          let pol = s.policy ?? 0;
+          if (isH1) {
+            modelType = 'TSPPD-H_1';
+            defaultName = 'TSPPD-H_1 (Política 1, Ecs. 17-25)';
+            pol = 1;
+          } else if (isH2) {
+            modelType = 'TSPPD-H_2';
+            defaultName = 'TSPPD-H_2 (Política 2, Ecs. 26-27)';
+            pol = 2;
+          } else if (isH3) {
+            modelType = 'TSPPD-H_3';
+            defaultName = 'TSPPD-H_3 (Política 3, Ecs. 31-48)';
+            pol = 3;
+          }
           return {
             ...s,
-            model: isH1 ? 'TSPPD-H_1' : (s.model || 'TSPPD-H'),
-            modelName: s.modelName || (isH1 ? 'TSPPD-H_1 (Política 1, Ecs. 17-25)' : 'TSPPD-H (General, Ecs. 1-16)'),
-            policy: isH1 ? 1 : (s.policy ?? 0),
+            model: s.model || modelType,
+            modelName: s.modelName || defaultName,
+            policy: s.policy ?? pol,
           };
         });
       }
@@ -27,14 +45,30 @@ export async function fetchSolutionsList(): Promise<SolutionMeta[]> {
   // Fallback a soluciones preempaquetadas (ideal para Vercel)
   const list: SolutionMeta[] = Object.entries(DEFAULT_SOLUTIONS).map(([filename, content]) => {
     const isH1 = (content.model === 'TSPPD-H_1') || filename.includes('TSPPD_H1') || filename.includes('_H1_');
-    const modelType = isH1 ? 'TSPPD-H_1' : 'TSPPD-H';
-    const modelName = content.modelName || (isH1 ? 'TSPPD-H_1 (Política 1, Ecs. 17-25)' : 'TSPPD-H (General, Ecs. 1-16)');
+    const isH2 = (content.model === 'TSPPD-H_2') || filename.includes('TSPPD_H2') || filename.includes('_H2_');
+    const isH3 = (content.model === 'TSPPD-H_3') || filename.includes('TSPPD_H3') || filename.includes('_H3_');
+    let modelType: ModelType = 'TSPPD-H';
+    let defaultName = 'TSPPD-H (General, Ecs. 1-16)';
+    let pol = content.policy ?? 0;
+    if (isH1) {
+      modelType = 'TSPPD-H_1';
+      defaultName = 'TSPPD-H_1 (Política 1, Ecs. 17-25)';
+      pol = 1;
+    } else if (isH2) {
+      modelType = 'TSPPD-H_2';
+      defaultName = 'TSPPD-H_2 (Política 2, Ecs. 26-27)';
+      pol = 2;
+    } else if (isH3) {
+      modelType = 'TSPPD-H_3';
+      defaultName = 'TSPPD-H_3 (Política 3, Ecs. 31-48)';
+      pol = 3;
+    }
     return {
       filename,
       instance: content.instance || filename.replace(/\.[^/.]+$/, ''),
-      model: modelType,
-      modelName,
-      policy: content.policy,
+      model: (content.model as ModelType) || modelType,
+      modelName: content.modelName || defaultName,
+      policy: content.policy ?? pol,
       numCustomers: content.numCustomers || 0,
       instanceId: content.instanceId || 0,
       h: content.h ?? 0.1,

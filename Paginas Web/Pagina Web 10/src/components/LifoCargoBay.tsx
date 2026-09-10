@@ -368,10 +368,15 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
 
     const countBetaHandled = handledBetaIndices.length;
     const countAlphaHandled = handledAlphaIndices.length;
+    const isPolicy2 = solution.model === 'TSPPD-H_2';
+    const isPolicy3 = solution.model === 'TSPPD-H_3';
+    const stepPolicy = currentStep.policyApplied === 0 ? 2 : (currentStep.policyApplied ?? (isPolicy2 ? 2 : 1));
 
     let handlingOutText = '✅ Sin conflicto LIFO: La compuerta trasera está despejada para la entrega.';
     if (handlingCount > 0) {
-      if (countAlphaHandled > 0 && countBetaHandled > 0) {
+      if (isPolicy2 || (isPolicy3 && stepPolicy === 2)) {
+        handlingOutText = `⚠️ Reordenamiento al Fondo (Política 2): Para alojar ${pickupB} unidades β en el fondo, se evacúan temporalmente ${countAlphaHandled > 0 ? countAlphaHandled : handlingCount} unidades α remanentes (Costo: +${formatNumber(currentStep.handlingCost, 2)}).`;
+      } else if (countAlphaHandled > 0 && countBetaHandled > 0) {
         handlingOutText = `⚠️ Conflicto LIFO: Se evacúan temporalmente ${handlingCount} unidades (${countBetaHandled} β y ${countAlphaHandled} α reubicadas) para despejar la compuerta trasera (Costo: +${formatNumber(currentStep.handlingCost, 2)}).`;
       } else if (countBetaHandled > 0) {
         handlingOutText = `⚠️ Conflicto LIFO: Se evacúan temporalmente ${countBetaHandled} unidades β para despejar el acceso a las unidades α (Costo: +${formatNumber(currentStep.handlingCost, 2)}).`;
@@ -382,7 +387,9 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
 
     let handlingInText = '✅ Compartimento ordenado: No se requirió reacomodo de mercancía.';
     if (handlingCount > 0) {
-      if (countAlphaHandled > 0 && countBetaHandled > 0) {
+      if (isPolicy2 || (isPolicy3 && stepPolicy === 2)) {
+        handlingInText = `🔄 Reingreso LIFO: Las unidades α remanentes vuelven a ingresar a la compuerta trasera una vez ubicada la carga β en el fondo.`;
+      } else if (countAlphaHandled > 0 && countBetaHandled > 0) {
         handlingInText = `🔄 Reingreso y Reubicación LIFO: Las ${countAlphaHandled} unidades α se reubican en los slots de partida y las ${countBetaHandled} unidades β vuelven a ingresar a la bahía.`;
       } else if (countBetaHandled > 0) {
         handlingInText = `🔄 Reingreso LIFO: Las ${countBetaHandled} unidades β evacuadas vuelven a ingresar y se asientan en sus slots correspondientes.`;
@@ -392,13 +399,22 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
     }
 
     const loadingBetaText = pickupB > 0
-      ? `📥 Recolección en curso: ${pickupB} nuevas unidades β ingresan por la compuerta trasera y ocupan los slots del camión.`
+      ? (isPolicy2 || (isPolicy3 && stepPolicy === 2))
+        ? `📥 Recolección en fondo (Política 2): ${pickupB} nuevas unidades β se estiban en el fondo del compartimiento.`
+        : `📥 Recolección en compuerta (Política 1): ${pickupB} nuevas unidades β ingresan por la compuerta trasera.`
       : `ℹ️ Sin recolecciones β requeridas en ${destinationNode.label}. El compartimento queda listo para el siguiente tramo.`;
+
+    const sub1Title = (isPolicy2 || (isPolicy3 && stepPolicy === 2))
+      ? (handlingCount > 0 ? 'Paso 1: Evacuación α para Carga en Fondo' : 'Paso 1: Verificación de Compuerta (Libre)')
+      : 'Paso 1: Evacuación LIFO (Handling)';
+    const sub3Title = (isPolicy2 || (isPolicy3 && stepPolicy === 2))
+      ? 'Paso 3: Carga al Fondo y Reingreso α'
+      : 'Paso 3: Reingreso y Reordenamiento LIFO';
 
     return [
       {
         id: 1,
-        title: 'Paso 1: Evacuación LIFO (Handling)',
+        title: sub1Title,
         shortTitle: '1. Evacuación',
         statusText: handlingOutText,
         color: 'amber',
@@ -416,7 +432,7 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
       },
       {
         id: 3,
-        title: 'Paso 3: Reingreso y Reordenamiento LIFO',
+        title: sub3Title,
         shortTitle: '3. Reingreso',
         statusText: handlingInText,
         color: 'amber',
@@ -438,6 +454,8 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
     handledBetaIndices.length,
     handledAlphaIndices.length,
     currentStep.handlingCost,
+    currentStep.policyApplied,
+    solution.model,
     deliverA,
     destinationNode.label,
     pickupB,
@@ -456,10 +474,27 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
             <Boxes className="w-5 h-5 stroke-[2.2]" />
           </div>
           <div>
-            <h2 className="font-bold text-base text-zinc-100 flex items-center gap-2">
+            <h2 className="font-bold text-base text-zinc-100 flex flex-wrap items-center gap-2">
               Compartimiento de Carga LIFO
               <span className="text-xs font-mono font-semibold px-2.5 py-0.5 rounded-full bg-zinc-800 text-zinc-300 border border-zinc-700">
                 Capacidad Q = {capacity}
+              </span>
+              <span className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+                solution.model === 'TSPPD-H_1'
+                  ? 'bg-purple-500/15 text-purple-300 border-purple-500/30'
+                  : solution.model === 'TSPPD-H_2'
+                  ? 'bg-sky-500/15 text-sky-300 border-sky-500/30'
+                  : solution.model === 'TSPPD-H_3'
+                  ? 'bg-teal-500/15 text-teal-300 border-teal-500/30'
+                  : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+              }`}>
+                {solution.model === 'TSPPD-H_1'
+                  ? 'Política 1 (Compuerta Rear)'
+                  : solution.model === 'TSPPD-H_2'
+                  ? 'Política 2 (Fondo Front)'
+                  : solution.model === 'TSPPD-H_3'
+                  ? `Política 3 (Híbrida — Stop: Pol. ${currentStep.policyApplied === 0 ? '2' : (currentStep.policyApplied ?? 1)})`
+                  : 'Modelo General (Posicional)'}
               </span>
             </h2>
             <p className="text-xs text-zinc-400">

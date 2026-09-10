@@ -22,7 +22,7 @@ export const SolutionSelectorModal: React.FC<SolutionSelectorModalProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortBy, setSortBy] = useState<SortByOption>('id-asc');
-  const [filterModel, setFilterModel] = useState<'all' | 'TSPPD-H' | 'TSPPD-H_1'>('all');
+  const [filterModel, setFilterModel] = useState<'all' | 'TSPPD-H' | 'TSPPD-H_1' | 'TSPPD-H_2' | 'TSPPD-H_3'>('all');
   const [filterHandling, setFilterHandling] = useState<'all' | 'zero' | 'with-handling'>('all');
 
   const filteredAndSortedSolutions = useMemo(() => {
@@ -140,7 +140,7 @@ export const SolutionSelectorModal: React.FC<SolutionSelectorModalProps> = ({
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              TSPPD-H
+              General
             </button>
             <button
               onClick={() => setFilterModel('TSPPD-H_1')}
@@ -150,7 +150,27 @@ export const SolutionSelectorModal: React.FC<SolutionSelectorModalProps> = ({
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              TSPPD-H_1
+              Pol. 1
+            </button>
+            <button
+              onClick={() => setFilterModel('TSPPD-H_2')}
+              className={`px-2 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer ${
+                filterModel === 'TSPPD-H_2'
+                  ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30 font-semibold'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              Pol. 2
+            </button>
+            <button
+              onClick={() => setFilterModel('TSPPD-H_3')}
+              className={`px-2 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer ${
+                filterModel === 'TSPPD-H_3'
+                  ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30 font-semibold'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              Pol. 3
             </button>
           </div>
 
@@ -178,7 +198,7 @@ export const SolutionSelectorModal: React.FC<SolutionSelectorModalProps> = ({
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              h=0
+              H = $0
             </button>
             <button
               onClick={() => setFilterHandling('with-handling')}
@@ -188,7 +208,7 @@ export const SolutionSelectorModal: React.FC<SolutionSelectorModalProps> = ({
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              h &gt; 0
+              H &gt; $0
             </button>
           </div>
 
@@ -252,11 +272,21 @@ export const SolutionSelectorModal: React.FC<SolutionSelectorModalProps> = ({
                             {s.numCustomers} Clientes
                           </h4>
                           <span className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded border ${
-                            isH1
+                            s.model === 'TSPPD-H_1'
                               ? 'bg-purple-500/15 text-purple-300 border-purple-500/30'
+                              : s.model === 'TSPPD-H_2'
+                              ? 'bg-sky-500/15 text-sky-300 border-sky-500/30'
+                              : s.model === 'TSPPD-H_3'
+                              ? 'bg-teal-500/15 text-teal-300 border-teal-500/30'
                               : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
                           }`}>
-                            {isH1 ? 'TSPPD-H_1' : 'TSPPD-H'}
+                            {s.model === 'TSPPD-H_1'
+                              ? 'TSPPD-H_1 (Pol. 1)'
+                              : s.model === 'TSPPD-H_2'
+                              ? 'TSPPD-H_2 (Pol. 2)'
+                              : s.model === 'TSPPD-H_3'
+                              ? 'TSPPD-H_3 (Pol. 3)'
+                              : 'TSPPD-H (General)'}
                           </span>
                         </div>
                         <span className="text-[10px] font-mono text-zinc-400">
