@@ -13,7 +13,6 @@ import { MetricsOverview } from './components/MetricsOverview';
 import { RouteCanvas } from './components/RouteCanvas';
 import { LifoCargoBay } from './components/LifoCargoBay';
 import { PlaybackControls } from './components/PlaybackControls';
-import { StepExplanation } from './components/StepExplanation';
 import { SolutionSelectorModal } from './components/SolutionSelectorModal';
 import { DistanceMatrixModal } from './components/DistanceMatrixModal';
 import { ModelFormulaModal } from './components/ModelFormulaModal';
@@ -256,10 +255,10 @@ export const App: React.FC = () => {
       />
 
       {/* Main Workspace */}
-      <main className="flex-1 max-w-[1600px] w-full mx-auto p-4 lg:p-8 space-y-6">
+      <main className="flex-1 max-w-[1700px] w-full mx-auto px-4 py-3 lg:px-6 lg:py-3.5 space-y-3">
         {/* Error Alert */}
         {error && (
-          <div className="p-4 rounded-2xl bg-rose-950/60 border border-rose-500/50 text-rose-200 flex items-center justify-between shadow-lg">
+          <div className="p-3 rounded-xl bg-rose-950/60 border border-rose-500/50 text-rose-200 flex items-center justify-between shadow-lg">
             <div className="flex items-center gap-3">
               <AlertTriangle className="h-5 w-5 text-rose-400" />
               <div>
@@ -287,7 +286,7 @@ export const App: React.FC = () => {
         {/* Loaded Solution Workspace */}
         {currentSolution && currentStep && (
           <>
-            {/* 1. Bento Metrics Overview */}
+            {/* 1. Bento Metrics Overview (Barra HUD Compacta) */}
             <MetricsOverview
               solution={currentSolution}
               currentStep={currentStep}
@@ -295,9 +294,9 @@ export const App: React.FC = () => {
             />
 
             {/* 2. Command Center: Dual Panel for simultaneous Map & Cargo Bay visualization */}
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-              {/* Left Column (xl:col-span-6): Network Route Map & Controls */}
-              <div className="xl:col-span-6 space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-start">
+              {/* Left Column (lg:col-span-6): Network Route Map & Controls */}
+              <div className="lg:col-span-6 space-y-2.5">
                 <RouteCanvas
                   solution={currentSolution}
                   currentStepIndex={currentStepIndex}
@@ -325,8 +324,8 @@ export const App: React.FC = () => {
                 />
               </div>
 
-              {/* Right Column (xl:col-span-6): Physical LIFO Cargo Bay & Operations */}
-              <div className="xl:col-span-6">
+              {/* Right Column (lg:col-span-6): Compact LIFO Cargo Bay & Pequeña Explicación Inferior */}
+              <div className="lg:col-span-6">
                 <LifoCargoBay
                   solution={currentSolution}
                   currentStep={currentStep}
@@ -338,15 +337,6 @@ export const App: React.FC = () => {
                   onContinueJourney={handleContinueJourney}
                 />
               </div>
-            </div>
-
-            {/* 3. Bottom Row: Narrative Step Explanation & Logistics Detail */}
-            <div className="w-full">
-              <StepExplanation
-                solution={currentSolution}
-                currentStep={currentStep}
-                currentStepIndex={currentStepIndex}
-              />
             </div>
           </>
         )}
@@ -394,7 +384,7 @@ export const App: React.FC = () => {
       )}
 
       {/* Subtle Footer */}
-      <footer className="border-t border-zinc-900 bg-zinc-950/80 px-4 py-4 mt-8 text-center text-xs text-zinc-500 font-mono">
+      <footer className="border-t border-zinc-900 bg-zinc-950/80 px-4 py-2 mt-auto text-center text-[11px] text-zinc-500 font-mono">
         TSPPD-H Visualizer (Página Web 10) &middot; Visualización de Soluciones Gurobi &middot; Formulación LIFO
       </footer>
     </div>

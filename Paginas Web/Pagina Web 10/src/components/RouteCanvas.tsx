@@ -69,11 +69,11 @@ export const RouteCanvas: React.FC<RouteCanvasProps> = ({
   }, [isArrived, isAtDepotInitial, progress, fromPos, controlPos, toPos]);
 
   return (
-    <div className="rounded-3xl bg-zinc-950/90 border border-zinc-800/90 p-4 lg:p-5 flex flex-col gap-3 shadow-2xl relative overflow-hidden">
+    <div className="rounded-2xl bg-zinc-950/90 border border-zinc-800/90 p-3.5 flex flex-col gap-2.5 shadow-xl relative overflow-hidden">
       {/* Header bar */}
-      <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+      <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
             <MapPin className="w-4 h-4" />
           </div>
           <div>
@@ -83,7 +83,7 @@ export const RouteCanvas: React.FC<RouteCanvasProps> = ({
                 {nodes.length} Nodos
               </span>
             </h3>
-            <p className="text-xs text-zinc-400">
+            <p className="text-[11px] text-zinc-400">
               Disposición circular con arcos curvos y posición en tiempo real del camión
             </p>
           </div>
@@ -107,7 +107,7 @@ export const RouteCanvas: React.FC<RouteCanvasProps> = ({
       </div>
 
       {/* SVG Canvas Arena */}
-      <div className="relative w-full aspect-[16/10] max-h-[360px] bg-zinc-950/60 rounded-2xl border border-zinc-900 overflow-hidden flex items-center justify-center">
+      <div className="relative w-full aspect-[16/10] max-h-[295px] bg-zinc-900/50 rounded-xl border border-zinc-800/90 overflow-hidden flex items-center justify-center">
         <svg
           viewBox={`0 0 ${width} ${height}`}
           className="w-full h-full overflow-visible select-none"
