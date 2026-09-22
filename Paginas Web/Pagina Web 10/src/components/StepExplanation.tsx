@@ -2,6 +2,7 @@ import React from 'react';
 import { FileText, Route, PackageCheck, PackagePlus, AlertCircle, ArrowRight } from 'lucide-react';
 import { SolutionData, StepData } from '../types/solution';
 import { formatDistance, formatNumber } from '../lib/utils';
+import { getStepPolicyNumber } from '../lib/policyUtils';
 
 interface StepExplanationProps {
   solution: SolutionData;
@@ -16,6 +17,8 @@ export const StepExplanation: React.FC<StepExplanationProps> = ({
 }) => {
   const fromNode = solution.nodes[currentStep.from];
   const toNode = solution.nodes[currentStep.to];
+  const isPolicy3 = solution.model === 'TSPPD-H_3';
+  const stepPolicy = getStepPolicyNumber(currentStep);
 
   return (
     <div className="rounded-3xl bg-zinc-950/90 border border-zinc-800/90 p-4 lg:p-5 shadow-2xl flex flex-col gap-3 relative overflow-hidden">
@@ -35,11 +38,22 @@ export const StepExplanation: React.FC<StepExplanationProps> = ({
           </div>
         </div>
 
-        {/* Origin -> Destination Badge */}
-        <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-zinc-900 border border-zinc-700/80 text-xs font-mono">
-          <span className="text-zinc-200 font-semibold">{fromNode?.label || `Nodo ${currentStep.from}`}</span>
-          <ArrowRight className="w-3.5 h-3.5 text-emerald-400" />
-          <span className="text-emerald-400 font-bold">{toNode?.label || `Nodo ${currentStep.to}`}</span>
+        {/* Origin -> Destination Badge + Compact Policy 3 Pill */}
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          {isPolicy3 && currentStep.to !== 0 && (
+            <span className={`px-2.5 py-1 rounded-xl text-xs font-mono font-bold border ${
+              stepPolicy === 1
+                ? 'bg-purple-500/20 text-purple-200 border-purple-500/40'
+                : 'bg-sky-500/20 text-sky-200 border-sky-500/40'
+            }`}>
+              P{stepPolicy} ({stepPolicy === 1 ? 's=1' : 's=0'})
+            </span>
+          )}
+          <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-zinc-900 border border-zinc-700/80 text-xs font-mono">
+            <span className="text-zinc-200 font-semibold">{fromNode?.label || `Nodo ${currentStep.from}`}</span>
+            <ArrowRight className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="text-emerald-400 font-bold">{toNode?.label || `Nodo ${currentStep.to}`}</span>
+          </div>
         </div>
       </div>
 

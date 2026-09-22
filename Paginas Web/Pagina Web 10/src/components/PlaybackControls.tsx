@@ -1,10 +1,12 @@
 import React from 'react';
-import { Play, Pause, SkipBack, SkipForward, RotateCcw, Zap, Gauge } from 'lucide-react';
-import { PlaybackStatus, AnimationSpeed } from '../types/solution';
+import { Play, Pause, SkipBack, SkipForward, RotateCcw, Zap, Gauge, Layers } from 'lucide-react';
+import { PlaybackStatus, AnimationSpeed, SolutionData } from '../types/solution';
+import { getStepPolicyNumber } from '../lib/policyUtils';
 
 interface PlaybackControlsProps {
   currentStepIndex: number;
   totalSteps: number;
+  solution?: SolutionData;
   status: PlaybackStatus;
   speed: AnimationSpeed;
   progress: number;
@@ -23,6 +25,7 @@ interface PlaybackControlsProps {
 export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
   currentStepIndex,
   totalSteps,
+  solution,
   status,
   speed,
   progress,
@@ -38,6 +41,10 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
   onToggleContinuousMode,
 }) => {
   const isPlaying = status === 'playing';
+  const isPolicy3 = solution?.model === 'TSPPD-H_3';
+  const currentStep = solution?.steps[currentStepIndex];
+  const isDepotStep = currentStep?.to === 0;
+  const currentStepPolicy = getStepPolicyNumber(currentStep);
 
   return (
     <div className="rounded-2xl bg-zinc-950/90 border border-zinc-800/90 p-3 flex flex-col gap-2.5 shadow-xl">
@@ -143,26 +150,89 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
           <span>Paso {currentStepIndex + 1} de {totalSteps}</span>
         </div>
 
+        {/* Dynamic Policy 3 Active Step Indicator Bar (Ultra compact, no verbose text) */}
+        {isPolicy3 && currentStep && (
+          <div className="flex items-center justify-between gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-900/80 border border-zinc-800 text-[11px] font-mono shadow-xs">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-zinc-400 font-semibold flex items-center gap-1">
+                <Layers className="w-3 h-3 text-teal-400" />
+                Pol. 3:
+              </span>
+              {isDepotStep ? (
+                <span className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700 text-[10px] font-medium">
+                  Depósito
+                </span>
+              ) : (
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold border flex items-center gap-1 ${
+                  currentStepPolicy === 1
+                    ? 'bg-purple-500/20 text-purple-200 border-purple-500/40'
+                    : 'bg-sky-500/20 text-sky-200 border-sky-500/40'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${currentStepPolicy === 1 ? 'bg-purple-400' : 'bg-sky-400'}`} />
+                  <span>Cliente {currentStep.to}: P{currentStepPolicy} ({currentStepPolicy === 1 ? 's=1' : 's=0'})</span>
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 text-[10px] text-zinc-500">
+              <span className="text-purple-300 font-semibold">P1 (s=1)</span>
+              <span>·</span>
+              <span className="text-sky-300 font-semibold">P2 (s=0)</span>
+            </div>
+          </div>
+        )}
+
         {/* Step Selector Buttons */}
         <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-1">
           {Array.from({ length: totalSteps }, (_, idx) => {
             const isCurrent = idx === currentStepIndex;
             const isPast = idx < currentStepIndex;
+            const stepItem = solution?.steps[idx];
+            const isStepDepot = stepItem ? stepItem.to === 0 : false;
+            const stepPolicyNum = getStepPolicyNumber(stepItem);
 
             return (
               <button
                 key={`timeline-step-${idx}`}
                 data-step-btn={idx + 1}
                 onClick={() => onSelectStep(idx)}
-                className={`h-6.5 rounded-lg font-mono text-xs font-bold transition-all cursor-pointer flex items-center justify-center border ${
+                className={`rounded-lg font-mono text-xs font-bold transition-all cursor-pointer flex flex-col items-center justify-center border ${
+                  isPolicy3 ? 'h-8 py-0.5' : 'h-6.5'
+                } ${
                   isCurrent
                     ? 'bg-emerald-500 text-zinc-950 border-emerald-400 shadow-sm'
                     : isPast
                     ? 'bg-zinc-800/80 text-emerald-400 border-zinc-700 hover:bg-zinc-800'
                     : 'bg-zinc-900/60 text-zinc-400 border-zinc-800 hover:bg-zinc-800/60'
                 }`}
+                title={
+                  isPolicy3 && stepItem
+                    ? isStepDepot
+                      ? `Paso ${idx + 1}: Retorno al Depósito`
+                      : `Paso ${idx + 1}: Cliente ${stepItem.to} → Política ${stepPolicyNum} (${stepPolicyNum === 1 ? 'Compuerta LIFO' : 'Reubicación al Frente'})`
+                    : `Paso ${idx + 1}`
+                }
               >
-                {idx + 1}
+                <span className={isPolicy3 ? 'text-[10px] leading-tight' : 'text-xs'}>{idx + 1}</span>
+                {isPolicy3 && (
+                  <span
+                    className={`text-[8px] font-mono font-extrabold uppercase px-1 rounded-[3px] leading-none ${
+                      isCurrent
+                        ? isStepDepot
+                          ? 'bg-zinc-900/30 text-zinc-900'
+                          : stepPolicyNum === 1
+                          ? 'bg-purple-950 text-purple-200'
+                          : 'bg-sky-950 text-sky-200'
+                        : isStepDepot
+                        ? 'text-zinc-500'
+                        : stepPolicyNum === 1
+                        ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40'
+                        : 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
+                    }`}
+                  >
+                    {isStepDepot ? 'DEP' : `P${stepPolicyNum}`}
+                  </span>
+                )}
               </button>
             );
           })}

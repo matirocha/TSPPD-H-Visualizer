@@ -14,8 +14,6 @@ import { RouteCanvas } from './components/RouteCanvas';
 import { LifoCargoBay } from './components/LifoCargoBay';
 import { PlaybackControls } from './components/PlaybackControls';
 import { SolutionSelectorModal } from './components/SolutionSelectorModal';
-import { DistanceMatrixModal } from './components/DistanceMatrixModal';
-import { ModelFormulaModal } from './components/ModelFormulaModal';
 import { NodeDetailsModal } from './components/NodeDetailsModal';
 import { AlertTriangle, Loader2 } from 'lucide-react';
 
@@ -38,8 +36,6 @@ export const App: React.FC = () => {
 
   // Modals
   const [isSelectorOpen, setIsSelectorOpen] = useState<boolean>(false);
-  const [isMatrixOpen, setIsMatrixOpen] = useState<boolean>(false);
-  const [isModelOpen, setIsModelOpen] = useState<boolean>(false);
   const [selectedNode, setSelectedNode] = useState<NodeDef | null>(null);
 
   // Animation Loop Ref
@@ -248,8 +244,6 @@ export const App: React.FC = () => {
         onSelectModel={handleSelectModel}
         onSelectSolution={setSelectedFilename}
         onOpenSelectorModal={() => setIsSelectorOpen(true)}
-        onOpenModelModal={() => setIsModelOpen(true)}
-        onOpenMatrixModal={() => setIsMatrixOpen(true)}
         isLoading={isLoading}
         onRefresh={loadSolutionsList}
       />
@@ -308,6 +302,7 @@ export const App: React.FC = () => {
                 <PlaybackControls
                   currentStepIndex={currentStepIndex}
                   totalSteps={currentSolution.steps.length}
+                  solution={currentSolution}
                   status={playbackStatus}
                   speed={speed}
                   progress={progress}
@@ -360,27 +355,12 @@ export const App: React.FC = () => {
       />
 
       {currentSolution && (
-        <>
-          <DistanceMatrixModal
-            solution={currentSolution}
-            isOpen={isMatrixOpen}
-            onClose={() => setIsMatrixOpen(false)}
-          />
-
-          <ModelFormulaModal
-            isOpen={isModelOpen}
-            onClose={() => setIsModelOpen(false)}
-            activeModel={activeModel}
-            onSelectModel={handleSelectModel}
-          />
-
-          <NodeDetailsModal
-            node={selectedNode}
-            solution={currentSolution}
-            isOpen={selectedNode !== null}
-            onClose={() => setSelectedNode(null)}
-          />
-        </>
+        <NodeDetailsModal
+          node={selectedNode}
+          solution={currentSolution}
+          isOpen={selectedNode !== null}
+          onClose={() => setSelectedNode(null)}
+        />
       )}
 
       {/* Subtle Footer */}

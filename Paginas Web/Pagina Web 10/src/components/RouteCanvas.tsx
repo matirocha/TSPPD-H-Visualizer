@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { Truck, MapPin } from 'lucide-react';
+import { Truck, MapPin, ZoomIn, RotateCcw } from 'lucide-react';
 import { cn } from '../lib/cn';
 import { SolutionData, NodeDef } from '../types/solution';
 import { calculateNodePositions, arcMidpoint, curvedArcPath, interpolateQuadratic } from '../lib/geometry';
+import { getNodePolicyNumber, getStepPolicyNumber } from '../lib/policyUtils';
 
 interface RouteCanvasProps {
   solution: SolutionData;
@@ -22,6 +23,7 @@ export const RouteCanvas: React.FC<RouteCanvasProps> = ({
 }) => {
   const width = 640;
   const height = 540;
+  const [zoomScale, setZoomScale] = useState<number>(1);
 
   const nodePositions = useMemo(() => {
     if (!solution || !solution.nodes) return [];
@@ -90,7 +92,7 @@ export const RouteCanvas: React.FC<RouteCanvasProps> = ({
         </div>
 
         {/* Legend */}
-        <div className="hidden sm:flex items-center gap-3 text-[11px] font-mono">
+        <div className="hidden sm:flex items-center gap-2.5 text-[11px] font-mono">
           <span className="flex items-center gap-1.5 text-amber-300">
             <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block shadow-sm shadow-amber-500/50" />
             Depósito
@@ -99,15 +101,48 @@ export const RouteCanvas: React.FC<RouteCanvasProps> = ({
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block shadow-sm shadow-emerald-500/50" />
             Cliente
           </span>
+          {solution.model === 'TSPPD-H_3' && (
+            <>
+              <span className="flex items-center gap-1 text-purple-300">
+                <span className="w-2 h-2 rounded-full bg-purple-400 inline-block shadow-sm shadow-purple-500/50" />
+                P1: Puerta
+              </span>
+              <span className="flex items-center gap-1 text-sky-300">
+                <span className="w-2 h-2 rounded-full bg-sky-400 inline-block shadow-sm shadow-sky-500/50" />
+                P2: Frente
+              </span>
+            </>
+          )}
           <span className="flex items-center gap-1.5 text-zinc-400">
             <span className="w-2 h-2 rounded bg-zinc-600 inline-block" />
-            Recorrido
+            Ruta
           </span>
         </div>
       </div>
 
       {/* SVG Canvas Arena */}
       <div className="relative w-full aspect-[16/10] max-h-[295px] bg-zinc-900/50 rounded-xl border border-zinc-800/90 overflow-hidden flex items-center justify-center">
+        {/* Floating Zoom Button */}
+        <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 bg-zinc-950/85 backdrop-blur-md border border-zinc-800/90 p-1 rounded-xl shadow-lg">
+          <button
+            onClick={() => setZoomScale((prev) => (prev >= 2.0 ? 1 : Number((prev + 0.25).toFixed(2))))}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 hover:text-white text-xs font-mono font-medium transition-all cursor-pointer border border-zinc-700/60 shadow-xs active:scale-95"
+            title="Aumentar zoom del mapa (clic para incrementar)"
+          >
+            <ZoomIn className="w-3.5 h-3.5 text-emerald-400" />
+            <span>{zoomScale > 1 ? `${zoomScale}x` : 'Zoom +'}</span>
+          </button>
+          {zoomScale > 1 && (
+            <button
+              onClick={() => setZoomScale(1)}
+              className="p-1 px-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs font-mono transition-all cursor-pointer border border-zinc-800 active:scale-95"
+              title="Restablecer zoom a 1x"
+            >
+              <RotateCcw className="w-3 h-3 text-zinc-400" />
+            </button>
+          )}
+        </div>
+
         <svg
           viewBox={`0 0 ${width} ${height}`}
           className="w-full h-full overflow-visible select-none"
@@ -155,7 +190,11 @@ export const RouteCanvas: React.FC<RouteCanvasProps> = ({
             </filter>
           </defs>
 
-          {/* Edges / Tour Arcs */}
+          <g
+            transform={`translate(${width / 2}, ${height / 2}) scale(${zoomScale}) translate(${-width / 2}, ${-height / 2})`}
+            style={{ transition: 'transform 300ms cubic-bezier(0.16, 1, 0.3, 1)' }}
+          >
+            {/* Edges / Tour Arcs */}
           {steps.map((step, idx) => {
             const from = nodePositions[step.from];
             const to = nodePositions[step.to];
@@ -235,6 +274,7 @@ export const RouteCanvas: React.FC<RouteCanvasProps> = ({
             const isCurrentTarget = currentStepData?.to === idx && !isArrived;
             const isCurrentHere = (isArrived && currentStepData?.to === idx) || (currentStepIndex === 0 && !isArrived && idx === 0);
             const isVisited = steps.some((s) => s.to === idx && s.stepIndex < currentStepIndex) || (isDepot && currentStepIndex > 0);
+            const nodePol = !isDepot && solution.model === 'TSPPD-H_3' ? getNodePolicyNumber(solution, node.id) : 1;
 
             let circleClass = 'fill-zinc-900 stroke-zinc-700';
             let r = 18;
@@ -265,6 +305,31 @@ export const RouteCanvas: React.FC<RouteCanvasProps> = ({
                     className="stroke-emerald-400/40 animate-ping"
                     strokeWidth={1.5}
                   />
+                )}
+
+                {/* Policy 3 indicator badge above customer node */}
+                {solution.model === 'TSPPD-H_3' && !isDepot && (
+                  <g transform={`translate(0, ${-(r + 11)})`}>
+                    <rect
+                      x={-14}
+                      y={-7}
+                      width={28}
+                      height={14}
+                      rx={4}
+                      className={nodePol === 1 ? 'fill-purple-950/95 stroke-purple-500/80' : 'fill-sky-950/95 stroke-sky-500/80'}
+                      strokeWidth={1.2}
+                    />
+                    <text
+                      y={3.5}
+                      textAnchor="middle"
+                      className={cn(
+                        'text-[8.5px] font-mono font-black pointer-events-none',
+                        nodePol === 1 ? 'fill-purple-300' : 'fill-sky-300'
+                      )}
+                    >
+                      P{nodePol}
+                    </text>
+                  </g>
                 )}
 
                 <circle
@@ -344,12 +409,13 @@ export const RouteCanvas: React.FC<RouteCanvasProps> = ({
               </g>
             </g>
           )}
+          </g>
         </svg>
       </div>
 
       {/* Map Footer Status Bar */}
       <div className="flex items-center justify-between text-xs font-mono text-zinc-400 px-1 pt-1 border-t border-zinc-800/60">
-        <span className="flex items-center gap-1.5">
+        <span className="flex items-center gap-1.5 flex-wrap">
           <span className="text-zinc-500">Estado del camión:</span>
           <strong className={isArrived ? 'text-emerald-400' : isAtDepotInitial ? 'text-amber-400' : 'text-cyan-400'}>
             {isAtDepotInitial
@@ -358,6 +424,15 @@ export const RouteCanvas: React.FC<RouteCanvasProps> = ({
               ? `Estacionado en ${solution.nodes[currentTo]?.label || `Nodo ${currentTo}`}`
               : `En ruta hacia ${solution.nodes[currentTo]?.label || `Nodo ${currentTo}`} (${Math.round(progress * 100)}%)`}
           </strong>
+          {solution.model === 'TSPPD-H_3' && !isAtDepotInitial && currentTo !== 0 && (
+            <span className={`px-2 py-0.2 rounded-full text-[10px] font-bold border ${
+              getStepPolicyNumber(currentStepData) === 1
+                ? 'bg-purple-500/15 text-purple-300 border-purple-500/40'
+                : 'bg-sky-500/15 text-sky-300 border-sky-500/40'
+            }`}>
+              P{getStepPolicyNumber(currentStepData)} ({getStepPolicyNumber(currentStepData) === 1 ? 's=1' : 's=0'})
+            </span>
+          )}
         </span>
         <span className="text-zinc-500 hidden md:inline">
           {isAtDepotInitial

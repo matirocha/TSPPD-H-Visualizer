@@ -210,7 +210,7 @@ export const ModelFormulaModal: React.FC<ModelFormulaModalProps> = ({
                   <span>Modelo TSPPD-H_1 (Política 1 de Battarra et al., 2010)</span>
                 </div>
                 <p className="text-xs text-zinc-300">
-                  <strong>Patrón de Estiba:</strong> (F, &alpha;, ..., &alpha;, &beta;, ..., &beta;, R). Toda la mercancía recolectada &beta; se coloca obligatoriamente en la compuerta trasera (rear). Cada vez que se visita un cliente con entrega (&alpha;<sub>j</sub> &gt; 0), <em>todas</em> las unidades &beta; a bordo (z<sub>ij</sub>) obstruyen el paso y deben descargarse temporalmente y recargarse con costo h<sub>b</sub> z<sub>ij</sub>. Si &alpha;<sub>j</sub> = 0, el costo es nulo.
+                  <strong>Patrón de Carga:</strong> (F, &alpha;, ..., &alpha;, &beta;, ..., &beta;, R). Toda la mercancía recolectada &beta; se coloca obligatoriamente en la compuerta trasera (rear). Cada vez que se visita un cliente con entrega (&alpha;<sub>j</sub> &gt; 0), <em>todas</em> las unidades &beta; a bordo (z<sub>ij</sub>) obstruyen el paso y deben descargarse temporalmente y recargarse con costo h<sub>b</sub> z<sub>ij</sub>. Si &alpha;<sub>j</sub> = 0, el costo es nulo.
                 </p>
               </div>
 
@@ -263,7 +263,7 @@ export const ModelFormulaModal: React.FC<ModelFormulaModalProps> = ({
                   <span>Modelo TSPPD-H_2 (Política 2 de Battarra et al., 2010)</span>
                 </div>
                 <p className="text-xs text-zinc-300">
-                  <strong>Patrón de Estiba:</strong> (F, &beta;, ..., &beta;, &alpha;, ..., &alpha;, R). Toda la mercancía recolectada &beta; se coloca en el <em>frente</em> (fondo) del vehículo, mientras que la mercancía de entrega &alpha; se ubica en la compuerta trasera. Al llegar a un cliente, la entrega &alpha; se realiza de forma directa sin conflicto. Sin embargo, si el cliente requiere recolección (&beta;<sub>i</sub> &gt; 0), toda la carga remanente &alpha; que parte hacia el siguiente cliente (y<sub>ij</sub>) debe descargarse temporalmente para colocar &beta; al fondo y luego recargarse, con costo h<sub>a</sub> y<sub>ij</sub>.
+                  <strong>Patrón de Carga:</strong> (F, &beta;, ..., &beta;, &alpha;, ..., &alpha;, R). Toda la mercancía recolectada &beta; se coloca en el <em>frente</em> (fondo) del vehículo, mientras que la mercancía de entrega &alpha; se ubica en la compuerta trasera. Al llegar a un cliente, la entrega &alpha; se realiza de forma directa sin conflicto. Sin embargo, si el cliente requiere recolección (&beta;<sub>i</sub> &gt; 0), toda la carga remanente &alpha; que parte hacia el siguiente cliente (y<sub>ij</sub>) debe descargarse temporalmente para colocar &beta; al fondo y luego recargarse, con costo h<sub>a</sub> y<sub>ij</sub>.
                 </p>
               </div>
 
@@ -309,7 +309,7 @@ export const ModelFormulaModal: React.FC<ModelFormulaModalProps> = ({
                   <span>Modelo TSPPD-H_3 (Política 3 de Battarra et al., 2010 - Híbrida / Dinámica)</span>
                 </div>
                 <p className="text-xs text-zinc-300">
-                  <strong>Patrón de Estiba Tri-Bloque:</strong> (F, &beta;<sub>front</sub>, ..., &beta;<sub>front</sub>, &alpha;, ..., &alpha;, &beta;<sub>rear</sub>, ..., &beta;<sub>rear</sub>, R). En cada cliente i &isin; V<sub>c</sub>, el optimizador decide dinámicamente si aplica la Política 1 (s<sub>i</sub> = 1) o la Política 2 (s<sub>i</sub> = 0). Permite combinar lo mejor de ambas políticas, reduciendo sustancialmente el costo total de manipulación hacia el óptimo teórico.
+                  <strong>Patrón de Carga Tri-Bloque:</strong> (F, &beta;<sub>front</sub>, ..., &beta;<sub>front</sub>, &alpha;, ..., &alpha;, &beta;<sub>rear</sub>, ..., &beta;<sub>rear</sub>, R). En cada cliente i &isin; V<sub>c</sub>, el optimizador decide dinámicamente si aplica la Política 1 (s<sub>i</sub> = 1) o la Política 2 (s<sub>i</sub> = 0). Permite combinar lo mejor de ambas políticas, reduciendo sustancialmente el costo total de manipulación hacia el óptimo teórico.
                 </p>
               </div>
 

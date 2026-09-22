@@ -1,7 +1,8 @@
 import React from 'react';
-import { Sparkles, Route, AlertCircle, Boxes, Users } from 'lucide-react';
+import { Sparkles, Route, AlertCircle, Boxes, Users, Layers } from 'lucide-react';
 import { SolutionData, StepData } from '../types/solution';
 import { formatNumber, formatDistance } from '../lib/utils';
+import { getStepPolicyNumber } from '../lib/policyUtils';
 
 interface MetricsOverviewProps {
   solution: SolutionData;
@@ -25,6 +26,7 @@ export const MetricsOverview: React.FC<MetricsOverviewProps> = ({
   const totalOps = solution.steps.reduce((acc, s) => acc + s.handlingCount, 0);
   const currentOccupancy = currentStep.aOnTruck + currentStep.bOnTruck;
   const occupancyPct = Math.round((currentOccupancy / (solution.capacity || 1)) * 100);
+  const activePol = getStepPolicyNumber(currentStep);
 
   return (
     <div className="w-full bg-zinc-900/60 backdrop-blur-md rounded-2xl border border-zinc-800/80 px-3.5 py-2 flex flex-wrap items-center justify-between gap-2 shadow-lg">
@@ -106,7 +108,7 @@ export const MetricsOverview: React.FC<MetricsOverviewProps> = ({
         </div>
         <div className="flex flex-col">
           <span className="text-[10px] uppercase font-mono tracking-wider font-semibold text-zinc-400">
-            Estiba Camión (Q={solution.capacity})
+            Carga Camión (Q={solution.capacity})
           </span>
           <div className="flex items-center gap-1.5 font-mono text-xs">
             <span className="font-bold text-zinc-100">
@@ -142,6 +144,47 @@ export const MetricsOverview: React.FC<MetricsOverviewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* 6. Dynamic Policy 3 Active Decision Tile */}
+      {solution.model === 'TSPPD-H_3' && (
+        <>
+          <div className="hidden xl:block h-6 w-px bg-zinc-800" />
+          <div className="flex items-center gap-2.5 min-w-[170px]">
+            <div className={`p-1.5 rounded-xl border ${
+              currentStep.to === 0
+                ? 'bg-zinc-800 text-zinc-400 border-zinc-700'
+                : activePol === 1
+                ? 'bg-purple-500/10 text-purple-400 border-purple-500/30'
+                : 'bg-sky-500/10 text-sky-400 border-sky-500/30'
+            }`}>
+              <Layers className="w-3.5 h-3.5" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] uppercase font-mono tracking-wider font-semibold text-zinc-400">
+                {currentStep.to === 0 ? 'Depósito' : `Pol. Cliente ${currentStep.to}`}
+              </span>
+              <div className="flex items-center gap-1.5 font-mono text-xs">
+                {currentStep.to === 0 ? (
+                  <span className="text-zinc-300 font-bold">Depósito Central</span>
+                ) : (
+                  <>
+                    <span className={`font-bold ${activePol === 1 ? 'text-purple-300' : 'text-sky-300'}`}>
+                      P{activePol}
+                    </span>
+                    <span className={`text-[9px] px-1.5 py-0.2 rounded font-extrabold border ${
+                      activePol === 1
+                        ? 'bg-purple-500/15 text-purple-200 border-purple-500/40'
+                        : 'bg-sky-500/15 text-sky-200 border-sky-500/40'
+                    }`}>
+                      {activePol === 1 ? 's=1' : 's=0'}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
