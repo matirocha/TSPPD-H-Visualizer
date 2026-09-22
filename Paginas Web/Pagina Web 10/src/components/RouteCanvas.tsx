@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Truck, MapPin, ZoomIn, RotateCcw } from 'lucide-react';
+import { Truck, MapPin, ZoomIn, RotateCcw, Maximize2, Minimize2 } from 'lucide-react';
 import { cn } from '../lib/cn';
 import { SolutionData, NodeDef, PlaybackStatus, AnimationSpeed } from '../types/solution';
 import { calculateNodePositions, arcMidpoint, curvedArcPath, interpolateQuadratic } from '../lib/geometry';
@@ -47,6 +47,21 @@ export const RouteCanvas: React.FC<RouteCanvasProps> = ({
   const width = 640;
   const height = 540;
   const [zoomScale, setZoomScale] = useState<number>(1);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsFullscreen(false);
+    };
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isFullscreen]);
 
   const nodePositions = useMemo(() => {
     if (!solution || !solution.nodes) return [];
@@ -94,21 +109,60 @@ export const RouteCanvas: React.FC<RouteCanvasProps> = ({
   }, [isArrived, isAtDepotInitial, progress, fromPos, controlPos, toPos]);
 
   return (
-    <div className="rounded-2xl bg-zinc-950/90 border border-zinc-800/90 p-3.5 flex flex-col gap-2.5 shadow-xl relative overflow-hidden">
-      {/* Header bar */}
-      <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
-            <MapPin className="w-4 h-4" />
+    <>
+      {isFullscreen && (
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-md z-40 transition-opacity"
+          onClick={() => setIsFullscreen(false)}
+        />
+      )}
+      {isFullscreen && <div className="w-full h-[400px] invisible pointer-events-none" />}
+      <div
+        className={cn(
+          "transition-all duration-200 flex flex-col",
+          isFullscreen
+            ? "fixed inset-3 md:inset-6 z-50 bg-zinc-950/98 border border-zinc-700/90 rounded-2xl shadow-2xl p-4 md:p-6 overflow-y-auto backdrop-blur-2xl justify-between"
+            : "rounded-2xl bg-zinc-950/90 border border-zinc-800/90 p-3.5 gap-2.5 shadow-xl relative overflow-hidden"
+        )}
+      >
+        {/* Header bar */}
+        <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+              <MapPin className="w-4 h-4" />
+            </div>
+            <h3 className="text-sm font-bold text-white tracking-tight font-sans">
+              Mapa de Ruteo
+            </h3>
+            {isFullscreen && (
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
+                Pantalla completa
+              </span>
+            )}
           </div>
-          <h3 className="text-sm font-bold text-white tracking-tight font-sans">
-            Mapa de Ruteo
-          </h3>
-        </div>
-      </div>
 
-      {/* SVG Canvas Arena */}
-      <div className="relative w-full aspect-[16/10] max-h-[295px] bg-zinc-900/50 rounded-xl border border-zinc-800/90 overflow-hidden flex items-center justify-center">
+          <button
+            onClick={() => setIsFullscreen((prev) => !prev)}
+            className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-white transition-all cursor-pointer shadow-xs active:scale-95"
+            title={isFullscreen ? "Salir de pantalla completa (Esc)" : "Ver en pantalla completa"}
+          >
+            {isFullscreen ? (
+              <Minimize2 className="w-4 h-4 text-emerald-400" />
+            ) : (
+              <Maximize2 className="w-4 h-4" />
+            )}
+          </button>
+        </div>
+
+        {/* SVG Canvas Arena */}
+        <div
+          className={cn(
+            "relative w-full bg-zinc-900/50 rounded-xl border border-zinc-800/90 overflow-hidden flex items-center justify-center",
+            isFullscreen
+              ? "flex-1 min-h-[460px] max-h-[calc(100vh-210px)] my-2"
+              : "aspect-[16/10] max-h-[295px]"
+          )}
+        >
         {/* Floating Zoom Button */}
         <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 bg-zinc-950/85 backdrop-blur-md border border-zinc-800/90 p-1 rounded-xl shadow-lg">
           <button
@@ -423,5 +477,6 @@ export const RouteCanvas: React.FC<RouteCanvasProps> = ({
         />
       </div>
     </div>
+    </>
   );
 };

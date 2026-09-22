@@ -14,7 +14,10 @@ import {
   ArrowLeft,
   AlertCircle,
   FileText,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
+import { cn } from '../lib/cn';
 import { SolutionData, StepData, CargoSubStepDef, SlotType, PlaybackStatus } from '../types/solution';
 import { formatNumber } from '../lib/utils';
 import { getStepPolicyNumber } from '../lib/policyUtils';
@@ -43,6 +46,21 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
   const [selectedSlotIdx, setSelectedSlotIdx] = useState<number | null>(null);
   const [subStep, setSubStep] = useState<number>(1); // 1 to 4
   const [showExtendedExplanation, setShowExtendedExplanation] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsFullscreen(false);
+    };
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isFullscreen]);
 
   const capacity = solution.capacity;
   const deliverA = currentStep.deliverA;
@@ -766,110 +784,144 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
   ]);
 
   return (
-    <div className="w-full rounded-2xl bg-zinc-950/90 border border-zinc-800/90 p-3.5 flex flex-col gap-2.5 shadow-xl relative overflow-hidden">
-      {/* 1. Header Bar: Compact Title + Sub-step Stepper Navigation */}
-      <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-zinc-800/80">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-xl bg-gradient-to-tr from-cyan-600 to-emerald-400 text-zinc-950 shadow-md">
-            <Boxes className="w-4 h-4 stroke-[2.2]" />
-          </div>
+    <>
+      {isFullscreen && (
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-md z-40 transition-opacity"
+          onClick={() => setIsFullscreen(false)}
+        />
+      )}
+      {isFullscreen && <div className="w-full h-[400px] invisible pointer-events-none" />}
+      <div
+        className={cn(
+          "w-full transition-all duration-200 flex flex-col shadow-xl",
+          isFullscreen
+            ? "fixed inset-3 md:inset-6 z-50 bg-zinc-950/98 border border-zinc-700/90 rounded-2xl shadow-2xl p-4 md:p-6 gap-3.5 overflow-y-auto backdrop-blur-2xl"
+            : "rounded-2xl bg-zinc-950/90 border border-zinc-800/90 p-3.5 gap-2.5 relative overflow-hidden"
+        )}
+      >
+        {/* 1. Header Bar: Compact Title + Sub-step Stepper Navigation */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-zinc-800/80">
           <div className="flex items-center gap-2">
-            <h2 className="font-bold text-sm text-zinc-100 flex items-center gap-1.5">
-              Compartimiento LIFO
-            </h2>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 border border-zinc-700">
-              Q={capacity}
-            </span>
-            <span className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full border ${
-              solution.model === 'TSPPD-H_1'
-                ? 'bg-purple-500/15 text-purple-300 border-purple-500/30'
-                : solution.model === 'TSPPD-H_2'
-                ? 'bg-sky-500/15 text-sky-300 border-sky-500/30'
-                : solution.model === 'TSPPD-H_3'
-                ? isDepot || isAtDepotInitial
-                  ? 'bg-teal-500/15 text-teal-300 border-teal-500/30'
-                  : stepPolicy === 1
-                  ? 'bg-purple-500/20 text-purple-200 border-purple-500/50 shadow-xs'
-                  : 'bg-sky-500/20 text-sky-200 border-sky-500/50 shadow-xs'
-                : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-            }`}>
-              {solution.model === 'TSPPD-H_1'
-                ? 'Pol. 1'
-                : solution.model === 'TSPPD-H_2'
-                ? 'Pol. 2'
-                : solution.model === 'TSPPD-H_3'
-                ? isDepot || isAtDepotInitial
-                  ? 'Pol. 3'
-                  : `Pol. 3: P${stepPolicy}`
-                : 'General'}
-            </span>
+            <div className="p-1.5 rounded-xl bg-gradient-to-tr from-cyan-600 to-emerald-400 text-zinc-950 shadow-md">
+              <Boxes className="w-4 h-4 stroke-[2.2]" />
+            </div>
+            <div className="flex items-center gap-2">
+              <h2 className="font-bold text-sm text-zinc-100 flex items-center gap-1.5">
+                Compartimiento LIFO
+              </h2>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 border border-zinc-700">
+                Q={capacity}
+              </span>
+              <span className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full border ${
+                solution.model === 'TSPPD-H_1'
+                  ? 'bg-purple-500/15 text-purple-300 border-purple-500/30'
+                  : solution.model === 'TSPPD-H_2'
+                  ? 'bg-sky-500/15 text-sky-300 border-sky-500/30'
+                  : solution.model === 'TSPPD-H_3'
+                  ? isDepot || isAtDepotInitial
+                    ? 'bg-teal-500/15 text-teal-300 border-teal-500/30'
+                    : stepPolicy === 1
+                    ? 'bg-purple-500/20 text-purple-200 border-purple-500/50 shadow-xs'
+                    : 'bg-sky-500/20 text-sky-200 border-sky-500/50 shadow-xs'
+                  : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+              }`}>
+                {solution.model === 'TSPPD-H_1'
+                  ? 'Pol. 1'
+                  : solution.model === 'TSPPD-H_2'
+                  ? 'Pol. 2'
+                  : solution.model === 'TSPPD-H_3'
+                  ? isDepot || isAtDepotInitial
+                    ? 'Pol. 3'
+                    : `Pol. 3: P${stepPolicy}`
+                  : 'General'}
+              </span>
+              {isFullscreen && (
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">
+                  Pantalla completa
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Stepper Tabs & Controls */}
+          <div className="flex items-center gap-1.5">
+            {/* Repeat */}
+            <button
+              onClick={() => setSubStep(1)}
+              className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/80 text-emerald-400 hover:text-emerald-300 transition-all cursor-pointer"
+              title={`Reiniciar sub-pasos 1 a ${totalSubSteps}`}
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Stepper Pills */}
+            <div className="flex items-center gap-1 bg-zinc-900/90 p-0.5 rounded-lg border border-zinc-800">
+              {subStepDefs.map((sDef) => {
+                const isCurrent = sDef.id === subStep;
+                const isDone = sDef.id < subStep;
+                return (
+                  <button
+                    key={`substep-btn-${sDef.id}`}
+                    onClick={() => setSubStep(sDef.id)}
+                    className={`px-2 py-0.5 rounded-md text-[11px] font-mono font-medium transition-all cursor-pointer flex items-center gap-1 ${
+                      isCurrent
+                        ? 'bg-zinc-100 text-zinc-950 font-bold shadow-xs'
+                        : isDone
+                        ? 'text-emerald-400 hover:bg-zinc-800'
+                        : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
+                    title={sDef.title}
+                  >
+                    <span>{sDef.shortTitle}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Prev / Next Buttons */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setSubStep((prev) => Math.max(1, prev - 1))}
+                disabled={subStep === 1}
+                className="p-1 px-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 disabled:opacity-30 text-xs font-mono text-zinc-400 hover:text-zinc-200 border border-zinc-800 cursor-pointer"
+                title="Anterior"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => {
+                  if (subStep < totalSubSteps) {
+                    setSubStep((prev) => prev + 1);
+                  } else {
+                    onContinueJourney();
+                  }
+                }}
+                className={`p-1 px-2.5 rounded-lg text-xs font-mono font-bold flex items-center gap-1 transition-all cursor-pointer shadow-sm ${
+                  subStep === totalSubSteps
+                    ? 'bg-emerald-500 hover:bg-emerald-400 text-zinc-950'
+                    : 'bg-cyan-500 hover:bg-cyan-400 text-zinc-950'
+                }`}
+              >
+                <span>{subStep === totalSubSteps ? (isLastStep ? 'Fin' : 'Ruta ➔') : `${subStep + 1}/${totalSubSteps} ➔`}</span>
+              </button>
+            </div>
+
+            {/* Fullscreen Toggle Button */}
+            <div className="h-4 w-[1px] bg-zinc-800 mx-0.5" />
+            <button
+              onClick={() => setIsFullscreen((prev) => !prev)}
+              className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-white transition-all cursor-pointer shadow-xs active:scale-95"
+              title={isFullscreen ? "Salir de pantalla completa (Esc)" : "Ver en pantalla completa"}
+            >
+              {isFullscreen ? (
+                <Minimize2 className="w-3.5 h-3.5 text-cyan-400" />
+              ) : (
+                <Maximize2 className="w-3.5 h-3.5" />
+              )}
+            </button>
           </div>
         </div>
-
-        {/* Stepper Tabs & Controls */}
-        <div className="flex items-center gap-1.5">
-          {/* Repeat */}
-          <button
-            onClick={() => setSubStep(1)}
-            className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/80 text-emerald-400 hover:text-emerald-300 transition-all cursor-pointer"
-            title={`Reiniciar sub-pasos 1 a ${totalSubSteps}`}
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-          </button>
-
-          {/* Stepper Pills */}
-          <div className="flex items-center gap-1 bg-zinc-900/90 p-0.5 rounded-lg border border-zinc-800">
-            {subStepDefs.map((sDef) => {
-              const isCurrent = sDef.id === subStep;
-              const isDone = sDef.id < subStep;
-              return (
-                <button
-                  key={`substep-btn-${sDef.id}`}
-                  onClick={() => setSubStep(sDef.id)}
-                  className={`px-2 py-0.5 rounded-md text-[11px] font-mono font-medium transition-all cursor-pointer flex items-center gap-1 ${
-                    isCurrent
-                      ? 'bg-zinc-100 text-zinc-950 font-bold shadow-xs'
-                      : isDone
-                      ? 'text-emerald-400 hover:bg-zinc-800'
-                      : 'text-zinc-500 hover:text-zinc-300'
-                  }`}
-                  title={sDef.title}
-                >
-                  <span>{sDef.shortTitle}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Prev / Next Buttons */}
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setSubStep((prev) => Math.max(1, prev - 1))}
-              disabled={subStep === 1}
-              className="p-1 px-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 disabled:opacity-30 text-xs font-mono text-zinc-400 hover:text-zinc-200 border border-zinc-800 cursor-pointer"
-              title="Anterior"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => {
-                if (subStep < totalSubSteps) {
-                  setSubStep((prev) => prev + 1);
-                } else {
-                  onContinueJourney();
-                }
-              }}
-              className={`p-1 px-2.5 rounded-lg text-xs font-mono font-bold flex items-center gap-1 transition-all cursor-pointer shadow-sm ${
-                subStep === totalSubSteps
-                  ? 'bg-emerald-500 hover:bg-emerald-400 text-zinc-950'
-                  : 'bg-cyan-500 hover:bg-cyan-400 text-zinc-950'
-              }`}
-            >
-              <span>{subStep === totalSubSteps ? (isLastStep ? 'Fin' : 'Ruta ➔') : `${subStep + 1}/${totalSubSteps} ➔`}</span>
-            </button>
-          </div>
-        </div>
-      </div>
 
       {/* 2. Compact Truck Location & Inventory Bar */}
       <div className="flex items-center justify-between px-2 py-1 rounded-lg bg-zinc-900/60 border border-zinc-800/80 text-xs">
@@ -913,8 +965,8 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
         </div>
       </div>
 
-      {/* 3. Physical Cargo Bay Container (Compact Grid) */}
-      <div className="relative bg-zinc-900/50 rounded-xl border border-zinc-800/90 p-2.5 pt-6 shadow-inner">
+      {/* 3. Physical Cargo Bay Container (Compact Grid, expands in fullscreen) */}
+      <div className={cn("relative bg-zinc-900/50 rounded-xl border border-zinc-800/90 p-2.5 pt-6 shadow-inner", isFullscreen && "flex-1 flex flex-col justify-center")}>
         {/* Door & Cab Labels */}
         <div className="absolute top-1.5 left-2.5 flex items-center gap-1 text-[9px] uppercase font-bold text-amber-400 font-mono">
           <DoorClosed className="w-3 h-3" />
@@ -926,8 +978,8 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
           <div className="w-1.5 h-1.5 rounded-full bg-zinc-600" />
         </div>
 
-        {/* Slot Grid: High Density (h-10 to h-11 per cell, min-h-[40px]) */}
-        <div className="grid grid-cols-8 gap-1.5 py-1">
+        {/* Slot Grid: High Density (h-10 to h-11 per cell, min-h-[40px], expands in fullscreen) */}
+        <div className={cn("grid grid-cols-8 py-1", isFullscreen ? "gap-2.5 my-auto" : "gap-1.5")}>
           {Array.from({ length: capacity }, (_, idx) => {
             const slotNum = idx + 1;
             const slotContent = displaySlots[idx] || 'EMPTY';
@@ -964,7 +1016,9 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.96 }}
                 onClick={() => setSelectedSlotIdx(isSelected ? null : slotNum)}
-                className={`relative rounded-lg p-1 flex flex-col items-center justify-between min-h-[40px] max-h-[46px] border transition-all duration-200 cursor-pointer select-none ${
+                className={cn(
+                  "relative rounded-lg p-1.5 flex flex-col items-center justify-between border transition-all duration-200 cursor-pointer select-none",
+                  isFullscreen ? "min-h-[72px] max-h-[90px]" : "min-h-[40px] max-h-[46px]",
                   isDeliveringExiting || isDepotUnloading
                     ? 'bg-rose-950/80 border-rose-400 text-white ring-2 ring-rose-500/60 shadow-md shadow-rose-950/60 scale-102 z-10'
                     : isHandlingExiting
@@ -977,26 +1031,27 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
                     ? 'bg-rose-950/30 border-rose-500/40 text-rose-300 shadow-xs'
                     : isBeta
                     ? 'bg-cyan-950/30 border-cyan-500/40 text-cyan-300 shadow-xs'
-                    : 'bg-zinc-950/40 border-dashed border-zinc-800 text-zinc-600 opacity-60 hover:opacity-100 hover:border-zinc-700'
-                } ${isSelected ? 'ring-2 ring-white ring-offset-1 ring-offset-zinc-950 z-20' : ''}`}
+                    : 'bg-zinc-950/40 border-dashed border-zinc-800 text-zinc-600 opacity-60 hover:opacity-100 hover:border-zinc-700',
+                  isSelected ? 'ring-2 ring-white ring-offset-1 ring-offset-zinc-950 z-20' : ''
+                )}
                 title={`Slot #${slotNum}: ${slotContent === 'A' ? 'Mercancía α' : slotContent === 'B' ? 'Mercancía β' : 'Vacío'}`}
               >
                 {/* Slot index tag */}
-                <div className="w-full flex items-center justify-between text-[8px] font-mono text-zinc-500">
+                <div className={cn("w-full flex items-center justify-between font-mono text-zinc-500", isFullscreen ? "text-[10px]" : "text-[8px]")}>
                   <span>#{slotNum}</span>
                   {isDeliveringExiting || isDepotUnloading ? (
-                    <span className="text-[7px] text-rose-300 font-bold">SALE</span>
+                    <span className={cn("text-rose-300 font-bold", isFullscreen ? "text-[8px]" : "text-[7px]")}>SALE</span>
                   ) : isHandlingExiting ? (
-                    <span className="text-[7px] text-amber-300 font-bold">EVAC</span>
+                    <span className={cn("text-amber-300 font-bold", isFullscreen ? "text-[8px]" : "text-[7px]")}>EVAC</span>
                   ) : isHandlingEntering ? (
-                    <span className="text-[7px] text-emerald-300 font-bold">ENTRA</span>
+                    <span className={cn("text-emerald-300 font-bold", isFullscreen ? "text-[8px]" : "text-[7px]")}>ENTRA</span>
                   ) : isLoadingEntering ? (
-                    <span className="text-[7px] text-cyan-300 font-bold">ENTRA</span>
+                    <span className={cn("text-cyan-300 font-bold", isFullscreen ? "text-[8px]" : "text-[7px]")}>ENTRA</span>
                   ) : null}
                 </div>
 
                 {/* Box Graphic */}
-                <div className="flex items-center justify-center relative w-full h-4">
+                <div className={cn("flex items-center justify-center relative w-full", isFullscreen ? "h-6" : "h-4")}>
                   <AnimatePresence mode="popLayout">
                     {isAlpha ? (
                       <motion.div
@@ -1007,8 +1062,8 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
                         transition={{ duration: animDuration }}
                         className="flex items-center justify-center gap-0.5"
                       >
-                        <Box className={`w-3.5 h-3.5 ${isHandlingExiting ? 'text-amber-300' : isHandlingEntering ? 'text-emerald-300' : isDeliveringExiting ? 'text-rose-300' : 'text-rose-400'}`} />
-                        <span className="text-[9px] font-mono font-bold leading-none">α</span>
+                        <Box className={cn(isFullscreen ? "w-4 h-4" : "w-3.5 h-3.5", isHandlingExiting ? 'text-amber-300' : isHandlingEntering ? 'text-emerald-300' : isDeliveringExiting ? 'text-rose-300' : 'text-rose-400')} />
+                        <span className={cn("font-mono font-bold leading-none", isFullscreen ? "text-xs" : "text-[9px]")}>α</span>
                       </motion.div>
                     ) : isBeta ? (
                       <motion.div
@@ -1019,11 +1074,11 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
                         transition={{ duration: animDuration }}
                         className="flex items-center justify-center gap-0.5"
                       >
-                        <Package className={`w-3.5 h-3.5 ${isHandlingExiting ? 'text-amber-300' : isHandlingEntering ? 'text-emerald-300' : isLoadingEntering ? 'text-cyan-300' : 'text-cyan-400'}`} />
-                        <span className="text-[9px] font-mono font-bold leading-none">β</span>
+                        <Package className={cn(isFullscreen ? "w-4 h-4" : "w-3.5 h-3.5", isHandlingExiting ? 'text-amber-300' : isHandlingEntering ? 'text-emerald-300' : isLoadingEntering ? 'text-cyan-300' : 'text-cyan-400')} />
+                        <span className={cn("font-mono font-bold leading-none", isFullscreen ? "text-xs" : "text-[9px]")}>β</span>
                       </motion.div>
                     ) : (
-                      <span className="text-[8px] text-zinc-600 font-mono">—</span>
+                      <span className={cn("text-zinc-600 font-mono", isFullscreen ? "text-[10px]" : "text-[8px]")}>—</span>
                     )}
                   </AnimatePresence>
                 </div>
@@ -1173,5 +1228,6 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
         </div>
       </div>
     </div>
+    </>
   );
 };
