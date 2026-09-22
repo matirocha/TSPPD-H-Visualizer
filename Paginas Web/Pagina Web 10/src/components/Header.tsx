@@ -1,5 +1,5 @@
 import React from 'react';
-import { Truck, RefreshCw, Layers, Table, BookOpen, ChevronDown, Check, Cpu } from 'lucide-react';
+import { Truck, RefreshCw, Layers, Table, BookOpen } from 'lucide-react';
 import { SolutionMeta, ModelType } from '../types/solution';
 
 interface HeaderProps {
@@ -28,9 +28,6 @@ export const Header: React.FC<HeaderProps> = ({
   onRefresh,
 }) => {
   const currentMeta = solutions.find((s) => s.filename === selectedFilename);
-
-  // Filter solutions matching the active model
-  const currentModelSolutions = solutions.filter((s) => (s.model || 'TSPPD-H') === activeModel);
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-xl">
@@ -121,31 +118,19 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          {/* Solution Selector Dropdown */}
-          <div className="relative flex items-center">
-            <select
-              value={selectedFilename}
-              onChange={(e) => onSelectSolution(e.target.value)}
-              className="appearance-none bg-zinc-900/90 border border-zinc-700/80 hover:border-zinc-600 rounded-xl pl-3 pr-8 py-1.5 text-xs font-mono text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer transition-all shadow-sm max-w-[200px] sm:max-w-[280px] truncate"
-            >
-              {(currentModelSolutions.length > 0 ? currentModelSolutions : solutions).map((s) => (
-                <option key={s.filename} value={s.filename} className="bg-zinc-900 text-zinc-100 font-mono py-1">
-                  ID #{s.instanceId} &middot; {s.numCustomers} Clientes &middot; Z*={s.objectiveValue.toFixed(2)}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2.5 pointer-events-none" />
-          </div>
-
-          {/* Modal Opener Button */}
+          {/* Solution Explorer / ID Selector Button */}
           <button
             onClick={onOpenSelectorModal}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-800/90 hover:bg-zinc-700/90 border border-zinc-700 text-xs font-medium text-zinc-200 hover:text-white transition-all cursor-pointer shadow-sm whitespace-nowrap"
-            title="Abrir catálogo completo con filtros y búsqueda"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700/80 hover:border-zinc-600 text-xs font-medium text-zinc-200 hover:text-white transition-all cursor-pointer shadow-sm whitespace-nowrap group"
+            title="Abrir explorador de soluciones para cambiar el ID de la instancia"
           >
-            <Layers className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden md:inline">Explorar Soluciones</span>
-            <span className="md:hidden">Explorar</span>
+            <Layers className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
+            <span className="font-semibold">Explorar Soluciones</span>
+            {currentMeta && (
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-300 font-bold border border-emerald-500/30">
+                ID #{currentMeta.instanceId}
+              </span>
+            )}
           </button>
 
           {/* Distance Matrix Button */}

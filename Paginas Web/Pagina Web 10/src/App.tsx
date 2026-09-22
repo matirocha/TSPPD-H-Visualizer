@@ -356,6 +356,7 @@ export const App: React.FC = () => {
       <SolutionSelectorModal
         solutions={solutions}
         selectedFilename={selectedFilename}
+        activeModel={activeModel}
         isOpen={isSelectorOpen}
         onClose={() => setIsSelectorOpen(false)}
         onSelectSolution={(fn) => {
