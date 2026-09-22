@@ -95,36 +95,8 @@ export const SolutionSelectorModal: React.FC<SolutionSelectorModalProps> = ({
             </button>
           </div>
 
-          {/* Quick ID Navigation Strip */}
-          <div className="px-6 py-3 bg-zinc-950/40 border-b border-zinc-800/80 flex items-center gap-2 overflow-x-auto select-none">
-            <span className="text-xs font-mono font-medium text-zinc-400 shrink-0 mr-1">
-              Cambio rápido:
-            </span>
-            <div className="flex items-center gap-1.5">
-              {sortedSolutions.map((s) => {
-                const isSelected = s.filename === selectedFilename;
-                return (
-                  <button
-                    key={`quick-pill-${s.filename}`}
-                    onClick={() => {
-                      onSelectSolution(s.filename);
-                      onClose();
-                    }}
-                    className={`px-3 py-1 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer whitespace-nowrap ${
-                      isSelected
-                        ? 'bg-emerald-500 text-zinc-950 shadow-md shadow-emerald-500/20 scale-105'
-                        : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 hover:border-zinc-700'
-                    }`}
-                  >
-                    ID #{s.instanceId}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
           {/* Solutions Grid */}
-          <div className="p-6 overflow-y-auto max-h-[62vh]">
+          <div className="p-6 overflow-y-auto max-h-[68vh]">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
               {sortedSolutions.map((s) => {
                 const isSelected = s.filename === selectedFilename;
@@ -224,10 +196,7 @@ export const SolutionSelectorModal: React.FC<SolutionSelectorModalProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-3.5 border-t border-zinc-800/80 bg-zinc-950/60 flex items-center justify-between">
-            <span className="text-xs text-zinc-400 font-mono">
-              Mostrando {sortedSolutions.length} instancias para este modelo (cambia de modelo en el encabezado)
-            </span>
+          <div className="px-6 py-3.5 border-t border-zinc-800/80 bg-zinc-950/60 flex items-center justify-end">
             <button
               onClick={onClose}
               className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-zinc-200 hover:text-white cursor-pointer transition-all"

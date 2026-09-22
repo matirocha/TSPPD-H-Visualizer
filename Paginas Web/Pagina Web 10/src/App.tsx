@@ -12,7 +12,6 @@ import { Header } from './components/Header';
 import { MetricsOverview } from './components/MetricsOverview';
 import { RouteCanvas } from './components/RouteCanvas';
 import { LifoCargoBay } from './components/LifoCargoBay';
-import { PlaybackControls } from './components/PlaybackControls';
 import { SolutionSelectorModal } from './components/SolutionSelectorModal';
 import { NodeDetailsModal } from './components/NodeDetailsModal';
 import { AlertTriangle, Loader2 } from 'lucide-react';
@@ -289,24 +288,15 @@ export const App: React.FC = () => {
 
             {/* 2. Command Center: Dual Panel for simultaneous Map & Cargo Bay visualization */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-start">
-              {/* Left Column (lg:col-span-6): Network Route Map & Controls */}
-              <div className="lg:col-span-6 space-y-2.5">
+              {/* Left Column (lg:col-span-6): Network Route Map with Integrated Playback */}
+              <div className="lg:col-span-6">
                 <RouteCanvas
                   solution={currentSolution}
                   currentStepIndex={currentStepIndex}
                   progress={progress}
                   isArrived={isArrived}
-                  onSelectNode={setSelectedNode}
-                />
-
-                <PlaybackControls
-                  currentStepIndex={currentStepIndex}
-                  totalSteps={currentSolution.steps.length}
-                  solution={currentSolution}
-                  status={playbackStatus}
+                  playbackStatus={playbackStatus}
                   speed={speed}
-                  progress={progress}
-                  isArrived={isArrived}
                   isContinuousMode={isContinuousMode}
                   onPlay={handlePlay}
                   onPause={handlePause}
@@ -316,6 +306,7 @@ export const App: React.FC = () => {
                   onSelectStep={handleSelectStep}
                   onChangeSpeed={setSpeed}
                   onToggleContinuousMode={setIsContinuousMode}
+                  onSelectNode={setSelectedNode}
                 />
               </div>
 
@@ -362,11 +353,6 @@ export const App: React.FC = () => {
           onClose={() => setSelectedNode(null)}
         />
       )}
-
-      {/* Subtle Footer */}
-      <footer className="border-t border-zinc-900 bg-zinc-950/80 px-4 py-2 mt-auto text-center text-[11px] text-zinc-500 font-mono">
-        TSPPD-H Visualizer (Página Web 10) &middot; Visualización de Soluciones Gurobi &middot; Formulación LIFO
-      </footer>
     </div>
   );
 };

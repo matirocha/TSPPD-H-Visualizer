@@ -2,15 +2,27 @@ import React, { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { Truck, MapPin, ZoomIn, RotateCcw } from 'lucide-react';
 import { cn } from '../lib/cn';
-import { SolutionData, NodeDef } from '../types/solution';
+import { SolutionData, NodeDef, PlaybackStatus, AnimationSpeed } from '../types/solution';
 import { calculateNodePositions, arcMidpoint, curvedArcPath, interpolateQuadratic } from '../lib/geometry';
 import { getNodePolicyNumber, getStepPolicyNumber } from '../lib/policyUtils';
+import { PlaybackControls } from './PlaybackControls';
 
 interface RouteCanvasProps {
   solution: SolutionData;
   currentStepIndex: number;
   progress: number; // 0 to 1
   isArrived: boolean;
+  playbackStatus: PlaybackStatus;
+  speed: AnimationSpeed;
+  isContinuousMode: boolean;
+  onPlay: () => void;
+  onPause: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+  onReset: () => void;
+  onSelectStep: (index: number) => void;
+  onChangeSpeed: (speed: AnimationSpeed) => void;
+  onToggleContinuousMode: (val: boolean) => void;
   onSelectNode?: (node: NodeDef) => void;
 }
 
@@ -19,6 +31,17 @@ export const RouteCanvas: React.FC<RouteCanvasProps> = ({
   currentStepIndex,
   progress,
   isArrived,
+  playbackStatus,
+  speed,
+  isContinuousMode,
+  onPlay,
+  onPause,
+  onPrev,
+  onNext,
+  onReset,
+  onSelectStep,
+  onChangeSpeed,
+  onToggleContinuousMode,
   onSelectNode,
 }) => {
   const width = 640;
@@ -78,45 +101,9 @@ export const RouteCanvas: React.FC<RouteCanvasProps> = ({
           <div className="p-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
             <MapPin className="w-4 h-4" />
           </div>
-          <div>
-            <h3 className="text-sm font-bold text-white tracking-tight flex items-center gap-2">
-              Mapa de Ruta y Topología de Red
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">
-                {nodes.length} Nodos
-              </span>
-            </h3>
-            <p className="text-[11px] text-zinc-400">
-              Disposición circular con arcos curvos y posición en tiempo real del camión
-            </p>
-          </div>
-        </div>
-
-        {/* Legend */}
-        <div className="hidden sm:flex items-center gap-2.5 text-[11px] font-mono">
-          <span className="flex items-center gap-1.5 text-amber-300">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block shadow-sm shadow-amber-500/50" />
-            Depósito
-          </span>
-          <span className="flex items-center gap-1.5 text-emerald-300">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block shadow-sm shadow-emerald-500/50" />
-            Cliente
-          </span>
-          {solution.model === 'TSPPD-H_3' && (
-            <>
-              <span className="flex items-center gap-1 text-purple-300">
-                <span className="w-2 h-2 rounded-full bg-purple-400 inline-block shadow-sm shadow-purple-500/50" />
-                P1: Puerta
-              </span>
-              <span className="flex items-center gap-1 text-sky-300">
-                <span className="w-2 h-2 rounded-full bg-sky-400 inline-block shadow-sm shadow-sky-500/50" />
-                P2: Frente
-              </span>
-            </>
-          )}
-          <span className="flex items-center gap-1.5 text-zinc-400">
-            <span className="w-2 h-2 rounded bg-zinc-600 inline-block" />
-            Ruta
-          </span>
+          <h3 className="text-sm font-bold text-white tracking-tight font-sans">
+            Mapa de Ruteo
+          </h3>
         </div>
       </div>
 
@@ -413,32 +400,27 @@ export const RouteCanvas: React.FC<RouteCanvasProps> = ({
         </svg>
       </div>
 
-      {/* Map Footer Status Bar */}
-      <div className="flex items-center justify-between text-xs font-mono text-zinc-400 px-1 pt-1 border-t border-zinc-800/60">
-        <span className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-zinc-500">Estado del camión:</span>
-          <strong className={isArrived ? 'text-emerald-400' : isAtDepotInitial ? 'text-amber-400' : 'text-cyan-400'}>
-            {isAtDepotInitial
-              ? 'Estacionado en Depósito Central (Listo para iniciar ruta)'
-              : isArrived
-              ? `Estacionado en ${solution.nodes[currentTo]?.label || `Nodo ${currentTo}`}`
-              : `En ruta hacia ${solution.nodes[currentTo]?.label || `Nodo ${currentTo}`} (${Math.round(progress * 100)}%)`}
-          </strong>
-          {solution.model === 'TSPPD-H_3' && !isAtDepotInitial && currentTo !== 0 && (
-            <span className={`px-2 py-0.2 rounded-full text-[10px] font-bold border ${
-              getStepPolicyNumber(currentStepData) === 1
-                ? 'bg-purple-500/15 text-purple-300 border-purple-500/40'
-                : 'bg-sky-500/15 text-sky-300 border-sky-500/40'
-            }`}>
-              P{getStepPolicyNumber(currentStepData)} ({getStepPolicyNumber(currentStepData) === 1 ? 's=1' : 's=0'})
-            </span>
-          )}
-        </span>
-        <span className="text-zinc-500 hidden md:inline">
-          {isAtDepotInitial
-            ? 'Listo para iniciar · Depósito Central'
-            : `Paso ${currentStepIndex + 1} de ${steps.length} · Tramo: ${currentStepData.from} → ${currentStepData.to}`}
-        </span>
+      {/* Integrated Route Playback & Progress Controls */}
+      <div className="pt-2 border-t border-zinc-800/80">
+        <PlaybackControls
+          currentStepIndex={currentStepIndex}
+          totalSteps={solution.steps.length}
+          solution={solution}
+          status={playbackStatus}
+          speed={speed}
+          progress={progress}
+          isArrived={isArrived}
+          isContinuousMode={isContinuousMode}
+          onPlay={onPlay}
+          onPause={onPause}
+          onPrev={onPrev}
+          onNext={onNext}
+          onReset={onReset}
+          onSelectStep={onSelectStep}
+          onChangeSpeed={onChangeSpeed}
+          onToggleContinuousMode={onToggleContinuousMode}
+          className="bg-transparent border-0 p-0 shadow-none rounded-none"
+        />
       </div>
     </div>
   );

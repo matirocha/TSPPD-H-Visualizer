@@ -2,6 +2,7 @@ import React from 'react';
 import { Play, Pause, SkipBack, SkipForward, RotateCcw, Zap, Gauge, Layers } from 'lucide-react';
 import { PlaybackStatus, AnimationSpeed, SolutionData } from '../types/solution';
 import { getStepPolicyNumber } from '../lib/policyUtils';
+import { cn } from '../lib/cn';
 
 interface PlaybackControlsProps {
   currentStepIndex: number;
@@ -20,6 +21,7 @@ interface PlaybackControlsProps {
   onSelectStep: (index: number) => void;
   onChangeSpeed: (speed: AnimationSpeed) => void;
   onToggleContinuousMode: (val: boolean) => void;
+  className?: string;
 }
 
 export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
@@ -39,6 +41,7 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
   onSelectStep,
   onChangeSpeed,
   onToggleContinuousMode,
+  className,
 }) => {
   const isPlaying = status === 'playing';
   const isPolicy3 = solution?.model === 'TSPPD-H_3';
@@ -47,7 +50,7 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
   const currentStepPolicy = getStepPolicyNumber(currentStep);
 
   return (
-    <div className="rounded-2xl bg-zinc-950/90 border border-zinc-800/90 p-3 flex flex-col gap-2.5 shadow-xl">
+    <div className={cn("rounded-2xl bg-zinc-950/90 border border-zinc-800/90 p-3 flex flex-col gap-2.5 shadow-xl", className)}>
       {/* Top Row: Playback Buttons & Speeds */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         {/* Main media buttons */}
