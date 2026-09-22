@@ -41,19 +41,32 @@ export const App: React.FC = () => {
   const animRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | null>(null);
 
-  // Handler to switch active model and automatically match the current instance ID
+  // Handler to switch active model and automatically match the current instance ID and customer count
   const handleSelectModel = useCallback(
     (newModel: ModelType) => {
       setActiveModel(newModel);
       const targetId = currentSolution ? currentSolution.instanceId : 1;
+      const targetCustomers = currentSolution ? currentSolution.numCustomers : 10;
       const matchingSolution = solutions.find(
-        (s) => (s.model || 'TSPPD-H') === newModel && s.instanceId === targetId
+        (s) =>
+          (s.model || 'TSPPD-H') === newModel &&
+          s.instanceId === targetId &&
+          (s.numCustomers || 0) === targetCustomers
       );
       if (matchingSolution) {
         setSelectedFilename(matchingSolution.filename);
       } else {
-        const firstMatch = solutions.find((s) => (s.model || 'TSPPD-H') === newModel);
-        if (firstMatch) setSelectedFilename(firstMatch.filename);
+        const fallbackWithCustomers = solutions.find(
+          (s) =>
+            (s.model || 'TSPPD-H') === newModel &&
+            (s.numCustomers || 0) === targetCustomers
+        );
+        if (fallbackWithCustomers) {
+          setSelectedFilename(fallbackWithCustomers.filename);
+        } else {
+          const firstMatch = solutions.find((s) => (s.model || 'TSPPD-H') === newModel);
+          if (firstMatch) setSelectedFilename(firstMatch.filename);
+        }
       }
     },
     [currentSolution, solutions]
@@ -67,7 +80,11 @@ export const App: React.FC = () => {
       const list = await fetchSolutionsList();
       setSolutions(list);
       if (list.length > 0) {
-        setSelectedFilename((prev) => (list.some((s) => s.filename === prev) ? prev : list[0].filename));
+        setSelectedFilename((prev) => {
+          if (list.some((s) => s.filename === prev)) return prev;
+          const preferred10 = list.find((s) => s.numCustomers === 10);
+          return preferred10 ? preferred10.filename : list[0].filename;
+        });
       }
     } catch (err: any) {
       setError(err.message || 'Error al conectar con el servidor para leer Outputs/');

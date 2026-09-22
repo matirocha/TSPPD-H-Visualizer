@@ -96,13 +96,15 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={onOpenSelectorModal}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700/80 hover:border-zinc-600 text-xs font-medium text-zinc-200 hover:text-white transition-all cursor-pointer shadow-xs whitespace-nowrap group"
-            title="Abrir catálogo para cambiar la instancia ID"
+            title="Abrir catálogo para cambiar la instancia ID o cantidad de clientes"
           >
             <Layers className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
             <span className="font-semibold">Explorar Soluciones</span>
             {currentMeta && (
-              <span className="text-[0.6875rem] font-mono px-2 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-300 font-bold border border-emerald-500/30">
-                ID #{currentMeta.instanceId}
+              <span className="flex items-center gap-1 text-[0.6875rem] font-mono px-2 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-300 font-bold border border-emerald-500/30">
+                <span>{currentMeta.numCustomers || 10} Cli</span>
+                <span className="text-emerald-500/60">·</span>
+                <span>ID #{currentMeta.instanceId}</span>
               </span>
             )}
           </button>

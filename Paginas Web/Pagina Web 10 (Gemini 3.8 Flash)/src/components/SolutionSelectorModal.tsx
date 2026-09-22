@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { X, Layers, Check, Sparkles, Route, AlertCircle } from 'lucide-react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { X, Layers, Check, Sparkles, Route, AlertCircle, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { SolutionMeta, ModelType } from '../types/solution';
 import { formatDistance, formatNumber } from '../lib/utils';
@@ -27,16 +27,41 @@ export const SolutionSelectorModal: React.FC<SolutionSelectorModalProps> = ({
 
   const effectiveModel: ModelType = activeModel || currentSolution?.model || 'TSPPD-H';
 
-  // Filter solutions to match the active model/policy
-  const modelSolutions = useMemo(() => {
-    const list = solutions.filter((s) => (s.model || 'TSPPD-H') === effectiveModel);
-    return list.length > 0 ? list : solutions;
-  }, [solutions, effectiveModel]);
+  // Dynamic list of available customer counts across solutions
+  const availableCustomerCounts = useMemo(() => {
+    const counts = new Set<number>();
+    solutions.forEach((s) => {
+      if (s.numCustomers) counts.add(s.numCustomers);
+    });
+    const arr = Array.from(counts).sort((a, b) => a - b);
+    return arr.length > 0 ? arr : [5, 10];
+  }, [solutions]);
 
-  // Sort strictly by instanceId ascending (ID 1 to ID 10)
-  const sortedSolutions = useMemo(() => {
-    return [...modelSolutions].sort((a, b) => (a.instanceId || 0) - (b.instanceId || 0));
-  }, [modelSolutions]);
+  // Selected customer count state (defaults to current solution or highest available)
+  const [selectedCustomers, setSelectedCustomers] = useState<number>(() => {
+    return currentSolution?.numCustomers || 10;
+  });
+
+  // Sync selectedCustomers when currentSolution changes
+  useEffect(() => {
+    if (currentSolution?.numCustomers) {
+      setSelectedCustomers(currentSolution.numCustomers);
+    }
+  }, [currentSolution?.numCustomers]);
+
+  // Filter solutions to match both the active model/policy AND selected customer count
+  const filteredSolutions = useMemo(() => {
+    let list = solutions.filter(
+      (s) =>
+        (s.model || 'TSPPD-H') === effectiveModel &&
+        (s.numCustomers || 0) === selectedCustomers
+    );
+    // Fallback if no exact match for this customer count + model
+    if (list.length === 0) {
+      list = solutions.filter((s) => (s.model || 'TSPPD-H') === effectiveModel);
+    }
+    return list.sort((a, b) => (a.instanceId || 0) - (b.instanceId || 0));
+  }, [solutions, effectiveModel, selectedCustomers]);
 
   if (!isOpen) return null;
 
@@ -51,7 +76,7 @@ export const SolutionSelectorModal: React.FC<SolutionSelectorModalProps> = ({
           className="relative w-full max-w-5xl bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden max-h-[92vh]"
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800/80 bg-zinc-950/60">
+          <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 border-b border-zinc-800/80 bg-zinc-950/60">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-2xl bg-zinc-800 border border-zinc-700 text-emerald-400 shadow-sm">
                 <Layers className="h-5 w-5" />
@@ -82,23 +107,54 @@ export const SolutionSelectorModal: React.FC<SolutionSelectorModalProps> = ({
                   </span>
                 </div>
                 <p className="text-xs text-zinc-400 mt-0.5">
-                  Selecciona fácilmente el <span className="text-zinc-200 font-semibold">ID de la instancia</span> a simular
+                  Selecciona la <span className="text-zinc-200 font-semibold">cantidad de clientes</span> y el <span className="text-zinc-200 font-semibold">ID de instancia</span> a simular
                 </p>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-xl bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-all cursor-pointer"
-              title="Cerrar ventana"
-            >
-              <X className="h-5 w-5" />
-            </button>
+
+            {/* Selector de Cantidad de Clientes (Botón N Clientes) */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center bg-zinc-950/90 border border-zinc-800 rounded-2xl p-1 shadow-inner">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 text-zinc-400 text-xs font-mono font-medium">
+                  <Users className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="hidden sm:inline">Clientes:</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  {availableCustomerCounts.map((count) => {
+                    const isCountActive = selectedCustomers === count;
+                    return (
+                      <motion.button
+                        key={count}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setSelectedCustomers(count)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer select-none ${
+                          isCountActive
+                            ? 'bg-emerald-500 text-zinc-950 shadow-md shadow-emerald-500/20'
+                            : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/80'
+                        }`}
+                      >
+                        {count} Clientes
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <button
+                onClick={onClose}
+                className="p-2 rounded-xl bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-all cursor-pointer"
+                title="Cerrar ventana"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
           </div>
 
           {/* Solutions Grid */}
           <div className="p-6 overflow-y-auto max-h-[68vh]">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
-              {sortedSolutions.map((s) => {
+              {filteredSolutions.map((s) => {
                 const isSelected = s.filename === selectedFilename;
 
                 return (
