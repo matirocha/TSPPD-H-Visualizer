@@ -61,7 +61,7 @@ export const ModelFormulaModal: React.FC<ModelFormulaModalProps> = ({
               }`}
             >
               <span>General</span>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-400">
+              <span className="text-[0.625rem] font-mono px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-400">
                 Ecs. 1-16
               </span>
               {activeModel === 'TSPPD-H' && (
@@ -79,7 +79,7 @@ export const ModelFormulaModal: React.FC<ModelFormulaModalProps> = ({
               }`}
             >
               <span>Pol. 1 (Rear)</span>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-400">
+              <span className="text-[0.625rem] font-mono px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-400">
                 Ecs. 17-25
               </span>
               {activeModel === 'TSPPD-H_1' && (
@@ -97,7 +97,7 @@ export const ModelFormulaModal: React.FC<ModelFormulaModalProps> = ({
               }`}
             >
               <span>Pol. 2 (Front)</span>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-400">
+              <span className="text-[0.625rem] font-mono px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-400">
                 Ecs. 26-27
               </span>
               {activeModel === 'TSPPD-H_2' && (
@@ -115,7 +115,7 @@ export const ModelFormulaModal: React.FC<ModelFormulaModalProps> = ({
               }`}
             >
               <span>Pol. 3 (Híbrida)</span>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-400">
+              <span className="text-[0.625rem] font-mono px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-400">
                 Ecs. 31-48
               </span>
               {activeModel === 'TSPPD-H_3' && (

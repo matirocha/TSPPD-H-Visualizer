@@ -27,11 +27,11 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-xl">
-      <div className="max-w-[1700px] mx-auto px-4 lg:px-6 h-14 flex items-center justify-between gap-4">
+      <div className="max-w-[106.25rem] mx-auto px-4 lg:px-6 h-14 flex items-center justify-between gap-4">
         {/* Brand Title */}
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 p-0.5 shadow-md shadow-emerald-950/40 flex items-center justify-center">
-            <div className="h-full w-full bg-zinc-950 rounded-[10px] flex items-center justify-center">
+            <div className="h-full w-full bg-zinc-950 rounded-[0.625rem] flex items-center justify-center">
               <Truck className="h-4 w-4 text-emerald-400" />
             </div>
           </div>
@@ -48,7 +48,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center bg-zinc-900/90 border border-zinc-700/80 rounded-xl p-0.5 shadow-xs">
             <button
               onClick={() => onSelectModel('TSPPD-H')}
-              className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+              className={`px-2 py-1 rounded-lg text-[0.6875rem] font-semibold transition-all cursor-pointer ${
                 activeModel === 'TSPPD-H'
                   ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-xs'
                   : 'text-zinc-400 hover:text-zinc-200'
@@ -59,7 +59,7 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
             <button
               onClick={() => onSelectModel('TSPPD-H_1')}
-              className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+              className={`px-2 py-1 rounded-lg text-[0.6875rem] font-semibold transition-all cursor-pointer ${
                 activeModel === 'TSPPD-H_1'
                   ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-xs'
                   : 'text-zinc-400 hover:text-zinc-200'
@@ -70,7 +70,7 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
             <button
               onClick={() => onSelectModel('TSPPD-H_2')}
-              className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+              className={`px-2 py-1 rounded-lg text-[0.6875rem] font-semibold transition-all cursor-pointer ${
                 activeModel === 'TSPPD-H_2'
                   ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-xs'
                   : 'text-zinc-400 hover:text-zinc-200'
@@ -81,7 +81,7 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
             <button
               onClick={() => onSelectModel('TSPPD-H_3')}
-              className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+              className={`px-2 py-1 rounded-lg text-[0.6875rem] font-semibold transition-all cursor-pointer ${
                 activeModel === 'TSPPD-H_3'
                   ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40 shadow-xs'
                   : 'text-zinc-400 hover:text-zinc-200'
@@ -101,7 +101,7 @@ export const Header: React.FC<HeaderProps> = ({
             <Layers className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
             <span className="font-semibold">Explorar Soluciones</span>
             {currentMeta && (
-              <span className="text-[11px] font-mono px-2 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-300 font-bold border border-emerald-500/30">
+              <span className="text-[0.6875rem] font-mono px-2 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-300 font-bold border border-emerald-500/30">
                 ID #{currentMeta.instanceId}
               </span>
             )}

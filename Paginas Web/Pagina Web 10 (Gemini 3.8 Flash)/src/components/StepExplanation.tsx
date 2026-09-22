@@ -73,7 +73,7 @@ export const StepExplanation: React.FC<StepExplanationProps> = ({
             <Route className="w-3.5 h-3.5" />
           </div>
           <div>
-            <span className="text-[10px] uppercase font-mono text-zinc-400 block">Distancia</span>
+            <span className="text-[0.625rem] uppercase font-mono text-zinc-400 block">Distancia</span>
             <span className="text-xs font-bold text-zinc-100 font-mono">{formatDistance(currentStep.distance)}</span>
           </div>
         </div>
@@ -84,7 +84,7 @@ export const StepExplanation: React.FC<StepExplanationProps> = ({
             <PackageCheck className="w-3.5 h-3.5" />
           </div>
           <div>
-            <span className="text-[10px] uppercase font-mono text-zinc-400 block">Entrega α</span>
+            <span className="text-[0.625rem] uppercase font-mono text-zinc-400 block">Entrega α</span>
             <span className="text-xs font-bold text-rose-400 font-mono">{currentStep.deliverA} uds</span>
           </div>
         </div>
@@ -95,7 +95,7 @@ export const StepExplanation: React.FC<StepExplanationProps> = ({
             <PackagePlus className="w-3.5 h-3.5" />
           </div>
           <div>
-            <span className="text-[10px] uppercase font-mono text-zinc-400 block">Recolección β</span>
+            <span className="text-[0.625rem] uppercase font-mono text-zinc-400 block">Recolección β</span>
             <span className="text-xs font-bold text-cyan-400 font-mono">{currentStep.pickupB} uds</span>
           </div>
         </div>
@@ -106,7 +106,7 @@ export const StepExplanation: React.FC<StepExplanationProps> = ({
             <AlertCircle className="w-3.5 h-3.5" />
           </div>
           <div>
-            <span className="text-[10px] uppercase font-mono text-zinc-400 block">Handling</span>
+            <span className="text-[0.625rem] uppercase font-mono text-zinc-400 block">Handling</span>
             <span className="text-xs font-bold text-amber-400 font-mono">
               {currentStep.handlingCount} op (+{formatNumber(currentStep.handlingCost, 2)})
             </span>

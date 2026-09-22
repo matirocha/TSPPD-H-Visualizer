@@ -111,7 +111,7 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
         <div className="flex flex-wrap items-center gap-2">
           {/* Speed Selector */}
           <div className="flex items-center gap-1 bg-zinc-900/90 p-0.5 rounded-lg border border-zinc-800 text-xs font-mono">
-            <span className="text-[10px] text-zinc-500 px-1.5 flex items-center gap-1">
+            <span className="text-[0.625rem] text-zinc-500 px-1.5 flex items-center gap-1">
               <Gauge className="w-3 h-3 text-cyan-400" />
               Vel:
             </span>
@@ -119,7 +119,7 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
               <button
                 key={`speed-${s}`}
                 onClick={() => onChangeSpeed(s)}
-                className={`px-1.5 py-0.5 rounded-md text-[11px] transition-all cursor-pointer ${
+                className={`px-1.5 py-0.5 rounded-md text-[0.6875rem] transition-all cursor-pointer ${
                   speed === s
                     ? 'bg-zinc-800 text-emerald-400 font-bold border border-zinc-700 shadow-xs'
                     : 'text-zinc-400 hover:text-zinc-200'
@@ -148,25 +148,25 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
 
       {/* Step Timeline Pills & Transit Progress Bar */}
       <div className="flex flex-col gap-1.5 pt-1.5 border-t border-zinc-800/80">
-        <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400">
+        <div className="flex items-center justify-between text-[0.6875rem] font-mono text-zinc-400">
           <span>Progreso:</span>
           <span>Paso {currentStepIndex + 1} de {totalSteps}</span>
         </div>
 
         {/* Dynamic Policy 3 Active Step Indicator Bar (Ultra compact, no verbose text) */}
         {isPolicy3 && currentStep && (
-          <div className="flex items-center justify-between gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-900/80 border border-zinc-800 text-[11px] font-mono shadow-xs">
+          <div className="flex items-center justify-between gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-900/80 border border-zinc-800 text-[0.6875rem] font-mono shadow-xs">
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] text-zinc-400 font-semibold flex items-center gap-1">
+              <span className="text-[0.625rem] text-zinc-400 font-semibold flex items-center gap-1">
                 <Layers className="w-3 h-3 text-teal-400" />
                 Pol. 3:
               </span>
               {isDepotStep ? (
-                <span className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700 text-[10px] font-medium">
+                <span className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700 text-[0.625rem] font-medium">
                   Depósito
                 </span>
               ) : (
-                <span className={`px-2 py-0.5 rounded text-[10px] font-bold border flex items-center gap-1 ${
+                <span className={`px-2 py-0.5 rounded text-[0.625rem] font-bold border flex items-center gap-1 ${
                   currentStepPolicy === 1
                     ? 'bg-purple-500/20 text-purple-200 border-purple-500/40'
                     : 'bg-sky-500/20 text-sky-200 border-sky-500/40'
@@ -177,7 +177,7 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
               )}
             </div>
 
-            <div className="flex items-center gap-2 text-[10px] text-zinc-500">
+            <div className="flex items-center gap-2 text-[0.625rem] text-zinc-500">
               <span className="text-purple-300 font-semibold">P1 (s=1)</span>
               <span>·</span>
               <span className="text-sky-300 font-semibold">P2 (s=0)</span>
@@ -216,10 +216,10 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
                     : `Paso ${idx + 1}`
                 }
               >
-                <span className={isPolicy3 ? 'text-[10px] leading-tight' : 'text-xs'}>{idx + 1}</span>
+                <span className={isPolicy3 ? 'text-[0.625rem] leading-tight' : 'text-xs'}>{idx + 1}</span>
                 {isPolicy3 && (
                   <span
-                    className={`text-[8px] font-mono font-extrabold uppercase px-1 rounded-[3px] leading-none ${
+                    className={`text-[0.5rem] font-mono font-extrabold uppercase px-1 rounded-[0.1875rem] leading-none ${
                       isCurrent
                         ? isStepDepot
                           ? 'bg-zinc-900/30 text-zinc-900'

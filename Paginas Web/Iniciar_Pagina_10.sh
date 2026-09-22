@@ -19,8 +19,8 @@ fi
 
 # Cambiar al directorio del script y luego a Pagina Web 10
 DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$DIR/Pagina Web 10" || {
-    echo "[ERROR] No se pudo acceder al directorio: $DIR/Pagina Web 10"
+cd "$DIR/Pagina Web 10 (Gemini 3.8 Flash)" || {
+    echo "[ERROR] No se pudo acceder al directorio: $DIR/Pagina Web 10 (Gemini 3.8 Flash)"
     read -n 1 -s -r -p "Presiona cualquier tecla para salir..."
     echo ""
     exit 1

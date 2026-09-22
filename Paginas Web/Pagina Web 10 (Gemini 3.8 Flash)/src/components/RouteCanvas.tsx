@@ -116,7 +116,7 @@ export const RouteCanvas: React.FC<RouteCanvasProps> = ({
           onClick={() => setIsFullscreen(false)}
         />
       )}
-      {isFullscreen && <div className="w-full h-[400px] invisible pointer-events-none" />}
+      {isFullscreen && <div className="w-full h-[25rem] invisible pointer-events-none" />}
       <div
         className={cn(
           "transition-all duration-200 flex flex-col",
@@ -135,7 +135,7 @@ export const RouteCanvas: React.FC<RouteCanvasProps> = ({
               Mapa de Ruteo
             </h3>
             {isFullscreen && (
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
+              <span className="text-[0.625rem] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
                 Pantalla completa
               </span>
             )}
@@ -159,8 +159,8 @@ export const RouteCanvas: React.FC<RouteCanvasProps> = ({
           className={cn(
             "relative w-full bg-zinc-900/50 rounded-xl border border-zinc-800/90 overflow-hidden flex items-center justify-center",
             isFullscreen
-              ? "flex-1 min-h-[460px] max-h-[calc(100vh-210px)] my-2"
-              : "aspect-[16/10] max-h-[295px]"
+              ? "flex-1 min-h-[28.75rem] max-h-[calc(100vh-13.125rem)] my-2"
+              : "aspect-[16/10] max-h-[18.4375rem]"
           )}
         >
         {/* Floating Zoom Button */}

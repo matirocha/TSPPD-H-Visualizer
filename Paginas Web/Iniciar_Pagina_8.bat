@@ -9,7 +9,7 @@ echo   Animacion LIFO + Ruta Optima
 echo ====================================================
 echo.
 
-cd /d "%~dp0Pagina Web 8"
+cd /d "%~dp0Pagina Web 8 (Claude Sonnet)"
 
 if not exist "node_modules" (
     echo [INFO] Instalando dependencias...

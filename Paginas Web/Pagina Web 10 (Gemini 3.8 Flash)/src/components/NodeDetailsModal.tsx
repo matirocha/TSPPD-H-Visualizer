@@ -59,27 +59,27 @@ export const NodeDetailsModal: React.FC<NodeDetailsModalProps> = ({
           {/* Demand metrics */}
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3.5 rounded-2xl bg-rose-950/30 border border-rose-500/30 flex flex-col justify-between">
-              <span className="text-[11px] font-semibold text-rose-300 flex items-center gap-1.5">
+              <span className="text-[0.6875rem] font-semibold text-rose-300 flex items-center gap-1.5">
                 <PackageCheck className="h-4 w-4 text-rose-400" />
                 Entrega Demanda (α)
               </span>
               <span className="text-xl font-bold text-rose-400 mt-2">
                 {node.alpha} unidades
               </span>
-              <span className="text-[10px] text-zinc-400 font-sans mt-0.5">
+              <span className="text-[0.625rem] text-zinc-400 font-sans mt-0.5">
                 {isDepot ? 'Total cargado inicialmente' : 'Descargado en este nodo'}
               </span>
             </div>
 
             <div className="p-3.5 rounded-2xl bg-cyan-950/30 border border-cyan-500/30 flex flex-col justify-between">
-              <span className="text-[11px] font-semibold text-cyan-300 flex items-center gap-1.5">
+              <span className="text-[0.6875rem] font-semibold text-cyan-300 flex items-center gap-1.5">
                 <PackagePlus className="h-4 w-4 text-cyan-400" />
                 Recolección Demanda (β)
               </span>
               <span className="text-xl font-bold text-cyan-400 mt-2">
                 {node.beta} unidades
               </span>
-              <span className="text-[10px] text-zinc-400 font-sans mt-0.5">
+              <span className="text-[0.625rem] text-zinc-400 font-sans mt-0.5">
                 {isDepot ? 'Total retornado al finalizar' : 'Recolectado de este cliente'}
               </span>
             </div>

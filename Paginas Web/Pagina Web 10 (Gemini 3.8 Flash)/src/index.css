@@ -6,6 +6,18 @@
     --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
 
+  /* Escalado fluido: toda la UI está en rem, así que ajustar el tamaño raíz
+     escala la página completa. Base de diseño: ventana 1440x820 (MacBook) → 16px.
+     Se usa el menor entre ancho y alto para que siempre quepa en pantalla. */
+  html {
+    font-size: 16px;
+  }
+  @media (min-width: 1024px) {
+    html {
+      font-size: clamp(12px, min(1.1111vw, 1.95vh), 30px);
+    }
+  }
+
   body {
     font-family: var(--font-sans);
     background-color: #09090b;

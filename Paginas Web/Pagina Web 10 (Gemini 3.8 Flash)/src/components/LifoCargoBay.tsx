@@ -791,7 +791,7 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
           onClick={() => setIsFullscreen(false)}
         />
       )}
-      {isFullscreen && <div className="w-full h-[400px] invisible pointer-events-none" />}
+      {isFullscreen && <div className="w-full h-[25rem] invisible pointer-events-none" />}
       <div
         className={cn(
           "w-full transition-all duration-200 flex flex-col shadow-xl",
@@ -810,10 +810,10 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
               <h2 className="font-bold text-sm text-zinc-100 flex items-center gap-1.5">
                 Compartimiento LIFO
               </h2>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 border border-zinc-700">
+              <span className="text-[0.625rem] font-mono px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 border border-zinc-700">
                 Q={capacity}
               </span>
-              <span className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full border ${
+              <span className={`text-[0.625rem] font-mono font-semibold px-2 py-0.5 rounded-full border ${
                 solution.model === 'TSPPD-H_1'
                   ? 'bg-purple-500/15 text-purple-300 border-purple-500/30'
                   : solution.model === 'TSPPD-H_2'
@@ -837,7 +837,7 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
                   : 'General'}
               </span>
               {isFullscreen && (
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">
+                <span className="text-[0.625rem] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">
                   Pantalla completa
                 </span>
               )}
@@ -864,7 +864,7 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
                   <button
                     key={`substep-btn-${sDef.id}`}
                     onClick={() => setSubStep(sDef.id)}
-                    className={`px-2 py-0.5 rounded-md text-[11px] font-mono font-medium transition-all cursor-pointer flex items-center gap-1 ${
+                    className={`px-2 py-0.5 rounded-md text-[0.6875rem] font-mono font-medium transition-all cursor-pointer flex items-center gap-1 ${
                       isCurrent
                         ? 'bg-zinc-100 text-zinc-950 font-bold shadow-xs'
                         : isDone
@@ -932,13 +932,13 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
             {isAtDepotInitial ? 'Depósito Central' : destinationNode.label}
           </span>
           <span className="text-zinc-600">|</span>
-          <span className="text-zinc-400 font-mono text-[11px]">
+          <span className="text-zinc-400 font-mono text-[0.6875rem]">
             {isAtDepotInitial ? 'Inicio' : `Paso ${currentStepIndex + 1}/${solution.steps.length}`}
           </span>
           {isPolicy3 && !isDepot && !isAtDepotInitial && (
             <>
               <span className="text-zinc-600">|</span>
-              <span className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold border ${
+              <span className={`px-2 py-0.5 rounded-md text-[0.625rem] font-mono font-bold border ${
                 stepPolicy === 1
                   ? 'bg-purple-500/20 text-purple-200 border-purple-500/40'
                   : 'bg-sky-500/20 text-sky-200 border-sky-500/40'
@@ -950,7 +950,7 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
         </div>
 
         {/* Live Inventory Badges */}
-        <div className="flex items-center gap-2 font-mono text-[11px]">
+        <div className="flex items-center gap-2 font-mono text-[0.6875rem]">
           <span className="flex items-center gap-1 text-rose-300 font-semibold">
             <span className="w-2 h-2 rounded-full bg-rose-500" />
             α: {alphaInBay}
@@ -968,17 +968,17 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
       {/* 3. Physical Cargo Bay Container (Compact Grid, expands in fullscreen) */}
       <div className={cn("relative bg-zinc-900/50 rounded-xl border border-zinc-800/90 p-2.5 pt-6 shadow-inner", isFullscreen && "flex-1 flex flex-col justify-center")}>
         {/* Door & Cab Labels */}
-        <div className="absolute top-1.5 left-2.5 flex items-center gap-1 text-[9px] uppercase font-bold text-amber-400 font-mono">
+        <div className="absolute top-1.5 left-2.5 flex items-center gap-1 text-[0.5625rem] uppercase font-bold text-amber-400 font-mono">
           <DoorClosed className="w-3 h-3" />
           <span>Puerta (Slot 1)</span>
         </div>
 
-        <div className="absolute top-1.5 right-2.5 flex items-center gap-1 text-[9px] uppercase font-bold text-zinc-500 font-mono">
+        <div className="absolute top-1.5 right-2.5 flex items-center gap-1 text-[0.5625rem] uppercase font-bold text-zinc-500 font-mono">
           <span>Cabina / Fondo (Slot {capacity})</span>
           <div className="w-1.5 h-1.5 rounded-full bg-zinc-600" />
         </div>
 
-        {/* Slot Grid: High Density (h-10 to h-11 per cell, min-h-[40px], expands in fullscreen) */}
+        {/* Slot Grid: High Density (h-10 to h-11 per cell, min-h-[2.5rem], expands in fullscreen) */}
         <div className={cn("grid grid-cols-8 py-1", isFullscreen ? "gap-2.5 my-auto" : "gap-1.5")}>
           {Array.from({ length: capacity }, (_, idx) => {
             const slotNum = idx + 1;
@@ -1018,7 +1018,7 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
                 onClick={() => setSelectedSlotIdx(isSelected ? null : slotNum)}
                 className={cn(
                   "relative rounded-lg p-1.5 flex flex-col items-center justify-between border transition-all duration-200 cursor-pointer select-none",
-                  isFullscreen ? "min-h-[72px] max-h-[90px]" : "min-h-[40px] max-h-[46px]",
+                  isFullscreen ? "min-h-[4.5rem] max-h-[5.625rem]" : "min-h-[2.5rem] max-h-[2.875rem]",
                   isDeliveringExiting || isDepotUnloading
                     ? 'bg-rose-950/80 border-rose-400 text-white ring-2 ring-rose-500/60 shadow-md shadow-rose-950/60 scale-102 z-10'
                     : isHandlingExiting
@@ -1037,16 +1037,16 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
                 title={`Slot #${slotNum}: ${slotContent === 'A' ? 'Mercancía α' : slotContent === 'B' ? 'Mercancía β' : 'Vacío'}`}
               >
                 {/* Slot index tag */}
-                <div className={cn("w-full flex items-center justify-between font-mono text-zinc-500", isFullscreen ? "text-[10px]" : "text-[8px]")}>
+                <div className={cn("w-full flex items-center justify-between font-mono text-zinc-500", isFullscreen ? "text-[0.625rem]" : "text-[0.5rem]")}>
                   <span>#{slotNum}</span>
                   {isDeliveringExiting || isDepotUnloading ? (
-                    <span className={cn("text-rose-300 font-bold", isFullscreen ? "text-[8px]" : "text-[7px]")}>SALE</span>
+                    <span className={cn("text-rose-300 font-bold", isFullscreen ? "text-[0.5rem]" : "text-[0.4375rem]")}>SALE</span>
                   ) : isHandlingExiting ? (
-                    <span className={cn("text-amber-300 font-bold", isFullscreen ? "text-[8px]" : "text-[7px]")}>EVAC</span>
+                    <span className={cn("text-amber-300 font-bold", isFullscreen ? "text-[0.5rem]" : "text-[0.4375rem]")}>EVAC</span>
                   ) : isHandlingEntering ? (
-                    <span className={cn("text-emerald-300 font-bold", isFullscreen ? "text-[8px]" : "text-[7px]")}>ENTRA</span>
+                    <span className={cn("text-emerald-300 font-bold", isFullscreen ? "text-[0.5rem]" : "text-[0.4375rem]")}>ENTRA</span>
                   ) : isLoadingEntering ? (
-                    <span className={cn("text-cyan-300 font-bold", isFullscreen ? "text-[8px]" : "text-[7px]")}>ENTRA</span>
+                    <span className={cn("text-cyan-300 font-bold", isFullscreen ? "text-[0.5rem]" : "text-[0.4375rem]")}>ENTRA</span>
                   ) : null}
                 </div>
 
@@ -1063,7 +1063,7 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
                         className="flex items-center justify-center gap-0.5"
                       >
                         <Box className={cn(isFullscreen ? "w-4 h-4" : "w-3.5 h-3.5", isHandlingExiting ? 'text-amber-300' : isHandlingEntering ? 'text-emerald-300' : isDeliveringExiting ? 'text-rose-300' : 'text-rose-400')} />
-                        <span className={cn("font-mono font-bold leading-none", isFullscreen ? "text-xs" : "text-[9px]")}>α</span>
+                        <span className={cn("font-mono font-bold leading-none", isFullscreen ? "text-xs" : "text-[0.5625rem]")}>α</span>
                       </motion.div>
                     ) : isBeta ? (
                       <motion.div
@@ -1075,10 +1075,10 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
                         className="flex items-center justify-center gap-0.5"
                       >
                         <Package className={cn(isFullscreen ? "w-4 h-4" : "w-3.5 h-3.5", isHandlingExiting ? 'text-amber-300' : isHandlingEntering ? 'text-emerald-300' : isLoadingEntering ? 'text-cyan-300' : 'text-cyan-400')} />
-                        <span className={cn("font-mono font-bold leading-none", isFullscreen ? "text-xs" : "text-[9px]")}>β</span>
+                        <span className={cn("font-mono font-bold leading-none", isFullscreen ? "text-xs" : "text-[0.5625rem]")}>β</span>
                       </motion.div>
                     ) : (
-                      <span className={cn("text-zinc-600 font-mono", isFullscreen ? "text-[10px]" : "text-[8px]")}>—</span>
+                      <span className={cn("text-zinc-600 font-mono", isFullscreen ? "text-[0.625rem]" : "text-[0.5rem]")}>—</span>
                     )}
                   </AnimatePresence>
                 </div>
@@ -1089,13 +1089,13 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
 
         {/* Temporary Staging / Andén Pill (Only visible when items are outside on dock) */}
         {dockItems && (
-          <div className="mt-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 font-mono text-[10px] flex items-center justify-between gap-2 animate-pulse">
+          <div className="mt-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 font-mono text-[0.625rem] flex items-center justify-between gap-2 animate-pulse">
             <span className="flex items-center gap-1.5 font-bold">
               <RotateCcw className="w-3 h-3 text-amber-400" />
               <span>Andén Exterior:</span>
               <span className="font-normal">{dockItems.label}</span>
             </span>
-            <span className="text-[9px] font-semibold bg-amber-500/20 px-1.5 py-0.2 rounded">
+            <span className="text-[0.5625rem] font-semibold bg-amber-500/20 px-1.5 py-0.2 rounded">
               Temporal ({dockItems.type})
             </span>
           </div>
@@ -1104,7 +1104,7 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
         {/* Selected Slot Inspector (Subtle bottom bar) */}
         {selectedSlotIdx !== null && (
           <div className="mt-1.5 px-2 py-1 rounded-lg bg-zinc-950 border border-zinc-700 text-xs flex items-center justify-between">
-            <span className="text-[11px] text-zinc-300">
+            <span className="text-[0.6875rem] text-zinc-300">
               <strong className="text-emerald-400 font-mono mr-1">Slot #{selectedSlotIdx}:</strong>
               {displaySlots[selectedSlotIdx - 1] === 'A'
                 ? 'Mercancía de entrega α'
@@ -1114,7 +1114,7 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
             </span>
             <button
               onClick={() => setSelectedSlotIdx(null)}
-              className="text-[10px] text-zinc-400 hover:text-white px-1.5 py-0.2 rounded bg-zinc-800 cursor-pointer"
+              className="text-[0.625rem] text-zinc-400 hover:text-white px-1.5 py-0.2 rounded bg-zinc-800 cursor-pointer"
             >
               Cerrar
             </button>
@@ -1168,11 +1168,11 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
                 <span className="text-xs font-bold text-zinc-200">
                   {currentSubStepDef.title}
                 </span>
-                <span className="text-[10px] font-mono text-zinc-500">
+                <span className="text-[0.625rem] font-mono text-zinc-500">
                   (Sub-paso {subStep}/{totalSubSteps})
                 </span>
               </div>
-              <p className="text-[11px] text-zinc-300 mt-0.5 leading-tight">
+              <p className="text-[0.6875rem] text-zinc-300 mt-0.5 leading-tight">
                 {currentSubStepDef.statusText}
               </p>
             </div>
@@ -1182,7 +1182,7 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
           {currentStep.explanation && (
             <button
               onClick={() => setShowExtendedExplanation((prev) => !prev)}
-              className="text-[10px] font-mono text-zinc-400 hover:text-zinc-200 px-2 py-0.5 rounded bg-zinc-800/80 hover:bg-zinc-800 border border-zinc-700/60 cursor-pointer flex items-center gap-1 shrink-0"
+              className="text-[0.625rem] font-mono text-zinc-400 hover:text-zinc-200 px-2 py-0.5 rounded bg-zinc-800/80 hover:bg-zinc-800 border border-zinc-700/60 cursor-pointer flex items-center gap-1 shrink-0"
               title="Alternar detalle extendido"
             >
               <FileText className="w-3 h-3 text-cyan-400" />
@@ -1203,7 +1203,7 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
         )}
 
         {/* Concise Operations Summary Badges (Micro-KPIs for this stop) */}
-        <div className="pt-1.5 border-t border-zinc-800/70 flex flex-wrap items-center justify-between gap-1.5 text-[11px] font-mono">
+        <div className="pt-1.5 border-t border-zinc-800/70 flex flex-wrap items-center justify-between gap-1.5 text-[0.6875rem] font-mono">
           <div className="flex items-center gap-2">
             <span className="px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/20 text-rose-300 font-semibold">
               Entrega: {isDepot ? `${arrivalSlots.filter((s) => s === 'B').length} uds β` : `${deliverA} uds α`}
@@ -1220,7 +1220,7 @@ export const LifoCargoBay: React.FC<LifoCargoBayProps> = ({
                 Handling: {handlingCount} ops (+{formatNumber(currentStep.handlingCost, 2)})
               </span>
             ) : (
-              <span className="text-[10px] text-zinc-500">
+              <span className="text-[0.625rem] text-zinc-500">
                 Sin penalización LIFO ($0.00)
               </span>
             )}

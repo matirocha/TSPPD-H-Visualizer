@@ -4,7 +4,7 @@ echo ===================================================
 echo   Iniciando TSPPD-H Visualizador - Pagina Web 3
 echo ===================================================
 echo.
-cd /d "%~dp0Pagina Web 3"
+cd /d "%~dp0Pagina Web 3 (Gemini Flash 3.7)"
 
 if not exist "node_modules\" (
     echo [INFO] Instalando dependencias de Node.js...

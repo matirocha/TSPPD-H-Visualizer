@@ -129,12 +129,12 @@ export const SolutionSelectorModal: React.FC<SolutionSelectorModalProps> = ({
                       </span>
 
                       {isSelected ? (
-                        <span className="flex items-center gap-1 text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                        <span className="flex items-center gap-1 text-[0.6875rem] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
                           <Check className="h-3 w-3" />
                           Activa
                         </span>
                       ) : (
-                        <span className="text-[11px] font-mono text-zinc-500 group-hover:text-emerald-400 transition-colors flex items-center gap-1">
+                        <span className="text-[0.6875rem] font-mono text-zinc-500 group-hover:text-emerald-400 transition-colors flex items-center gap-1">
                           Elegir &rarr;
                         </span>
                       )}
@@ -142,7 +142,7 @@ export const SolutionSelectorModal: React.FC<SolutionSelectorModalProps> = ({
 
                     {/* Objective Value (Z*) */}
                     <div className="bg-zinc-900/90 rounded-xl p-3 border border-zinc-800/80 mb-3">
-                      <div className="flex items-center justify-between text-[10px] font-mono text-zinc-400 mb-1">
+                      <div className="flex items-center justify-between text-[0.625rem] font-mono text-zinc-400 mb-1">
                         <span className="flex items-center gap-1">
                           <Sparkles className="h-3 w-3 text-emerald-400" />
                           Costo (Z*):
@@ -155,7 +155,7 @@ export const SolutionSelectorModal: React.FC<SolutionSelectorModalProps> = ({
                     </div>
 
                     {/* Metrics: Distancia & Handling */}
-                    <div className="space-y-1 text-[11px] font-mono pt-2 border-t border-zinc-800/80">
+                    <div className="space-y-1 text-[0.6875rem] font-mono pt-2 border-t border-zinc-800/80">
                       <div className="flex items-center justify-between text-zinc-400">
                         <span className="flex items-center gap-1 text-zinc-400">
                           <Route className="h-3 w-3 text-cyan-400" />
@@ -185,7 +185,7 @@ export const SolutionSelectorModal: React.FC<SolutionSelectorModalProps> = ({
                     </div>
 
                     {/* Instance Specs */}
-                    <div className="mt-2.5 pt-1.5 border-t border-zinc-800/60 flex items-center justify-between text-[9px] font-mono text-zinc-500">
+                    <div className="mt-2.5 pt-1.5 border-t border-zinc-800/60 flex items-center justify-between text-[0.5625rem] font-mono text-zinc-500">
                       <span>Q = {s.capacity}</span>
                       <span>h = {s.h}</span>
                     </div>

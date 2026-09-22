@@ -248,7 +248,7 @@ export const App: React.FC = () => {
       />
 
       {/* Main Workspace */}
-      <main className="flex-1 max-w-[1700px] w-full mx-auto px-4 py-3 lg:px-6 lg:py-3.5 space-y-3">
+      <main className="flex-1 max-w-[106.25rem] w-full mx-auto px-4 py-3 lg:px-6 lg:py-3.5 space-y-3">
         {/* Error Alert */}
         {error && (
           <div className="p-3 rounded-xl bg-rose-950/60 border border-rose-500/50 text-rose-200 flex items-center justify-between shadow-lg">

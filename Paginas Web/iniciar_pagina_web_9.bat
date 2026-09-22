@@ -2,7 +2,7 @@
 chcp 65001 >nul
 title TSPPD-H Visualizador - Pagina Web 9
 
-cd /d "%~dp0Pagina Web 9"
+cd /d "%~dp0Pagina Web 9 (Gemini 3.7 Flash)"
 
 if not exist "node_modules" (
     echo [INFO] Instalando dependencias...
