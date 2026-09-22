@@ -21,7 +21,7 @@ if sys.stderr and hasattr(sys.stderr, 'reconfigure'):
 # =====================================================================
 # CONFIGURACIÓN DE PARÁMETROS DE EJECUCIÓN (MODIFICABLE AQUÍ)
 # =====================================================================
-NUM_CUSTOMERS = 5      # Número de clientes a resolver (e.g. 5, 10, 15, 20, 50)
+NUM_CUSTOMERS = 10      # Número de clientes a resolver (e.g. 5, 10, 15, 20, 50)
 INSTANCE_ID = 1        # ID de la instancia de datos (1 a 10)
 H_VALUE = 0.1          # Costo unitario de manipulación h (default: 0.1)
 

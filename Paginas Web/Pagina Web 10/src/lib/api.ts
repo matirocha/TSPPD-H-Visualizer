@@ -31,7 +31,7 @@ export async function fetchSolutionsList(): Promise<SolutionMeta[]> {
           }
           return {
             ...s,
-            model: s.model || modelType,
+            model: (isH1 || isH2 || isH3) ? modelType : (s.model || modelType),
             modelName: s.modelName || defaultName,
             policy: s.policy ?? pol,
           };

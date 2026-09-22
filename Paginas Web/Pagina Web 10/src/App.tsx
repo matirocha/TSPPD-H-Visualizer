@@ -364,6 +364,7 @@ export const App: React.FC = () => {
           if (picked?.model && picked.model !== activeModel) {
             setActiveModel(picked.model);
           }
+          setIsSelectorOpen(false);
         }}
       />
 
