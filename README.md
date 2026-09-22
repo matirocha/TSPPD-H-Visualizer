@@ -1,33 +1,50 @@
 # TSPPD-H Visualizer & Solver 🚚📦
 ### Visualización Interactiva del Problema del Viajante de Comercio con Recogidas, Entregas y Costos de Manipulación
 
-[![Paper: Battarra et al. 2010](https://img.shields.io/badge/Paper-Battarra_et_al._2010-blue.svg)](file:///Users/carrascote/Documents/matirocha/Taller-de-investigacion/papers/battarra2010.pdf)
-[![Frontend: React 19](https://img.shields.io/badge/Frontend-React_19_+_Vite-61dafb.svg)](file:///Users/carrascote/Documents/matirocha/Taller-de-investigacion/Paginas%20Web/Pagina%20Web%2010)
-[![Styling: Tailwind CSS v4](https://img.shields.io/badge/Styling-Tailwind_CSS_v4-38bdf8.svg)](file:///Users/carrascote/Documents/matirocha/Taller-de-investigacion/Paginas%20Web/Pagina%20Web%2010)
-[![Solver: Gurobi Optimizer](https://img.shields.io/badge/Solver-Gurobi_Python-red.svg)](file:///Users/carrascote/Documents/matirocha/Taller-de-investigacion/notebooks)
-[![Dataset: e__vigo Benchmark](https://img.shields.io/badge/Dataset-e__vigo_Benchmark-orange.svg)](file:///Users/carrascote/Documents/matirocha/Taller-de-investigacion/e_vigo)
+[![Vercel Deployment](https://img.shields.io/badge/Demo_Online-tsppd--h--visualizer.vercel.app-000000?style=for-the-badge&logo=vercel)](https://tsppd-h-visualizer.vercel.app/)
+[![Paper: Battarra et al. 2010](https://img.shields.io/badge/Paper-Battarra_et_al._2010-blue.svg)](file:///Users/carrascote/Documents/matirocha/TSPPD-H%20Visualizer/papers/battarra2010.pdf)
+[![Frontend: React 19](https://img.shields.io/badge/Frontend-React_19_+_Vite-61dafb.svg)](file:///Users/carrascote/Documents/matirocha/TSPPD-H%20Visualizer/Paginas%20Web/Pagina%20Web%2010)
+[![Styling: Tailwind CSS v4](https://img.shields.io/badge/Styling-Tailwind_CSS_v4-38bdf8.svg)](file:///Users/carrascote/Documents/matirocha/TSPPD-H%20Visualizer/Paginas%20Web/Pagina%20Web%2010)
+[![Solver: Gurobi Optimizer](https://img.shields.io/badge/Solver-Gurobi_Python-red.svg)](file:///Users/carrascote/Documents/matirocha/TSPPD-H%20Visualizer/notebooks)
+[![Dataset: e__vigo Benchmark](https://img.shields.io/badge/Dataset-e__vigo_Benchmark-orange.svg)](file:///Users/carrascote/Documents/matirocha/TSPPD-H%20Visualizer/e_vigo)
 
-Este repositorio contiene la implementación matemática, resolución exacta y visualización interactiva paso a paso del **Problema del Viajante de Comercio con Recogidas, Entregas y Costos de Manipulación (TSPPD-H)** (*Traveling Salesman Problem with Pickups, Deliveries, and Handling Costs*).
+> 🚀 **Demo en Producción (Vercel):**  
+> Puedes interactuar directamente con la visualización oficial (**Página Web 10**) sin necesidad de instalar dependencias locales ingresando a:  
+> 👉 **[https://tsppd-h-visualizer.vercel.app/](https://tsppd-h-visualizer.vercel.app/)**
+
+---
+
+Este repositorio contiene la formulación matemática, resolución exacta y visualización interactiva paso a paso del **Problema del Viajante de Comercio con Recogidas, Entregas y Costos de Manipulación (TSPPD-H)** (*Traveling Salesman Problem with Pickups, Deliveries, and Handling Costs*).
 
 El proyecto se fundamenta directamente en el artículo seminal:
 > **Battarra, R., Erdoğan, G., & Vigo, D. (2010).**  
 > *"The Traveling Salesman Problem with Pickups, Deliveries, and Handling Costs."*  
 > **Transportation Science**, 44(3), pp. 383–399.  
-> Documento PDF disponible en: [`papers/battarra2010.pdf`](file:///Users/carrascote/Documents/matirocha/Taller-de-investigacion/papers/battarra2010.pdf).
+> Documento PDF disponible en: [`papers/battarra2010.pdf`](file:///Users/carrascote/Documents/matirocha/TSPPD-H%20Visualizer/papers/battarra2010.pdf).
 
 ---
 
 ## 📑 Tabla de Contenidos
 
-1. [Descripción del Problema (TSPPD-H)](#-descripción-del-problema-tsppd-h)
-2. [Modelos y Políticas Implementadas](#-modelos-y-políticas-implementadas)
-3. [Instancias y Datos del Paper (`e_vigo`)](#-instancias-y-datos-del-paper-e_vigo)
-4. [Solución con Gurobi y Generación de Datos (`notebooks`)](#-solución-con-gurobi-y-generación-de-datos-notebooks)
-5. [Visualizador Oficial: Página Web 10](#-visualizador-oficial-página-web-10)
-6. [Páginas Web Experimentales (1 al 9 y 11)](#-páginas-web-experimentales-1-al-9-y-11)
-7. [Guía de Instalación y Ejecución](#-guía-de-instalación-y-ejecución)
-8. [Estructura del Proyecto](#-estructura-del-proyecto)
-9. [Referencias](#-referencias)
+1. [Demostración en Línea (Vercel)](#-demostración-en-línea-vercel)
+2. [Descripción del Problema (TSPPD-H)](#-descripción-del-problema-tsppd-h)
+3. [Modelos y Políticas Implementadas](#-modelos-y-políticas-implementadas)
+4. [Instancias y Datos del Paper (`e_vigo`)](#-instancias-y-datos-del-paper-e_vigo)
+5. [Solución con Gurobi y Generación de Datos (`notebooks`)](#-solución-con-gurobi-y-generación-de-datos-notebooks)
+6. [Visualizador Oficial: Página Web 10](#-visualizador-oficial-página-web-10)
+7. [Páginas Web Experimentales (1 al 9 y 11)](#-páginas-web-experimentales-1-al-9-y-11)
+8. [Guía de Instalación y Ejecución](#-guía-de-instalación-y-ejecución)
+9. [Estructura del Proyecto](#-estructura-del-proyecto)
+10. [Referencias](#-referencias)
+
+---
+
+## 🌐 Demostración en Línea (Vercel)
+
+El visualizador está desplegado en Vercel con integración continua y acceso global:
+
+* **URL del Despliegue:** [https://tsppd-h-visualizer.vercel.app/](https://tsppd-h-visualizer.vercel.app/)
+* **Contenido Incluido:** Las 40 soluciones precalculadas de `Outputs/` empaquetadas en cliente, selector dinámico de instancias (ID 1 al 10), comparación entre las cuatro variantes (Modelo General, Políticas 1, 2 y 3), visualización LIFO animada y modal de fórmulas matemáticas.
 
 ---
 
@@ -51,10 +68,10 @@ El proyecto implementa y visualiza con exactitud matemática el modelo general y
 
 | Modelo / Política | Ecuaciones del Paper | Descripción Operativa en la Bahía de Carga | Script Solver |
 | :--- | :--- | :--- | :--- |
-| **Modelo General** | Ecs. (1)–(16) | Modela la posición exacta (slot por slot) de cada ítem en el camión. Optimiza globalmente el orden de carga, descarga y reordenamiento. | [`notebooks/tsppd_h_gurobi.py`](file:///Users/carrascote/Documents/matirocha/Taller-de-investigacion/notebooks/tsppd_h_gurobi.py) |
-| **Política 1 (TSPPD-H₁)** | Ecs. (17)–(25) | **Patrón $[F, a, \dots, a, b, \dots, b, R]$**: Las mercancías recogidas ($b$) se colocan siempre cerca de la puerta trasera. Al entregar $a$, se deben descargar y recargar todas las $b$ que obstruyen el paso. | [`notebooks/tsppd_h_1_gurobi.py`](file:///Users/carrascote/Documents/matirocha/Taller-de-investigacion/notebooks/tsppd_h_1_gurobi.py) |
-| **Política 2 (TSPPD-H₂)** | Ecs. (26)–(30) | **Patrón $[F, b, \dots, b, a, \dots, a, R]$**: En cada cliente con recogida, se descargan temporalmente todas las entregas $a$ a bordo para ubicar las nuevas $b$ en el fondo del camión, volviendo a cargar las $a$. Elimina obstrucciones en entregas posteriores. | [`notebooks/tsppd_h_2_gurobi.py`](file:///Users/carrascote/Documents/matirocha/Taller-de-investigacion/notebooks/tsppd_h_2_gurobi.py) |
-| **Política 3 (TSPPD-H₃)** | Ecs. (31)–(48) | **Patrón $[F, b, \dots, a, \dots, b, R]$**: Política híbrida y adaptativa. En cada cliente el conductor decide dinámicamente si aplicar la Política 1 o la Política 2, formando hasta 3 bloques de carga para minimizar manipulaciones innecesarias. | [`notebooks/tsppd_h_3_gurobi.py`](file:///Users/carrascote/Documents/matirocha/Taller-de-investigacion/notebooks/tsppd_h_3_gurobi.py) |
+| **Modelo General** | Ecs. (1)–(16) | Modela la posición exacta (slot por slot) de cada ítem en el camión. Optimiza globalmente el orden de carga, descarga y reordenamiento. | [`notebooks/tsppd_h_gurobi.py`](file:///Users/carrascote/Documents/matirocha/TSPPD-H%20Visualizer/notebooks/tsppd_h_gurobi.py) |
+| **Política 1 (TSPPD-H₁)** | Ecs. (17)–(25) | **Patrón $[F, a, \dots, a, b, \dots, b, R]$**: Las mercancías recogidas ($b$) se colocan siempre cerca de la puerta trasera. Al entregar $a$, se deben descargar y recargar todas las $b$ que obstruyen el paso. | [`notebooks/tsppd_h_1_gurobi.py`](file:///Users/carrascote/Documents/matirocha/TSPPD-H%20Visualizer/notebooks/tsppd_h_1_gurobi.py) |
+| **Política 2 (TSPPD-H₂)** | Ecs. (26)–(30) | **Patrón $[F, b, \dots, b, a, \dots, a, R]$**: En cada cliente con recogida, se descargan temporalmente todas las entregas $a$ a bordo para ubicar las nuevas $b$ en el fondo del camión, volviendo a cargar las $a$. Elimina obstrucciones en entregas posteriores. | [`notebooks/tsppd_h_2_gurobi.py`](file:///Users/carrascote/Documents/matirocha/TSPPD-H%20Visualizer/notebooks/tsppd_h_2_gurobi.py) |
+| **Política 3 (TSPPD-H₃)** | Ecs. (31)–(48) | **Patrón $[F, b, \dots, a, \dots, b, R]$**: Política híbrida y adaptativa. En cada cliente el conductor decide dinámicamente si aplicar la Política 1 o la Política 2, formando hasta 3 bloques de carga para minimizar manipulaciones innecesarias. | [`notebooks/tsppd_h_3_gurobi.py`](file:///Users/carrascote/Documents/matirocha/TSPPD-H%20Visualizer/notebooks/tsppd_h_3_gurobi.py) |
 
 > **Nota:** La formulación matemática detallada de cada política con variables de flujo ($y_{ij}, z_{ij}$), variables de precedencia ($w_{ij}, u_i$) y restricciones de capacidad se encuentra documentada e interactiva dentro del visualizador web en el modal de fórmulas matemáticas.
 
@@ -62,20 +79,20 @@ El proyecto implementa y visualiza con exactitud matemática el modelo general y
 
 ## 📂 Instancias y Datos del Paper (`e_vigo`)
 
-Las instancias de prueba utilizadas corresponden al benchmark estándar de Vigo / Hernández-Pérez & Salazar-González referenciadas en el paper, ubicadas en el directorio [`e_vigo/`](file:///Users/carrascote/Documents/matirocha/Taller-de-investigacion/e_vigo):
+Las instancias de prueba utilizadas corresponden al benchmark estándar de Vigo / Hernández-Pérez & Salazar-González referenciadas en el paper, ubicadas en el directorio [`e_vigo/`](file:///Users/carrascote/Documents/matirocha/TSPPD-H%20Visualizer/e_vigo):
 
-- **[`e_vigo/edati.dat`](file:///Users/carrascote/Documents/matirocha/Taller-de-investigacion/e_vigo/edati.dat)**: Contiene los datos nodales de las instancias (identificador, tamaño de clientes $n$, coordenadas cartesianas, demandas de entrega $\alpha_i$ y demandas de recogida $\beta_i$).
-- **[`e_vigo/ecosti.dat`](file:///Users/carrascote/Documents/matirocha/Taller-de-investigacion/e_vigo/ecosti.dat)**: Matrices simétricas de costos y distancias euclidianas $c_{ij}$ precalculadas para cada par de nodos.
-- **[`Instancias/`](file:///Users/carrascote/Documents/matirocha/Taller-de-investigacion/Instancias)**: Instancias formateadas en estándar TSPLIB (`.tsp`) con tamaños de 20, 40, 60, 80 y 100 clientes.
-- **[`Instancias Generadas por IA/`](file:///Users/carrascote/Documents/matirocha/Taller-de-investigacion/Instancias%20Generadas%20por%20IA)**: Instancias sintéticas adicionales de 2 a 15 clientes para verificación rápida y pruebas de estrés de los modelos.
+- **[`e_vigo/edati.dat`](file:///Users/carrascote/Documents/matirocha/TSPPD-H%20Visualizer/e_vigo/edati.dat)**: Contiene los datos nodales de las instancias (identificador, tamaño de clientes $n$, coordenadas cartesianas, demandas de entrega $\alpha_i$ y demandas de recogida $\beta_i$).
+- **[`e_vigo/ecosti.dat`](file:///Users/carrascote/Documents/matirocha/TSPPD-H%20Visualizer/e_vigo/ecosti.dat)**: Matrices simétricas de costos y distancias euclidianas $c_{ij}$ precalculadas para cada par de nodos.
+- **[`Instancias/`](file:///Users/carrascote/Documents/matirocha/TSPPD-H%20Visualizer/Instancias)**: Instancias formateadas en estándar TSPLIB (`.tsp`) con tamaños de 20, 40, 60, 80 y 100 clientes.
+- **[`Instancias Generadas por IA/`](file:///Users/carrascote/Documents/matirocha/TSPPD-H%20Visualizer/Instancias%20Generadas%20por%20IA)**: Instancias sintéticas adicionales de 2 a 15 clientes para verificación rápida y pruebas de estrés de los modelos.
 
 ---
 
 ## ⚙️ Solución con Gurobi y Generación de Datos (`notebooks`)
 
-Los scripts en [`notebooks/`](file:///Users/carrascote/Documents/matirocha/Taller-de-investigacion/notebooks) leen los datos de [`e_vigo`](file:///Users/carrascote/Documents/matirocha/Taller-de-investigacion/e_vigo), resuelven los modelos de optimización entera mixta (MIP) con el solver **Gurobi** y generan un archivo JSON estructurado con el desglose paso a paso de cada ruta:
+Los scripts en [`notebooks/`](file:///Users/carrascote/Documents/matirocha/TSPPD-H%20Visualizer/notebooks) leen los datos de [`e_vigo`](file:///Users/carrascote/Documents/matirocha/TSPPD-H%20Visualizer/e_vigo), resuelven los modelos de optimización entera mixta (MIP) con el solver **Gurobi** y generan un archivo JSON estructurado con el desglose paso a paso de cada ruta:
 
-- **Ruta de salida:** [`Outputs/`](file:///Users/carrascote/Documents/matirocha/Taller-de-investigacion/Outputs)
+- **Ruta de salida:** [`Outputs/`](file:///Users/carrascote/Documents/matirocha/TSPPD-H%20Visualizer/Outputs)
 - **Contenido del repositorio:** Contiene **40 soluciones óptimas precalculadas** (10 instancias $\times$ 4 formulaciones: General, $H_1$, $H_2$ y $H_3$ para $n=5$ clientes con costo unitario $h=0.1$):
   - `Solucion_5_Clientes_ID[1-10]_H_01.txt` (Modelo General)
   - `Solucion_TSPPD_H1_5_Clientes_ID[1-10]_H_01.txt` (Política 1)
@@ -93,11 +110,11 @@ Cada solución almacena:
 ## 🖥️ Visualizador Oficial: Página Web 10
 
 La visualización interactiva de referencia y bajo desarrollo activo continuo es **Página Web 10**, ubicada en:
-[`Paginas Web/Pagina Web 10`](file:///Users/carrascote/Documents/matirocha/Taller-de-investigacion/Paginas%20Web/Pagina%20Web%2010).
+[`Paginas Web/Pagina Web 10`](file:///Users/carrascote/Documents/matirocha/TSPPD-H%20Visualizer/Paginas%20Web/Pagina%20Web%2010).
 
 Construida con **React 19**, **TypeScript**, **Tailwind CSS v4**, **Motion (Framer Motion)** y **Vite**, ofrece una experiencia visual completa basada en física y diseño anti-slop:
 
-### Características Principales de la Página Web 10:
+### Características Principales:
 1. **Bahía de Carga LIFO Interactiva (`LifoCargoBay.tsx`)**:
    - Visualización esquemática del camión orientada desde la Cabina/Fondo hacia la Puerta trasera.
    - Representación animada de palets individuales ($\alpha$: azul/entrega, $\beta$: esmeralda/recogida).
@@ -114,16 +131,18 @@ Construida con **React 19**, **TypeScript**, **Tailwind CSS v4**, **Motion (Fram
 5. **Selector de Soluciones (`SolutionSelectorModal.tsx`)**:
    - Catálogo integrado para cambiar instantáneamente entre cualquiera de las 40 soluciones disponibles en `Outputs/`.
    - Filtros por ID de instancia y por política ($H_1$, $H_2$, $H_3$, General).
-6. **Formulaciones Matemáticas en Vivo (`ModelFormulaModal.tsx`)**:
-   - Modal interactivo con las fórmulas completas en notación KaTeX de cada modelo según el paper de Battarra (2010).
-7. **Modo Autónomo e Híbrido**:
-   - Incluye pre-empaquetado estático (`bundle-solutions.js`) que permite ejecutar la web de forma 100% autónoma en el navegador sin dependencias activas de backend, o mediante el servidor Express [`server.js`](file:///Users/carrascote/Documents/matirocha/Taller-de-investigacion/Paginas%20Web/Pagina%20Web%2010/server.js) para recargar dinámicamente nuevas corridas de Gurobi.
+6. **Formulaciones Matemáticas en Notación KaTeX (`ModelFormulaModal.tsx`)**:
+   - Modal interactivo con las fórmulas completas de cada modelo según el paper de Battarra (2010).
+7. **Despliegue y Portabilidad**:
+   - **En Vercel (Producción):** [https://tsppd-h-visualizer.vercel.app/](https://tsppd-h-visualizer.vercel.app/)
+   - **Local Autónomo:** `bundle-solutions.js` pre-empaqueta las 40 soluciones en `defaultSolutions.ts`, permitiendo ejecutar la app sin backend activo.
+   - **Local Dinámico:** Servidor Express [`server.js`](file:///Users/carrascote/Documents/matirocha/TSPPD-H%20Visualizer/Paginas%20Web/Pagina%20Web%2010/server.js) para recargar dinámicamente nuevas ejecuciones de Gurobi.
 
 ---
 
 ## 🧪 Páginas Web Experimentales (1 al 9 y 11)
 
-Dentro del directorio [`Paginas Web/`](file:///Users/carrascote/Documents/matirocha/Taller-de-investigacion/Paginas%20Web) se encuentran diversas versiones anteriores (`Pagina Web 1` a `Pagina Web 9`, así como `Pagina Web 11`):
+Dentro del directorio [`Paginas Web/`](file:///Users/carrascote/Documents/matirocha/TSPPD-H%20Visualizer/Paginas%20Web) se encuentran diversas versiones anteriores (`Pagina Web 1` a `Pagina Web 9`, así como `Pagina Web 11`):
 
 - **Propósito experimental:** Estas páginas fueron desarrolladas como bancos de prueba iterativos para contrastar las capacidades de diferentes modelos fundacionales de Inteligencia Artificial (tales como *Nemotron 3 Ultra*, *Muse Park 1.2*, familias *Claude* y *GPT*) en la generación de arquitecturas frontend, algoritmos de renderizado SVG/Canvas y modelado de animaciones LIFO.
 - **Evolución del proyecto:** Cada página experimental aportó lecciones en la representación de la bahía de carga, el manejo de sub-pasos y el acoplamiento con los archivos de salida, culminando en la consolidación definitiva de todas las mejores prácticas en la **Página Web 10**.
@@ -132,40 +151,43 @@ Dentro del directorio [`Paginas Web/`](file:///Users/carrascote/Documents/matiro
 
 ## 🚀 Guía de Instalación y Ejecución
 
-### Prerrequisitos
-- **Node.js** v18 o superior y **npm** v9+.
-- *(Opcional)* **Python 3.10+** y licencia de **Gurobi Optimizer** (`gurobipy`) únicamente si deseas resolver nuevas instancias o modificar los modelos matemáticos.
+### Opción 0: Acceso Directo en Línea (Recomendado)
+Para explorar la aplicación inmediatamente sin instalar nada:  
+👉 **[Abrir en Vercel: tsppd-h-visualizer.vercel.app](https://tsppd-h-visualizer.vercel.app/)**
 
 ---
 
-### Opción A: Iniciar la Visualización (Página Web 10)
+### Opción A: Ejecución Local de la Visualización (Página Web 10)
+
+#### Prerrequisitos
+- **Node.js** v18 o superior y **npm** v9+.
 
 #### En macOS / Linux:
-Puedes iniciarla con el script ejecutable provisto:
 ```bash
-# Dar permisos de ejecución si es necesario
+# Otorgar permisos de ejecución si es necesario
 chmod +x "Paginas Web/Iniciar_Pagina_10.sh"
 
-# Ejecutar el script
+# Iniciar el script automático
 ./"Paginas Web/Iniciar_Pagina_10.sh"
 ```
-O directamente mediante la consola:
+O directamente desde la consola:
 ```bash
 cd "Paginas Web/Pagina Web 10"
 npm install
 npm run dev
 ```
-La aplicación se abrirá automáticamente en tu navegador predeterminado en `http://localhost:3010`.
+La aplicación se abrirá en `http://localhost:3010`.
 
 #### En Windows:
-1. Haz doble clic en el archivo [`Iniciar_Paginas_Web.bat`](file:///Users/carrascote/Documents/matirocha/Taller-de-investigacion/Iniciar_Paginas_Web.bat) en la raíz del proyecto, o bien:
-2. Haz doble clic en [`Paginas Web/Iniciar_Pagina_10.bat`](file:///Users/carrascote/Documents/matirocha/Taller-de-investigacion/Paginas%20Web/Iniciar_Pagina_10.bat).
+1. Doble clic en [`Iniciar_Paginas_Web.bat`](file:///Users/carrascote/Documents/matirocha/TSPPD-H%20Visualizer/Iniciar_Paginas_Web.bat) en la raíz, o bien:
+2. Doble clic en [`Paginas Web/Iniciar_Pagina_10.bat`](file:///Users/carrascote/Documents/matirocha/TSPPD-H%20Visualizer/Paginas%20Web/Iniciar_Pagina_10.bat).
 
 ---
 
 ### Opción B: Resolver Nuevas Instancias con Gurobi
 
-Para ejecutar o ajustar la resolución de una instancia del paper:
+#### Prerrequisitos
+- **Python 3.10+** y licencia de **Gurobi Optimizer** (`gurobipy`).
 
 1. Activa tu entorno virtual con Gurobi:
    ```bash
@@ -186,7 +208,7 @@ Para ejecutar o ajustar la resolución de una instancia del paper:
    # Resolver Modelo General
    python notebooks/tsppd_h_gurobi.py
    ```
-3. Los resultados se guardarán automáticamente en `Outputs/`. Para actualizar las soluciones empaquetadas en el visualizador web:
+3. Los resultados se guardarán automáticamente en `Outputs/`. Para sincronizar las soluciones empaquetadas con el visualizador:
    ```bash
    cd "Paginas Web/Pagina Web 10"
    node bundle-solutions.js
@@ -197,7 +219,7 @@ Para ejecutar o ajustar la resolución de una instancia del paper:
 ## 📁 Estructura del Proyecto
 
 ```plaintext
-Taller-de-investigacion/
+TSPPD-H Visualizer/
 ├── README.md                      # Documentación integral del proyecto
 ├── AGENTS.md                      # Directrices de desarrollo y reglas de ingeniería UI
 ├── Iniciar_Paginas_Web.bat        # Lanzador rápido para Windows
@@ -231,7 +253,7 @@ Taller-de-investigacion/
 │   ├── Iniciar_Pagina_10.sh       # Script de lanzamiento para macOS/Linux
 │   ├── Iniciar_Pagina_10.bat      # Script de lanzamiento para Windows
 │   │
-│   ├── Pagina Web 10/             # 🌟 VISUALIZADOR OFICIAL (En desarrollo iterativo activo)
+│   ├── Pagina Web 10/             # 🌟 VISUALIZADOR OFICIAL (Desplegado en Vercel)
 │   │   ├── src/
 │   │   │   ├── components/
 │   │   │   │   ├── LifoCargoBay.tsx        # Bahía de carga del camión animada
@@ -246,6 +268,7 @@ Taller-de-investigacion/
 │   │   ├── server.js              # Servidor API Express (puerto 3010)
 │   │   ├── bundle-solutions.js    # Empaquetador estático de Outputs
 │   │   ├── package.json           # Dependencias (React 19, Tailwind v4, Vite, Motion)
+│   │   ├── vercel.json            # Configuración para despliegue en Vercel
 │   │   └── vite.config.ts         # Configuración Vite con middleware API
 │   │
 │   └── Pagina Web [1-9, 11]/      # Prototipos experimentales previos con distintos modelos de IA
