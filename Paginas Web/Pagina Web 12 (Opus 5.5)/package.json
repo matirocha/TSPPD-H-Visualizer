@@ -1,0 +1,45 @@
+{
+  "name": "pagina-web-12-tsppd-h",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "TSPPD-H Visualizer — Página Web 12 (Opus 5.5). Simulador LIFO por unidad con coreografía derivada de las soluciones Gurobi.",
+  "scripts": {
+    "dev": "vite",
+    "build": "node bundle-solutions.js && tsc -b && vite build",
+    "preview": "vite preview --port 3012",
+    "server": "node server.js",
+    "start": "node server.js",
+    "bundle": "node bundle-solutions.js",
+    "typecheck": "tsc -b",
+    "test": "node scripts/validate-engine.ts && node scripts/validate-playback.ts",
+    "test:engine": "node scripts/validate-engine.ts",
+    "test:playback": "node scripts/validate-playback.ts"
+  },
+  "dependencies": {
+    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource-variable/geist-mono": "^5.3.0",
+    "clsx": "^2.1.1",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "katex": "^0.16.47",
+    "lucide-react": "^1.37.0",
+    "motion": "^12.43.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tailwind-merge": "^3.6.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/katex": "^0.16.8",
+    "@types/node": "^22.13.5",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.7.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~5.7.3",
+    "vite": "^6.4.3"
+  }
+}

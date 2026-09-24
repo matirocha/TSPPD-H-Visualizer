@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "pagina-12-dev",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "Paginas Web/Pagina Web 12 (Opus 5.5)/node_modules/vite/bin/vite.js",
+        "Paginas Web/Pagina Web 12 (Opus 5.5)",
+        "--port",
+        "3012",
+        "--strictPort",
+        "--no-open"
+      ],
+      "port": 3012
+    }
+  ]
+}
