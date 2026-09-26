@@ -1,15 +1,30 @@
 # Dependencies
 node_modules/
 
-# Production build outputs
+# Production build outputs & TypeScript cache
 dist/
 build/
 .vite/
+*.tsbuildinfo
+*.tsbuildinfo.*
 
-# Python cache
+# Python cache & virtual environments
 __pycache__/
 *.py[cod]
 *.pyc
+.venv/
+venv/
+ENV/
+
+# Test outputs & Playwright
+test-results/
+playwright-report/
+.last-run.json
+
+# Backups and temporary files
+*.backup
+*.bak
+*.tmp
 
 # Logs
 *.log
@@ -22,3 +37,7 @@ yarn-error.log*
 .env.local
 .DS_Store
 Thumbs.db
+
+# IDEs & Local Assistant configs
+.claude/
+

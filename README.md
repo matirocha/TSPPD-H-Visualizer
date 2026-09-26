@@ -330,12 +330,6 @@ TSPPD-H-Visualizer/
 │   ├── tsppd_h_3_gurobi.py        # Política 3 (Ecs. 31-48)
 │   ├── solve_for_html.py          # Utilidad antigua: Modelo General sobre un .tsp, JSON por consola
 │   └── main.py                    # Menú interactivo antiguo sobre los .tsp (ruta base de macOS fija)
-├── Testeando Modelo con Papers/   # Copia de prueba de tsppd_h_gurobi.py (5 clientes por defecto);
-│                                  #   escribe en Outputs/ y sin argumentos reescribe Solucion_5_Clientes_ID1_H_01.txt
-├── inspect_gurobi.py              # Depuración: reescribe Outputs/Solucion_5_Clientes_ID1_H_01.txt
-├── extract_*.txt                  # Texto parcial del paper: págs. 1-4 del PDF, políticas y Ecs. 17-25,
-│                                  #   descripción de la Política 3
-│
 ├── Outputs/                       # 80 soluciones (JSON en .txt): 4 modelos × ID 1-10 × n = 5 y 10
 │   ├── Solucion_{5|10}_Clientes_ID1..10_H_01.txt            (Modelo General)
 │   ├── Solucion_TSPPD_H1_{5|10}_Clientes_ID1..10_H_01.txt   (Política 1)
@@ -368,14 +362,11 @@ TSPPD-H-Visualizer/
 │   │   ├── public/solutions/      # 80 soluciones empaquetadas + index.json
 │   │   ├── server.js              # Servidor Express (puerto 3012)
 │   │   └── bundle-solutions.js    # Regenera public/solutions desde Outputs
-│   ├── Iniciar_Pagina_{1,2,3,8,9,10,11,12}.bat, iniciar_pagina_web_{4,5,6,7,9}.bat
+│   ├── Iniciar_Pagina_{1..12}.bat # Lanzadores individuales estandarizados para Windows
 │   ├── Iniciar_Pagina_10.sh, Iniciar_Pagina_10.command   # Lanzadores para macOS/Linux
-│   └── Iniciar_Ambas_Paginas.bat, Iniciar_Todas_Las_Paginas.bat   # Páginas 1-2 y 1-3
+│   └── Iniciar_Ambas_Paginas.bat, Iniciar_Todas_Las_Paginas.bat   # Lanzadores agrupados
 │
-├── Visualizaciones HTML/          # Páginas HTML independientes (políticas, solución óptima, plantilla)
-│
-└── package.json, package-lock.json, main.js, preload.js, restart_antigravity.bat, restore_antigravity.bat
-                                   # Archivos de la app de escritorio Antigravity, ajenos al proyecto
+└── Visualizaciones HTML/          # Páginas HTML independientes (políticas, solución óptima, plantilla)
 ```
 
 ---
