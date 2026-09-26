@@ -363,7 +363,7 @@ TSPPD-H-Visualizer/
 │   │   ├── server.js              # Servidor Express (puerto 3012)
 │   │   └── bundle-solutions.js    # Regenera public/solutions desde Outputs
 │   ├── Iniciar_Pagina_{1..12}.bat # Lanzadores individuales estandarizados para Windows
-│   ├── Iniciar_Pagina_10.sh, Iniciar_Pagina_10.command   # Lanzadores para macOS/Linux
+│   ├── Iniciar_Pagina_{10,12}.sh, Iniciar_Pagina_{10,12}.command # Lanzadores para macOS/Linux
 │   └── Iniciar_Ambas_Paginas.bat, Iniciar_Todas_Las_Paginas.bat   # Lanzadores agrupados
 │
 └── Visualizaciones HTML/          # Páginas HTML independientes (políticas, solución óptima, plantilla)
