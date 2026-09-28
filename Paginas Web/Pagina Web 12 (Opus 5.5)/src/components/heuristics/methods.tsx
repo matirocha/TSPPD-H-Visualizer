@@ -3,8 +3,7 @@
  * modelos Gurobi (tonos de lib/models) más el Algoritmo 2.1 + DP (ámbar ▲) y el
  * ILS · Algoritmo 4.2 (azul ★). Codificación doble color + forma, como ModelMark.
  */
-import { MODELS, TONE_COLOR, type ModelTone } from '../../lib/models';
-import type { ModelType } from '../../types/solution';
+import { TONE_COLOR, type ModelTone } from '../../lib/models';
 import { COLOR } from '../analysis/chart';
 import { ModelMarkSvg } from '../analysis/ModelMark';
 
@@ -56,9 +55,6 @@ export const ERDOGAN_REF = {
   doi: '10.1016/j.cor.2011.07.013',
   pdf: 'papers/Erdogan2012.pdf',
 } as const;
-
-/** Tono de un modelo Gurobi (para usar MethodMark con ModelType). */
-export const toneOfModel = (id: ModelType): ModelTone => MODELS.find((m) => m.id === id)?.tone ?? 'general';
 
 /** Marca SVG: modelos Gurobi (○ ● ■ ◆), Algoritmo 2.1 (▲) e ILS (★). */
 export function MethodMarkSvg({ tone, x, y, r = 4.5, ring = COLOR.surface }: { tone: MethodTone; x: number; y: number; r?: number; ring?: string }) {

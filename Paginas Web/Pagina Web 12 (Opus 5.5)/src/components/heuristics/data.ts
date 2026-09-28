@@ -6,7 +6,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useCatalog } from '../../state/SimulationProvider';
 import { fetchHeuristics } from '../../lib/api';
-import { MODELS } from '../../lib/models';
 import type { ModelType } from '../../types/solution';
 import type { DPEvaluation, DPFile, HeuristicsBundle, ILSFile, TourCost } from '../../types/heuristics';
 
@@ -66,15 +65,7 @@ export function gurobiFor(inst: HeurInstance | null, model: ModelType): TourCost
 }
 
 /** Brecha relativa (a − ref) / ref, o null si no hay referencia positiva. */
-export const relGap = (value: number, ref: number | null | undefined) => (ref && ref > 0 ? (value - ref) / ref : null);
-
-/** Mismo recorrido (misma secuencia de nodos). */
-export const sameTour = (a: number[] | null | undefined, b: number[] | null | undefined) =>
-  !!a && !!b && a.length === b.length && a.every((v, i) => v === b[i]);
-
-/** Mismo ciclo recorrido en sentido inverso. */
-export const reversedTour = (a: number[] | null | undefined, b: number[] | null | undefined) =>
-  !!a && !!b && a.length === b.length && a.every((v, i) => v === b[b.length - 1 - i]);
+const relGap = (value: number, ref: number | null | undefined) => (ref && ref > 0 ? (value - ref) / ref : null);
 
 export interface HeurSummary {
   instances: number;
@@ -162,11 +153,6 @@ export function summarize(list: HeurInstance[]): HeurSummary {
     runsTotal,
     meanRunSec: mean(times),
   };
-}
-
-/** Modelos Gurobi en el orden canónico, con su evaluación DP (si existe). */
-export function evaluationsInOrder(inst: HeurInstance | null) {
-  return MODELS.map((model) => ({ model, evaluation: evalFor(inst, model.id) }));
 }
 
 export interface HeuristicsState {

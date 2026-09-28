@@ -223,7 +223,7 @@ Construida con **React 19.3**, **TypeScript 5.7**, **Vite 6.4**, **Tailwind CSS 
   - Simulador: métricas en vivo, mapa, panel de parada con los sub-pasos, compartimiento y reproductor con línea de tiempo proporcional a la distancia.
   - Bitácora: perfil de carga, construcción de Z* y tabla del tour.
   - Comparativa de las cuatro variantes.
-  - Heurísticas: manipulación de Gurobi (General, P1, P2 y P3) frente al Algoritmo 2.1 + DP en la misma ruta y al ILS (Algoritmo 4.2) de Erdoğan et al. (2012), con la convergencia del ILS, las decisiones de la DP parada a parada y el panorama de las 20 instancias.
+  - Heurísticas: tablas que comparan el costo (manipulación, distancia y Z) de los cuatro modelos Gurobi con el del Algoritmo 2.1 y el del ILS (Algoritmo 4.2) de Erdoğan et al. (2012), para la instancia cargada y para las 20 instancias.
   - Modelo matemático: Ecs. (1)–(48) en KaTeX.
   - Datos: matriz $c_{ij}$ y tabla de nodos.
 - **Navegación:** paleta de comandos (`Ctrl K`), atajos de teclado (`?`) y URL compartible con el formato `#/<modelo>/<clientes>/<instancia>` (por ejemplo `#/p3/10/7`).

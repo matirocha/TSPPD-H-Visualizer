@@ -19,7 +19,8 @@ import { ShortcutsDialog } from './components/ShortcutsDialog';
 import { Footer } from './components/Footer';
 import { ErrorBanner, LoadingStage } from './components/StatusScreens';
 
-// KaTeX (fuentes + CSS) solo se descarga cuando se montan las secciones del modelo y de heurísticas.
+// KaTeX (fuentes + CSS) solo se descarga cuando se monta la sección del modelo; la de
+// heurísticas también se carga de forma diferida.
 const Formulation = lazy(() => import('./components/Formulation').then((m) => ({ default: m.Formulation })));
 const Heuristics = lazy(() => import('./components/Heuristics').then((m) => ({ default: m.Heuristics })));
 

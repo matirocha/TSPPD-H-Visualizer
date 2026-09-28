@@ -43,11 +43,11 @@ La fuente en uso se indica con un punto de color en el botón de recarga de la b
 - **Bitácora**: perfil de carga por tramo, construcción de Z* y tabla completa del tour.
 - **Comparativa**: las cuatro variantes (General, P1, P2, P3) de la instancia actual y el panorama de brechas en las 10 instancias.
 - **Heurísticas** (Erdoğan, Battarra, Laporte y Vigo, 2012, *Computers & Operations Research* 39, 1074–1086): compara la manipulación de Gurobi con el **Algoritmo 2.1 + DP** (manipulación óptima de la Política 3 sobre una ruta fija) y con el **ILS** (Algoritmo 4.2). Los resultados los generan `notebooks/tsppd_h_alg21_dp.py` y `notebooks/tsppd_h_alg42_ils.py` en `Outputs/Erdogan2012/`:
-  - **Veredicto** sobre todas las instancias (o las de un tamaño): cuántas rutas de la Política 3 reproduce la DP, cuántas veces el ILS alcanza el óptimo de Gurobi, el ahorro de la DP sobre las rutas de P1 y P2 y el tiempo por corrida.
-  - **Esta instancia**: para cada modelo Gurobi, su manipulación frente a la de la DP en la misma ruta, más la solución del ILS y su brecha con el óptimo de la Política 3.
-  - **Convergencia del ILS**: mejor costo por iteración en ambas direcciones, óptimos locales, solución inicial (TSP + reubicación del depósito) y robustez en las 10 corridas.
-  - **La DP parada a parada**: carga a bordo, decisión P1/P2, operaciones y costo en cada cliente de la ruta elegida, contra lo que pagó Gurobi en esa misma ruta.
-  - **Panorama** de las 10 instancias de cada tamaño (gráfico o tabla) y **cómo se calculó**: Ecs. (1)–(2), pseudo-código de los Algoritmos 2.1 y 4.2, parámetros, decisiones de implementación y comandos para reproducir.
+  - **Resumen** sobre todas las instancias (o las de un tamaño): en cuántas el Algoritmo 2.1 iguala la manipulación de Gurobi P3, en cuántas el ILS iguala su óptimo y el tiempo por corrida del ILS.
+  - **Esta instancia**: tabla con la manipulación (en barras), la distancia y el costo total Z de los cuatro modelos Gurobi, del Algoritmo 2.1 (sobre la ruta de P3) y del ILS.
+  - **La misma ruta, con la mejor carga**: la manipulación de Gurobi y la del Algoritmo 2.1 sobre la ruta de cada modelo, con su diferencia.
+  - **Todas las instancias**: tabla de las 10 instancias de cada tamaño, en manipulación o en costo total Z, con promedios y la comparación del ILS con Gurobi P3. Pulsar una instancia la abre en toda la página.
+  - **Qué se compara**: qué es cada método y los comandos para regenerar los resultados.
 - **Modelo matemático**: formulaciones del paper en KaTeX, Ecs. (1)–(48), con el patrón de carga de cada política. En la Política 2, el modelo son las Ecs. (26)–(27); las (28)–(30) muestran su equivalencia con la Política 1, y por eso la interfaz rotula esa política como «Ecs. 26–30».
 - **Datos**: matriz c_ij con los arcos del tour, tabla de nodos y parámetros.
 - **Navegación**: catálogo de soluciones, paleta de comandos (`Ctrl K`), atajos de teclado (`?`) y URL compartible con el formato `#/<modelo>/<clientes>/<instancia>`, donde el modelo es `general`, `p1`, `p2` o `p3`. Por ejemplo, `#/p3/10/7` es la Política 3 con 10 clientes, instancia 7.
@@ -96,7 +96,7 @@ src/
   components/                  Secciones de la página (map/, bay/, stop/, transport/, analysis/,
                                model/, data/, heuristics/, ui/…)
   components/heuristics/       Sección Heurísticas: carga y unión de los resultados (data.ts),
-                               identidad de los métodos (methods.tsx) y sus cinco tarjetas
+                               identidad de los métodos (methods.tsx) y sus tablas
   types/heuristics.ts          Formato de los JSON de Outputs/Erdogan2012/
 scripts/
   solutions-api.js             Lectura de Outputs/ y Outputs/Erdogan2012/ compartida por Vite y Express
