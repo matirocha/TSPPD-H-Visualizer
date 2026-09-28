@@ -1,6 +1,7 @@
 /**
- * Pie editorial: qué es la herramienta, la referencia académica verificada contra
- * papers/battarra2010.pdf y la ficha técnica de esta página (stack, fuente de datos, atajos).
+ * Pie editorial: qué es la herramienta, las referencias académicas verificadas contra
+ * papers/battarra2010.pdf y papers/Erdogan2012.pdf y la ficha técnica de esta página
+ * (stack, fuente de datos, atajos).
  * pb-28 deja libre el espacio del mini reproductor flotante.
  */
 import { motion } from 'motion/react';
@@ -12,6 +13,7 @@ import { cn } from '../lib/cn';
 import { springSnappy, tapPress, scrollBehavior } from '../lib/motion';
 import { Kbd } from './ui';
 import { BrandMark } from './chrome/BrandMark';
+import { ERDOGAN_REF, HEUR_METHODS } from './heuristics/methods';
 
 const DOI = '10.1287/trsc.1100.0316';
 
@@ -99,6 +101,38 @@ export function Footer() {
                     {m.label}
                   </span>
                   <span className="num text-[11.5px] text-zinc-500">{m.equations}</span>
+                </li>
+              ))}
+            </ul>
+
+            <p className="mt-6 text-sm leading-relaxed text-pretty text-zinc-300">
+              <span className="text-zinc-400">Heurísticas:</span> {ERDOGAN_REF.authors}.{' '}
+              <cite className="text-zinc-100 italic">{ERDOGAN_REF.title}</cite>.{' '}
+              <span className="text-zinc-400">
+                {ERDOGAN_REF.journal}, <span className="italic">{ERDOGAN_REF.volume}</span>, {ERDOGAN_REF.pages}.
+              </span>
+            </p>
+            <a
+              href={`https://doi.org/${ERDOGAN_REF.doi}`}
+              target="_blank"
+              rel="noreferrer"
+              className="group mt-3 inline-flex items-center gap-1 rounded-md font-mono text-xs text-zinc-400 transition-colors hover:text-zinc-50"
+            >
+              doi:{ERDOGAN_REF.doi}
+              <ArrowUpRight
+                aria-hidden
+                className="h-3.5 w-3.5 transition-transform duration-200 ease-spring group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+              />
+              <span className="sr-only">(se abre en una pestaña nueva)</span>
+            </a>
+            <ul aria-label="Heurísticas implementadas" className="mt-4 space-y-1.5 text-[13px]">
+              {(['dp', 'ils'] as const).map((k) => (
+                <li key={k} className="flex items-baseline justify-between gap-3 border-b border-dashed border-zinc-800/80 pb-1.5 last:border-0">
+                  <span className="flex items-center gap-2 text-zinc-300">
+                    <span aria-hidden className={cn('h-1.5 w-1.5 shrink-0 translate-y-[-1px] rounded-full', k === 'dp' ? 'bg-dp' : 'bg-ils')} />
+                    {HEUR_METHODS[k].label}
+                  </span>
+                  <span className="num text-[11.5px] text-zinc-500">{HEUR_METHODS[k].reference}</span>
                 </li>
               ))}
             </ul>

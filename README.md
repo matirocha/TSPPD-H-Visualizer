@@ -31,12 +31,13 @@ El proyecto se fundamenta directamente en el artículo que define el problema:
 3. [Modelos y Políticas Implementadas](#-modelos-y-políticas-implementadas)
 4. [Instancias y Datos del Paper (`e_vigo`)](#-instancias-y-datos-del-paper-e_vigo)
 5. [Solución con Gurobi y Generación de Datos (`notebooks`)](#-solución-con-gurobi-y-generación-de-datos-notebooks)
-6. [Visualizador Oficial: Página Web 10](#-visualizador-oficial-página-web-10)
-7. [Página Web 12 (Opus 5.5): Laboratorio LIFO](#-página-web-12-opus-55-laboratorio-lifo)
-8. [Todas las Páginas Web (1 a 12)](#-todas-las-páginas-web-1-a-12)
-9. [Guía de Instalación y Ejecución](#-guía-de-instalación-y-ejecución)
-10. [Estructura del Proyecto](#-estructura-del-proyecto)
-11. [Referencias](#-referencias)
+6. [Heurísticas de Erdoğan et al. (2012): Algoritmo 2.1 e ILS](#-heurísticas-de-erdoğan-et-al-2012-algoritmo-21-e-ils)
+7. [Visualizador Oficial: Página Web 10](#-visualizador-oficial-página-web-10)
+8. [Página Web 12 (Opus 5.5): Laboratorio LIFO](#-página-web-12-opus-55-laboratorio-lifo)
+9. [Todas las Páginas Web (1 a 12)](#-todas-las-páginas-web-1-a-12)
+10. [Guía de Instalación y Ejecución](#-guía-de-instalación-y-ejecución)
+11. [Estructura del Proyecto](#-estructura-del-proyecto)
+12. [Referencias](#-referencias)
 
 ---
 
@@ -120,6 +121,58 @@ Cada solución almacena:
 
 ---
 
+## 🧠 Heurísticas de Erdoğan et al. (2012): Algoritmo 2.1 e ILS
+
+Implementación en Python puro (no usa Gurobi) de dos algoritmos de
+> **Erdoğan, G., Battarra, M., Laporte, G., & Vigo, D. (2012).** *Metaheuristics for the traveling salesman problem with pickups, deliveries and handling costs.* Computers & Operations Research, 39, 1074–1086. [doi:10.1016/j.cor.2011.07.013](https://doi.org/10.1016/j.cor.2011.07.013) · PDF en [`papers/Erdogan2012.pdf`](papers/Erdogan2012.pdf).
+
+| Script | Algoritmo del paper | Qué resuelve |
+| :--- | :--- | :--- |
+| [`notebooks/tsppd_h_alg21_dp.py`](notebooks/tsppd_h_alg21_dp.py) | Algoritmo 2.1 + programación dinámica, Ecs. (1)–(2) (§2.1) | Para una ruta **fija**, el costo mínimo de manipulación bajo la Política 3: en qué clientes conviene aplicar la Política 1 (β en la compuerta) y en cuáles la Política 2 (β al fondo). Complejidad $O(n^2)$. |
+| [`notebooks/tsppd_h_alg42_ils.py`](notebooks/tsppd_h_alg42_ils.py) | *Iterated Local Search*, Algoritmo 4.2 (§3, §4 y §4.2) | La ruta completa bajo la Política 3: perturbaciones aleatorias + búsqueda local relocate/2-opt, evaluando cada vecino con ruteo + manipulación exacta (Algoritmo 2.1 + DP). |
+
+**Algoritmo 2.1 + DP.** Con los clientes renumerados en el orden del tour, $p_{ij}$ es el costo de aplicar la Política 1 en los clientes $i+1, \dots, j-1$ y la Política 2 en $j$ (lo calcula el Algoritmo 2.1), y
+
+$$f(i) = \min_{j \in \{i+1,\dots,n\}} \{\, p_{ij} + f(j) \,\} \quad \forall i \in \{0,\dots,n-1\}, \qquad f(n) = 0,$$
+
+de modo que la manipulación óptima del tour es $f(0)$. El script reconstruye además la política de cada cliente y simula la carga $[F, \beta\dots\beta, \alpha\dots\alpha, \beta\dots\beta, R]$ parada a parada como verificación independiente.
+- `--verify` compara la DP con la enumeración de las $2^n$ combinaciones de políticas en 3000 tours aleatorios (incluye clientes con $\alpha_i = 0$ y $h_a \ne h_b$).
+- Para cada instancia evalúa los **tours que encontró Gurobi** (Modelo General y Políticas 1, 2 y 3): la manipulación de Gurobi frente a la de la DP en la misma ruta, y la de las Políticas 1 y 2 puras.
+
+**ILS (Algoritmo 4.2).** En cada una de las $N_{iter}$ iteraciones parte de la mejor ruta (`bestTour`), aplica $N_{rand}$ movimientos aleatorios (si $i = j$ reubica el cliente $i$ en otra posición; si no, invierte la cadena entre $i$ y $j$) y luego aplica el mejor movimiento relocate o 2-opt factible mientras mejore. Solo acepta la nueva ruta si mejora a la mejor encontrada.
+- **Parámetros del paper:** $N_{iter} = 200$ por dirección y $N_{rand} = d\,|V_c|$ con $d = 10\,\%$ (redondeado, con mínimo 1: vale 1 con 5 y con 10 clientes). Se reportan ILS-1dir (desde el ciclo TSP) e ILS-2dir (mejor entre el ciclo TSP y su inverso).
+- **Decisiones de implementación** (el paper no las fija o usa software externo), documentadas en el script:
+  - Tour TSP inicial: el paper usa Lin–Kernighan de Concorde; aquí, con hasta 12 clientes, Held-Karp (TSP óptimo exacto) y, para más clientes, vecino más cercano + 2-opt/relocate.
+  - Reubicación del depósito (Mosheiov, 1994): entre las $n$ posiciones del depósito en el ciclo TSP se elige la factible de menor ruteo + manipulación.
+  - Solo se aceptan movimientos que respetan la capacidad $Q$, también en la diversificación (un movimiento aleatorio infactible se vuelve a sortear, hasta 100 veces).
+  - En la búsqueda local se omite la DP de un vecino cuyo ruteo ya iguala o supera al mejor costo del vecindario (la manipulación es ≥ 0), lo que no cambia el movimiento elegido.
+  - Por defecto se hacen 10 corridas con semillas 1 a 10 para medir la robustez; se reporta la mejor (ante empate, la de menor semilla) y las demás solo aportan las estadísticas de robustez.
+
+```bash
+# Algoritmo 2.1 + DP sobre los tours Gurobi de las 20 instancias (5 y 10 clientes)
+python notebooks/tsppd_h_alg21_dp.py --customers 5 10 --all-ids
+
+# ILS sobre las mismas instancias (10 corridas por instancia)
+python notebooks/tsppd_h_alg42_ils.py --customers 5 10 --all-ids
+
+# Otras opciones
+python notebooks/tsppd_h_alg21_dp.py --verify                             # DP vs fuerza bruta
+python notebooks/tsppd_h_alg21_dp.py --customers 5 --tour 0,3,1,2,4,5,0    # evaluar una ruta propia
+python notebooks/tsppd_h_alg42_ils.py --customers 10 --id 4 --iters 50 --runs 3 --seed 7
+```
+Ambos aceptan `--customers N [N …]`, `--id K`, `--all-ids`, `--h VALOR` y `--no-save`; el ILS acepta además `--iters`, `--d`, `--seed` y `--runs`.
+
+**Resultados** ($h = 0{,}1$; 5 y 10 clientes; instancias 1 a 10):
+- Sobre el tour de la Política 3, la DP reproduce la manipulación de Gurobi en **20/20** instancias.
+- **ILS-2dir alcanza el Z\* óptimo de Gurobi para la Política 3 en 20/20 instancias**, y las 200 corridas (10 semillas por instancia) llegan a ese valor. En todas, su ruta coincide con la de Gurobi.
+- Aplicada sobre las rutas que Gurobi encontró para las Políticas 1 y 2, la DP reduce la manipulación en promedio un 43 % y un 54 %, respectivamente (36 % y 49 % con 5 clientes; 49 % y 59 % con 10).
+- El Modelo General, que no restringe la carga a una política, manipula menos que la DP en su propia ruta en 10 de las 20 instancias (1 con 5 clientes y 9 con 10).
+- Una corrida del ILS (ambas direcciones) tarda en promedio 0,05 s con 5 clientes y 0,23 s con 10 clientes (Python 3.12).
+
+Los resultados se guardan en `Outputs/Erdogan2012/` (`DP_<n>_Clientes_ID<id>_H_01.json` e `ILS_<n>_Clientes_ID<id>_H_01.json`). Es una subcarpeta porque los visualizadores solo leen los archivos del nivel superior de `Outputs/`, así que sus catálogos no cambian. La **Página Web 12** los muestra en su pestaña **Heurísticas**.
+
+---
+
 ## 💻 Visualizador Oficial: Página Web 10
 
 La visualización desplegada en Vercel es la **Página Web 10**, ubicada en:
@@ -170,10 +223,11 @@ Construida con **React 19.3**, **TypeScript 5.7**, **Vite 6.4**, **Tailwind CSS 
   - Simulador: métricas en vivo, mapa, panel de parada con los sub-pasos, compartimiento y reproductor con línea de tiempo proporcional a la distancia.
   - Bitácora: perfil de carga, construcción de Z* y tabla del tour.
   - Comparativa de las cuatro variantes.
+  - Heurísticas: manipulación de Gurobi (General, P1, P2 y P3) frente al Algoritmo 2.1 + DP en la misma ruta y al ILS (Algoritmo 4.2) de Erdoğan et al. (2012), con la convergencia del ILS, las decisiones de la DP parada a parada y el panorama de las 20 instancias.
   - Modelo matemático: Ecs. (1)–(48) en KaTeX.
   - Datos: matriz $c_{ij}$ y tabla de nodos.
 - **Navegación:** paleta de comandos (`Ctrl K`), atajos de teclado (`?`) y URL compartible con el formato `#/<modelo>/<clientes>/<instancia>` (por ejemplo `#/p3/10/7`).
-- **Datos:** lee `Outputs/` en vivo por `/api/solutions` (Vite o Express). Sin backend (con `vite preview` o en un hosting estático como Vercel, donde hoy solo está desplegada la Página 10), usa las 80 soluciones empaquetadas en `public/solutions/`.
+- **Datos:** lee `Outputs/` en vivo por `/api/solutions` y `Outputs/Erdogan2012/` por `/api/heuristics` (Vite o Express). Sin backend (con `vite preview` o en un hosting estático como Vercel, donde hoy solo está desplegada la Página 10), usa las 80 soluciones empaquetadas en `public/solutions/` y los resultados de las heurísticas en `public/solutions/heuristics.json`.
 - **Corrige cuatro comportamientos de la Página 10:**
   - «Siguiente» desde el depósito saltaba al segundo cliente.
   - Con el modo continuo desactivado, «Reproducir» quedaba detenido en la parada.
@@ -314,6 +368,7 @@ TSPPD-H-Visualizer/
 │
 ├── papers/                        # Artículos de investigación y marco teórico
 │   ├── battarra2010.pdf           # Paper base (Battarra, Erdoğan, Laporte & Vigo, 2010)
+│   ├── Erdogan2012.pdf            # Metaheurísticas: Algoritmo 2.1 + DP e ILS (Erdoğan et al., 2012)
 │   └── Thesis_Rey.pdf             # Tesis doctoral de C. R. Rey Barra (U. de Bolonia, 2022)
 │
 ├── e_vigo/                        # Instancias del paper (Gendreau, Laporte & Vigo, 1999)
@@ -323,18 +378,21 @@ TSPPD-H-Visualizer/
 ├── Instancias/                    # 49 instancias tipo TSPLIB (.tsp), n = 20 a 100
 ├── Instancias Generadas por IA/   # 14 instancias sintéticas (2 a 15 clientes)
 │
-├── notebooks/                     # Solvers matemáticos en Python con Gurobi
+├── notebooks/                     # Solvers en Python: modelos Gurobi y heurísticas de Erdoğan et al. (2012)
 │   ├── tsppd_h_gurobi.py          # Modelo General (Ecs. 1-16)
 │   ├── tsppd_h_1_gurobi.py        # Política 1 (Ecs. 17-25)
 │   ├── tsppd_h_2_gurobi.py        # Política 2 (Ecs. 26-27)
 │   ├── tsppd_h_3_gurobi.py        # Política 3 (Ecs. 31-48)
+│   ├── tsppd_h_alg21_dp.py        # Algoritmo 2.1 + DP: manipulación óptima (Política 3) de una ruta fija
+│   ├── tsppd_h_alg42_ils.py       # ILS, Algoritmo 4.2: ruta + manipulación (Política 3)
 │   ├── solve_for_html.py          # Utilidad antigua: Modelo General sobre un .tsp, JSON por consola
 │   └── main.py                    # Menú interactivo antiguo sobre los .tsp (ruta base de macOS fija)
 ├── Outputs/                       # 80 soluciones (JSON en .txt): 4 modelos × ID 1-10 × n = 5 y 10
 │   ├── Solucion_{5|10}_Clientes_ID1..10_H_01.txt            (Modelo General)
 │   ├── Solucion_TSPPD_H1_{5|10}_Clientes_ID1..10_H_01.txt   (Política 1)
 │   ├── Solucion_TSPPD_H2_{5|10}_Clientes_ID1..10_H_01.txt   (Política 2)
-│   └── Solucion_TSPPD_H3_{5|10}_Clientes_ID1..10_H_01.txt   (Política 3)
+│   ├── Solucion_TSPPD_H3_{5|10}_Clientes_ID1..10_H_01.txt   (Política 3)
+│   └── Erdogan2012/               # 20 DP_*.json (Algoritmo 2.1 sobre los tours Gurobi) + 20 ILS_*.json
 │
 ├── Paginas Web/                   # Entornos de visualización web (12 páginas, generadas con distintos modelos de IA)
 │   ├── Pagina Web 1 (Gemini Flash 3.7)/ … Pagina Web 9 (Gemini 3.7 Flash)/
@@ -359,7 +417,7 @@ TSPPD-H-Visualizer/
 │   ├── Pagina Web 12 (Opus 5.5)/           # 🆕 Iteración más reciente (ver su README)
 │   │   ├── src/                   # lib/ (motor LIFO, layout del mapa), state/, hooks/, components/
 │   │   ├── scripts/               # API de Outputs compartida y pruebas del motor y la reproducción
-│   │   ├── public/solutions/      # 80 soluciones empaquetadas + index.json
+│   │   ├── public/solutions/      # 80 soluciones empaquetadas + index.json + heuristics.json
 │   │   ├── server.js              # Servidor Express (puerto 3012)
 │   │   └── bundle-solutions.js    # Regenera public/solutions desde Outputs
 │   ├── Iniciar_Pagina_{1..12}.bat # Lanzadores individuales estandarizados para Windows
@@ -374,6 +432,7 @@ TSPPD-H-Visualizer/
 ## 📚 Referencias
 
 - **Battarra, M., Erdoğan, G., Laporte, G., & Vigo, D. (2010).** *The Traveling Salesman Problem with Pickups, Deliveries, and Handling Costs.* Transportation Science, 44(3), 383–399. [doi:10.1287/trsc.1100.0316](https://doi.org/10.1287/trsc.1100.0316)
+- **Erdoğan, G., Battarra, M., Laporte, G., & Vigo, D. (2012).** *Metaheuristics for the traveling salesman problem with pickups, deliveries and handling costs.* Computers & Operations Research, 39, 1074–1086. [doi:10.1016/j.cor.2011.07.013](https://doi.org/10.1016/j.cor.2011.07.013) — Algoritmo 2.1 + DP e ILS (Algoritmo 4.2), implementados en `notebooks/`.
 - **Gendreau, M., Laporte, G., & Vigo, D. (1999).** *Heuristics for the traveling salesman problem with pickup and delivery.* Computers & Operations Research, 26(7), 699–714. [doi:10.1016/S0305-0548(98)00085-9](https://doi.org/10.1016/S0305-0548(98)00085-9) — origen de las instancias.
 - **Carrabs, F., Cordeau, J.-F., & Laporte, G. (2007).** *Variable neighborhood search for the pickup and delivery traveling salesman problem with LIFO loading.* INFORMS Journal on Computing, 19(4), 618–632. [doi:10.1287/ijoc.1060.0202](https://doi.org/10.1287/ijoc.1060.0202)
 - **Hernández-Pérez, H., & Salazar-González, J.-J. (2004).** *A branch-and-cut algorithm for a traveling salesman problem with pickup and delivery.* Discrete Applied Mathematics, 145(1), 126–139. [doi:10.1016/j.dam.2003.09.013](https://doi.org/10.1016/j.dam.2003.09.013) — lectura complementaria (Battarra et al. no la citan; H. Hernández-Pérez aloja las instancias en su sitio web).

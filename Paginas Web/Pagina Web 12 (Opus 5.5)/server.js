@@ -3,7 +3,7 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { listSolutions, readSolution } from './scripts/solutions-api.js';
+import { listSolutions, readHeuristics, readSolution } from './scripts/solutions-api.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -27,6 +27,15 @@ app.get('/api/solutions/:filename', (req, res) => {
     const data = readSolution(OUTPUTS_DIR, filename);
     if (!data) return res.status(404).json({ success: false, error: 'Solución no encontrada en Outputs/' });
     res.json({ success: true, filename, data });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Resultados del Algoritmo 2.1 + DP y del ILS (Outputs/Erdogan2012/)
+app.get('/api/heuristics', (_req, res) => {
+  try {
+    res.json({ success: true, ...readHeuristics(OUTPUTS_DIR) });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

@@ -1,10 +1,11 @@
 // Empaqueta las soluciones de ../../Outputs como JSON estáticos en public/solutions/
 // para que la app funcione sin backend (vite preview, Vercel, hosting estático).
 // Cada solución se descarga bajo demanda; index.json contiene solo la metadata.
+// heuristics.json reúne los resultados del Algoritmo 2.1 + DP y del ILS (Outputs/Erdogan2012/).
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { listSolutions, readSolution } from './scripts/solutions-api.js';
+import { listSolutions, readHeuristics, readSolution } from './scripts/solutions-api.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const outputsDir = path.resolve(__dirname, '../../Outputs');
@@ -24,4 +25,7 @@ for (const m of meta) {
   fs.writeFileSync(path.join(targetDir, `${m.filename}.json`), JSON.stringify(data), 'utf-8');
 }
 fs.writeFileSync(path.join(targetDir, 'index.json'), JSON.stringify({ count: meta.length, solutions: meta }), 'utf-8');
+const heuristics = readHeuristics(outputsDir);
+fs.writeFileSync(path.join(targetDir, 'heuristics.json'), JSON.stringify(heuristics), 'utf-8');
 console.log(`[bundle] ${meta.length} soluciones empaquetadas en public/solutions/`);
+console.log(`[bundle] Heurísticas Erdoğan 2012: ${heuristics.dp.length} evaluaciones DP y ${heuristics.ils.length} resultados ILS`);

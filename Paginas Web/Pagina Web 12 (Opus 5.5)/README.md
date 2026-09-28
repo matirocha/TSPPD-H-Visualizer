@@ -19,16 +19,16 @@ En Windows también sirve `Paginas Web/Iniciar_Pagina_12.bat`, que instala las d
 
 | Comando | Qué hace |
 | --- | --- |
-| `npm run dev` | Vite en el puerto 3012 + API `/api/solutions` sobre `../../Outputs` (abre el navegador; `npm run dev -- --no-open` lo evita) |
-| `npm run build` | Empaqueta las soluciones en `public/solutions/`, hace el typecheck y el build en `dist/` |
+| `npm run dev` | Vite en el puerto 3012 + API `/api/solutions` sobre `../../Outputs` y `/api/heuristics` sobre `../../Outputs/Erdogan2012` (abre el navegador; `npm run dev -- --no-open` lo evita) |
+| `npm run build` | Empaqueta las soluciones y las heurísticas en `public/solutions/`, hace el typecheck y el build en `dist/` |
 | `npm run preview` | Sirve `dist/` con `vite preview` en el puerto 3012 (sin API: usa `public/solutions/`); requiere un `npm run build` previo |
 | `npm start` / `npm run server` | Servidor Express (API + `dist/`) en el puerto 3012, o en `PORT` si está definido; sin un `npm run build` previo solo responde la API |
-| `npm run bundle` | Solo regenera `public/solutions/` desde `Outputs/` |
+| `npm run bundle` | Solo regenera `public/solutions/` desde `Outputs/` (incluye `heuristics.json` desde `Outputs/Erdogan2012/`) |
 | `npm run typecheck` | `tsc -b` |
-| `npm test` | Valida el motor LIFO y la máquina de reproducción sobre las 80 soluciones |
-| `npm run test:engine` / `npm run test:playback` | Cada validación por separado |
+| `npm test` | Valida el motor LIFO y la máquina de reproducción sobre las 80 soluciones, y los resultados de las heurísticas contra Gurobi |
+| `npm run test:engine` / `npm run test:playback` / `npm run test:heuristics` | Cada validación por separado |
 
-Sin backend (con `vite preview` o en un hosting estático como Vercel; la demo de Vercel del repositorio corresponde a la Página 10), la app usa automáticamente las soluciones empaquetadas en `public/solutions/`: 80 archivos JSON más `index.json`, es decir, 4 modelos × 5 y 10 clientes × instancias 1 a 10, con h = 0,1.
+Sin backend (con `vite preview` o en un hosting estático como Vercel; la demo de Vercel del repositorio corresponde a la Página 10), la app usa automáticamente las soluciones empaquetadas en `public/solutions/`: 80 archivos JSON más `index.json`, es decir, 4 modelos × 5 y 10 clientes × instancias 1 a 10, con h = 0,1, y `heuristics.json` con los 40 resultados de las heurísticas (20 del Algoritmo 2.1 + DP y 20 del ILS).
 
 La fuente en uso se indica con un punto de color en el botón de recarga de la barra superior: verde con la API local y gris con el paquete estático. Su tooltip dice «Leyendo Outputs/ en vivo (API local)» o «Soluciones empaquetadas (sin backend)», y el pie de página muestra «API local · Outputs/ en vivo» o «Paquete estático (sin backend)».
 
@@ -42,6 +42,12 @@ La fuente en uso se indica con un punto de color en el botón de recarga de la b
 - **Dock de reproducción**: línea de tiempo proporcional a la distancia (arrastrable), velocidades 0,5×, 1×, 1,5× y 2×, y modo continuo. Al bajar por la página aparece un mini reproductor flotante (reproducir/pausar, posición actual y botón para volver al simulador).
 - **Bitácora**: perfil de carga por tramo, construcción de Z* y tabla completa del tour.
 - **Comparativa**: las cuatro variantes (General, P1, P2, P3) de la instancia actual y el panorama de brechas en las 10 instancias.
+- **Heurísticas** (Erdoğan, Battarra, Laporte y Vigo, 2012, *Computers & Operations Research* 39, 1074–1086): compara la manipulación de Gurobi con el **Algoritmo 2.1 + DP** (manipulación óptima de la Política 3 sobre una ruta fija) y con el **ILS** (Algoritmo 4.2). Los resultados los generan `notebooks/tsppd_h_alg21_dp.py` y `notebooks/tsppd_h_alg42_ils.py` en `Outputs/Erdogan2012/`:
+  - **Veredicto** sobre todas las instancias (o las de un tamaño): cuántas rutas de la Política 3 reproduce la DP, cuántas veces el ILS alcanza el óptimo de Gurobi, el ahorro de la DP sobre las rutas de P1 y P2 y el tiempo por corrida.
+  - **Esta instancia**: para cada modelo Gurobi, su manipulación frente a la de la DP en la misma ruta, más la solución del ILS y su brecha con el óptimo de la Política 3.
+  - **Convergencia del ILS**: mejor costo por iteración en ambas direcciones, óptimos locales, solución inicial (TSP + reubicación del depósito) y robustez en las 10 corridas.
+  - **La DP parada a parada**: carga a bordo, decisión P1/P2, operaciones y costo en cada cliente de la ruta elegida, contra lo que pagó Gurobi en esa misma ruta.
+  - **Panorama** de las 10 instancias de cada tamaño (gráfico o tabla) y **cómo se calculó**: Ecs. (1)–(2), pseudo-código de los Algoritmos 2.1 y 4.2, parámetros, decisiones de implementación y comandos para reproducir.
 - **Modelo matemático**: formulaciones del paper en KaTeX, Ecs. (1)–(48), con el patrón de carga de cada política. En la Política 2, el modelo son las Ecs. (26)–(27); las (28)–(30) muestran su equivalencia con la Política 1, y por eso la interfaz rotula esa política como «Ecs. 26–30».
 - **Datos**: matriz c_ij con los arcos del tour, tabla de nodos y parámetros.
 - **Navegación**: catálogo de soluciones, paleta de comandos (`Ctrl K`), atajos de teclado (`?`) y URL compartible con el formato `#/<modelo>/<clientes>/<instancia>`, donde el modelo es `general`, `p1`, `p2` o `p3`. Por ejemplo, `#/p3/10/7` es la Política 3 con 10 clientes, instancia 7.
@@ -78,6 +84,7 @@ src/
   lib/layout.ts                MDS clásico + rotación + separación de nodos; disposición circular;
                                marco adaptativo del viewBox (frameFor) y paneles como obstáculos
   lib/api.ts                   API en vivo con respaldo estático, caché por archivo y precarga
+                               (también /api/heuristics → solutions/heuristics.json)
   lib/overlay.ts               Bloqueo de scroll y pila de capas (Esc/Tab solo en la superior)
   lib/hash.ts · models.ts      URL compartible y metadatos de los cuatro modelos
   lib/policy.ts · sanitize.ts  Política aplicada por parada y limpieza de textos del solver
@@ -87,12 +94,16 @@ src/
   state/UIProvider.tsx         Hover cruzado mapa ↔ compartimiento, diálogos, paneles en foco
   hooks/                       Atajos de teclado globales y foco confinado en pantalla completa
   components/                  Secciones de la página (map/, bay/, stop/, transport/, analysis/,
-                               model/, data/, ui/…)
+                               model/, data/, heuristics/, ui/…)
+  components/heuristics/       Sección Heurísticas: carga y unión de los resultados (data.ts),
+                               identidad de los métodos (methods.tsx) y sus cinco tarjetas
+  types/heuristics.ts          Formato de los JSON de Outputs/Erdogan2012/
 scripts/
-  solutions-api.js             Lectura de Outputs/ compartida por Vite y Express
+  solutions-api.js             Lectura de Outputs/ y Outputs/Erdogan2012/ compartida por Vite y Express
   validate-engine.ts           Pruebas del motor sobre las 80 soluciones
   validate-playback.ts         Pruebas de la reproducción sobre las 80 soluciones
-public/solutions/              Soluciones empaquetadas (las genera bundle-solutions.js)
+  validate-heuristics.ts       Recalcula los resultados de la DP y del ILS y los contrasta con Gurobi
+public/solutions/              Soluciones empaquetadas y heuristics.json (los genera bundle-solutions.js)
 server.js                      Servidor Express: API + dist/
 vite.config.ts                 Plugin con la misma API para el modo desarrollo
 vercel.json                    Reescrituras para el despliegue estático
@@ -112,6 +123,16 @@ La prueba de reproducción recorre las 80 soluciones:
 - con el modo continuo activado y desactivado (una pausa por parada);
 - avanzando con «Siguiente» y retrocediendo con «Anterior» desde el final;
 - en casos límite: salto en la línea de tiempo, reinicio y parada anterior.
+
+### Validación de las heurísticas
+
+`npm run test:heuristics` lee `Outputs/Erdogan2012/` y, para cada archivo:
+
+- **DP** (80 evaluaciones = 20 instancias × 4 tours Gurobi): el tour evaluado es el de Gurobi, la distancia coincide con `distMatrix`, Z = distancia + manipulación, la DP no supera a las Políticas 1 y 2 puras en su propia ruta, la Política 1 pura reproduce a Gurobi P1 y la Política 2 pura a Gurobi P2, y en el tour de la Política 3 la DP reproduce la manipulación de Gurobi.
+- **Detalle por parada** (DP e ILS): la carga de llegada, las operaciones y el costo de cada parada se recalculan desde cero con las reglas de la Política 1 y 2, y su suma coincide con la manipulación total.
+- **ILS**: el tour visita cada cliente una vez, `best` es el mínimo de las dos direcciones, la traza tiene `Niter` puntos y nunca empeora, y el Z nunca es menor que el óptimo de Gurobi para la Política 3 (lo que delataría un error).
+
+Hoy: 20/20 rutas de la Política 3 reproducidas por la DP y 20/20 instancias en las que el ILS alcanza el óptimo de Gurobi.
 
 ### Mapa de ruta: marco adaptativo
 

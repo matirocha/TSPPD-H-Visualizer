@@ -20,6 +20,7 @@ const SECTIONS = [
   { id: 'simulador', label: 'Simulador' },
   { id: 'bitacora', label: 'Bitácora' },
   { id: 'comparativa', label: 'Comparativa' },
+  { id: 'heuristicas', label: 'Heurísticas' },
   { id: 'modelo', label: 'Modelo' },
   { id: 'datos', label: 'Datos' },
 ] as const;

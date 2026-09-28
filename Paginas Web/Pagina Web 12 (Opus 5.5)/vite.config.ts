@@ -3,18 +3,27 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { listSolutions, readSolution } from './scripts/solutions-api.js';
+import { listSolutions, readHeuristics, readSolution } from './scripts/solutions-api.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUTPUTS_DIR = path.resolve(__dirname, '../../Outputs');
 
-/** Expone /api/solutions durante `npm run dev`, leyendo en vivo la carpeta Outputs/. */
+/** Expone /api/solutions y /api/heuristics durante `npm run dev`, leyendo en vivo la carpeta Outputs/. */
 function solutionsApiPlugin(): Plugin {
   return {
     name: 'tsppd-solutions-api-p12',
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const url = (req.url || '').split('?')[0];
+        if (url === '/api/heuristics' || url === '/api/heuristics/') {
+          res.setHeader('Content-Type', 'application/json');
+          try {
+            return res.end(JSON.stringify({ success: true, ...readHeuristics(OUTPUTS_DIR) }));
+          } catch (err) {
+            res.statusCode = 500;
+            return res.end(JSON.stringify({ success: false, error: (err as Error).message }));
+          }
+        }
         if (!url.startsWith('/api/solutions')) return next();
         res.setHeader('Content-Type', 'application/json');
         try {

@@ -12,9 +12,10 @@
     "start": "node server.js",
     "bundle": "node bundle-solutions.js",
     "typecheck": "tsc -b",
-    "test": "node scripts/validate-engine.ts && node scripts/validate-playback.ts",
+    "test": "node scripts/validate-engine.ts && node scripts/validate-playback.ts && node scripts/validate-heuristics.ts",
     "test:engine": "node scripts/validate-engine.ts",
-    "test:playback": "node scripts/validate-playback.ts"
+    "test:playback": "node scripts/validate-playback.ts",
+    "test:heuristics": "node scripts/validate-heuristics.ts"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",

@@ -12,6 +12,8 @@ export type ChipTone =
   | 'p1'
   | 'p2'
   | 'p3'
+  | 'dp'
+  | 'ils'
   | 'solid';
 
 const TONE: Record<ChipTone, string> = {
@@ -25,6 +27,8 @@ const TONE: Record<ChipTone, string> = {
   p1: 'text-p1 bg-p1/12 border-p1/35',
   p2: 'text-p2 bg-p2/12 border-p2/35',
   p3: 'tone-p3',
+  dp: 'text-dp bg-dp/12 border-dp/35',
+  ils: 'text-ils bg-ils/12 border-ils/35',
   solid: 'text-zinc-950 bg-zinc-100 border-zinc-100',
 };
 

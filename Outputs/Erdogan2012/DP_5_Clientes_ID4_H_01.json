@@ -1,0 +1,640 @@
+{
+  "algorithm": "alg21-dp",
+  "algorithmName": "Algoritmo 2.1 + DP (Erdoğan et al. 2012, §2.1)",
+  "paper": "Erdoğan, Battarra, Laporte & Vigo (2012). Metaheuristics for the TSP with pickups, deliveries and handling costs. Computers & Operations Research 39, 1074–1086.",
+  "numCustomers": 5,
+  "instanceId": 4,
+  "h": 0.1,
+  "h_a": 0.1,
+  "h_b": 0.1,
+  "capacity": 33,
+  "nodes": [
+    {
+      "id": 0,
+      "alpha": 0,
+      "beta": 0
+    },
+    {
+      "id": 1,
+      "alpha": 12,
+      "beta": 2
+    },
+    {
+      "id": 2,
+      "alpha": 2,
+      "beta": 0
+    },
+    {
+      "id": 3,
+      "alpha": 1,
+      "beta": 0
+    },
+    {
+      "id": 4,
+      "alpha": 3,
+      "beta": 12
+    },
+    {
+      "id": 5,
+      "alpha": 15,
+      "beta": 0
+    }
+  ],
+  "evaluations": [
+    {
+      "model": "TSPPD-H",
+      "label": "Modelo General",
+      "source": "Solucion_5_Clientes_ID4_H_01.txt",
+      "gurobiHandling": 0.7,
+      "gurobiObjective": 252.7,
+      "gurobiStops": {
+        "1": {
+          "cost": 0.0,
+          "ops": 0
+        },
+        "5": {
+          "cost": 0.2,
+          "ops": 2
+        },
+        "2": {
+          "cost": 0.2,
+          "ops": 2
+        },
+        "4": {
+          "cost": 0.3,
+          "ops": 3
+        },
+        "3": {
+          "cost": 0.0,
+          "ops": 0
+        }
+      },
+      "gurobiPolicies": null,
+      "tour": [
+        0,
+        1,
+        5,
+        2,
+        4,
+        3,
+        0
+      ],
+      "feasible": true,
+      "totalDistance": 252,
+      "handlingDP": 0.7,
+      "objectiveDP": 252.7,
+      "handlingP1": 2.0,
+      "handlingP2": 2.2,
+      "policies": {
+        "1": 1,
+        "5": 1,
+        "2": 1,
+        "4": 2,
+        "3": 2
+      },
+      "policy2Customers": [
+        4,
+        3
+      ],
+      "f": [
+        0.7,
+        0.1,
+        0.1,
+        0.1,
+        0.0,
+        0.0
+      ],
+      "detail": [
+        {
+          "position": 1,
+          "aArrival": 33,
+          "bFrontArrival": 0,
+          "bRearArrival": 0,
+          "policy": 1,
+          "opsA": 0,
+          "opsB": 0,
+          "cost": 0.0,
+          "aDeparture": 21,
+          "bFrontDeparture": 0,
+          "bRearDeparture": 2,
+          "customer": 1,
+          "alpha": 12,
+          "beta": 2
+        },
+        {
+          "position": 2,
+          "aArrival": 21,
+          "bFrontArrival": 0,
+          "bRearArrival": 2,
+          "policy": 1,
+          "opsA": 0,
+          "opsB": 2,
+          "cost": 0.2,
+          "aDeparture": 6,
+          "bFrontDeparture": 0,
+          "bRearDeparture": 2,
+          "customer": 5,
+          "alpha": 15,
+          "beta": 0
+        },
+        {
+          "position": 3,
+          "aArrival": 6,
+          "bFrontArrival": 0,
+          "bRearArrival": 2,
+          "policy": 1,
+          "opsA": 0,
+          "opsB": 2,
+          "cost": 0.2,
+          "aDeparture": 4,
+          "bFrontDeparture": 0,
+          "bRearDeparture": 2,
+          "customer": 2,
+          "alpha": 2,
+          "beta": 0
+        },
+        {
+          "position": 4,
+          "aArrival": 4,
+          "bFrontArrival": 0,
+          "bRearArrival": 2,
+          "policy": 2,
+          "opsA": 1,
+          "opsB": 2,
+          "cost": 0.3,
+          "aDeparture": 1,
+          "bFrontDeparture": 14,
+          "bRearDeparture": 0,
+          "customer": 4,
+          "alpha": 3,
+          "beta": 12
+        },
+        {
+          "position": 5,
+          "aArrival": 1,
+          "bFrontArrival": 14,
+          "bRearArrival": 0,
+          "policy": 2,
+          "opsA": 0,
+          "opsB": 0,
+          "cost": 0.0,
+          "aDeparture": 0,
+          "bFrontDeparture": 14,
+          "bRearDeparture": 0,
+          "customer": 3,
+          "alpha": 1,
+          "beta": 0
+        }
+      ],
+      "dpTimeMs": 0.0145
+    },
+    {
+      "model": "TSPPD-H_1",
+      "label": "Política 1",
+      "source": "Solucion_TSPPD_H1_5_Clientes_ID4_H_01.txt",
+      "gurobiHandling": 2.0,
+      "gurobiObjective": 254.0,
+      "gurobiStops": {
+        "1": {
+          "cost": 0.0,
+          "ops": 0
+        },
+        "5": {
+          "cost": 0.2,
+          "ops": 2
+        },
+        "2": {
+          "cost": 0.2,
+          "ops": 2
+        },
+        "4": {
+          "cost": 0.2,
+          "ops": 2
+        },
+        "3": {
+          "cost": 1.4,
+          "ops": 14
+        }
+      },
+      "gurobiPolicies": null,
+      "tour": [
+        0,
+        1,
+        5,
+        2,
+        4,
+        3,
+        0
+      ],
+      "feasible": true,
+      "totalDistance": 252,
+      "handlingDP": 0.7,
+      "objectiveDP": 252.7,
+      "handlingP1": 2.0,
+      "handlingP2": 2.2,
+      "policies": {
+        "1": 1,
+        "5": 1,
+        "2": 1,
+        "4": 2,
+        "3": 2
+      },
+      "policy2Customers": [
+        4,
+        3
+      ],
+      "f": [
+        0.7,
+        0.1,
+        0.1,
+        0.1,
+        0.0,
+        0.0
+      ],
+      "detail": [
+        {
+          "position": 1,
+          "aArrival": 33,
+          "bFrontArrival": 0,
+          "bRearArrival": 0,
+          "policy": 1,
+          "opsA": 0,
+          "opsB": 0,
+          "cost": 0.0,
+          "aDeparture": 21,
+          "bFrontDeparture": 0,
+          "bRearDeparture": 2,
+          "customer": 1,
+          "alpha": 12,
+          "beta": 2
+        },
+        {
+          "position": 2,
+          "aArrival": 21,
+          "bFrontArrival": 0,
+          "bRearArrival": 2,
+          "policy": 1,
+          "opsA": 0,
+          "opsB": 2,
+          "cost": 0.2,
+          "aDeparture": 6,
+          "bFrontDeparture": 0,
+          "bRearDeparture": 2,
+          "customer": 5,
+          "alpha": 15,
+          "beta": 0
+        },
+        {
+          "position": 3,
+          "aArrival": 6,
+          "bFrontArrival": 0,
+          "bRearArrival": 2,
+          "policy": 1,
+          "opsA": 0,
+          "opsB": 2,
+          "cost": 0.2,
+          "aDeparture": 4,
+          "bFrontDeparture": 0,
+          "bRearDeparture": 2,
+          "customer": 2,
+          "alpha": 2,
+          "beta": 0
+        },
+        {
+          "position": 4,
+          "aArrival": 4,
+          "bFrontArrival": 0,
+          "bRearArrival": 2,
+          "policy": 2,
+          "opsA": 1,
+          "opsB": 2,
+          "cost": 0.3,
+          "aDeparture": 1,
+          "bFrontDeparture": 14,
+          "bRearDeparture": 0,
+          "customer": 4,
+          "alpha": 3,
+          "beta": 12
+        },
+        {
+          "position": 5,
+          "aArrival": 1,
+          "bFrontArrival": 14,
+          "bRearArrival": 0,
+          "policy": 2,
+          "opsA": 0,
+          "opsB": 0,
+          "cost": 0.0,
+          "aDeparture": 0,
+          "bFrontDeparture": 14,
+          "bRearDeparture": 0,
+          "customer": 3,
+          "alpha": 1,
+          "beta": 0
+        }
+      ],
+      "dpTimeMs": 0.0082
+    },
+    {
+      "model": "TSPPD-H_2",
+      "label": "Política 2",
+      "source": "Solucion_TSPPD_H2_5_Clientes_ID4_H_01.txt",
+      "gurobiHandling": 2.2,
+      "gurobiObjective": 254.2,
+      "gurobiStops": {
+        "1": {
+          "cost": 2.1,
+          "ops": 21
+        },
+        "5": {
+          "cost": 0.0,
+          "ops": 0
+        },
+        "2": {
+          "cost": 0.0,
+          "ops": 0
+        },
+        "4": {
+          "cost": 0.1,
+          "ops": 1
+        },
+        "3": {
+          "cost": 0.0,
+          "ops": 0
+        }
+      },
+      "gurobiPolicies": null,
+      "tour": [
+        0,
+        1,
+        5,
+        2,
+        4,
+        3,
+        0
+      ],
+      "feasible": true,
+      "totalDistance": 252,
+      "handlingDP": 0.7,
+      "objectiveDP": 252.7,
+      "handlingP1": 2.0,
+      "handlingP2": 2.2,
+      "policies": {
+        "1": 1,
+        "5": 1,
+        "2": 1,
+        "4": 2,
+        "3": 2
+      },
+      "policy2Customers": [
+        4,
+        3
+      ],
+      "f": [
+        0.7,
+        0.1,
+        0.1,
+        0.1,
+        0.0,
+        0.0
+      ],
+      "detail": [
+        {
+          "position": 1,
+          "aArrival": 33,
+          "bFrontArrival": 0,
+          "bRearArrival": 0,
+          "policy": 1,
+          "opsA": 0,
+          "opsB": 0,
+          "cost": 0.0,
+          "aDeparture": 21,
+          "bFrontDeparture": 0,
+          "bRearDeparture": 2,
+          "customer": 1,
+          "alpha": 12,
+          "beta": 2
+        },
+        {
+          "position": 2,
+          "aArrival": 21,
+          "bFrontArrival": 0,
+          "bRearArrival": 2,
+          "policy": 1,
+          "opsA": 0,
+          "opsB": 2,
+          "cost": 0.2,
+          "aDeparture": 6,
+          "bFrontDeparture": 0,
+          "bRearDeparture": 2,
+          "customer": 5,
+          "alpha": 15,
+          "beta": 0
+        },
+        {
+          "position": 3,
+          "aArrival": 6,
+          "bFrontArrival": 0,
+          "bRearArrival": 2,
+          "policy": 1,
+          "opsA": 0,
+          "opsB": 2,
+          "cost": 0.2,
+          "aDeparture": 4,
+          "bFrontDeparture": 0,
+          "bRearDeparture": 2,
+          "customer": 2,
+          "alpha": 2,
+          "beta": 0
+        },
+        {
+          "position": 4,
+          "aArrival": 4,
+          "bFrontArrival": 0,
+          "bRearArrival": 2,
+          "policy": 2,
+          "opsA": 1,
+          "opsB": 2,
+          "cost": 0.3,
+          "aDeparture": 1,
+          "bFrontDeparture": 14,
+          "bRearDeparture": 0,
+          "customer": 4,
+          "alpha": 3,
+          "beta": 12
+        },
+        {
+          "position": 5,
+          "aArrival": 1,
+          "bFrontArrival": 14,
+          "bRearArrival": 0,
+          "policy": 2,
+          "opsA": 0,
+          "opsB": 0,
+          "cost": 0.0,
+          "aDeparture": 0,
+          "bFrontDeparture": 14,
+          "bRearDeparture": 0,
+          "customer": 3,
+          "alpha": 1,
+          "beta": 0
+        }
+      ],
+      "dpTimeMs": 0.0067
+    },
+    {
+      "model": "TSPPD-H_3",
+      "label": "Política 3",
+      "source": "Solucion_TSPPD_H3_5_Clientes_ID4_H_01.txt",
+      "gurobiHandling": 0.7,
+      "gurobiObjective": 252.7,
+      "gurobiStops": {
+        "1": {
+          "cost": 0.0,
+          "ops": 0
+        },
+        "5": {
+          "cost": 0.2,
+          "ops": 2
+        },
+        "2": {
+          "cost": 0.2,
+          "ops": 2
+        },
+        "4": {
+          "cost": 0.3,
+          "ops": 3
+        },
+        "3": {
+          "cost": 0.0,
+          "ops": 0
+        }
+      },
+      "gurobiPolicies": {
+        "1": 1,
+        "2": 1,
+        "3": 1,
+        "4": 2,
+        "5": 1
+      },
+      "tour": [
+        0,
+        1,
+        5,
+        2,
+        4,
+        3,
+        0
+      ],
+      "feasible": true,
+      "totalDistance": 252,
+      "handlingDP": 0.7,
+      "objectiveDP": 252.7,
+      "handlingP1": 2.0,
+      "handlingP2": 2.2,
+      "policies": {
+        "1": 1,
+        "5": 1,
+        "2": 1,
+        "4": 2,
+        "3": 2
+      },
+      "policy2Customers": [
+        4,
+        3
+      ],
+      "f": [
+        0.7,
+        0.1,
+        0.1,
+        0.1,
+        0.0,
+        0.0
+      ],
+      "detail": [
+        {
+          "position": 1,
+          "aArrival": 33,
+          "bFrontArrival": 0,
+          "bRearArrival": 0,
+          "policy": 1,
+          "opsA": 0,
+          "opsB": 0,
+          "cost": 0.0,
+          "aDeparture": 21,
+          "bFrontDeparture": 0,
+          "bRearDeparture": 2,
+          "customer": 1,
+          "alpha": 12,
+          "beta": 2
+        },
+        {
+          "position": 2,
+          "aArrival": 21,
+          "bFrontArrival": 0,
+          "bRearArrival": 2,
+          "policy": 1,
+          "opsA": 0,
+          "opsB": 2,
+          "cost": 0.2,
+          "aDeparture": 6,
+          "bFrontDeparture": 0,
+          "bRearDeparture": 2,
+          "customer": 5,
+          "alpha": 15,
+          "beta": 0
+        },
+        {
+          "position": 3,
+          "aArrival": 6,
+          "bFrontArrival": 0,
+          "bRearArrival": 2,
+          "policy": 1,
+          "opsA": 0,
+          "opsB": 2,
+          "cost": 0.2,
+          "aDeparture": 4,
+          "bFrontDeparture": 0,
+          "bRearDeparture": 2,
+          "customer": 2,
+          "alpha": 2,
+          "beta": 0
+        },
+        {
+          "position": 4,
+          "aArrival": 4,
+          "bFrontArrival": 0,
+          "bRearArrival": 2,
+          "policy": 2,
+          "opsA": 1,
+          "opsB": 2,
+          "cost": 0.3,
+          "aDeparture": 1,
+          "bFrontDeparture": 14,
+          "bRearDeparture": 0,
+          "customer": 4,
+          "alpha": 3,
+          "beta": 12
+        },
+        {
+          "position": 5,
+          "aArrival": 1,
+          "bFrontArrival": 14,
+          "bRearArrival": 0,
+          "policy": 2,
+          "opsA": 0,
+          "opsB": 0,
+          "cost": 0.0,
+          "aDeparture": 0,
+          "bFrontDeparture": 14,
+          "bRearDeparture": 0,
+          "customer": 3,
+          "alpha": 1,
+          "beta": 0
+        }
+      ],
+      "dpTimeMs": 0.0065
+    }
+  ],
+  "generatedAt": "2026-09-28T15:46:54+00:00"
+}

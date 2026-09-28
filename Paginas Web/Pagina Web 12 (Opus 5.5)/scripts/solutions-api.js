@@ -79,3 +79,34 @@ export function readSolution(outputsDir, filename) {
   if (!fs.existsSync(filePath)) return null;
   return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
 }
+
+// ── Heurísticas de Erdoğan et al. (2012) ─────────────────────────────────────
+// notebooks/tsppd_h_alg21_dp.py y notebooks/tsppd_h_alg42_ils.py guardan sus resultados
+// en Outputs/Erdogan2012/ (subcarpeta: el catálogo de soluciones solo lee el nivel superior).
+export const HEURISTICS_SUBDIR = 'Erdogan2012';
+
+const HEURISTIC_KINDS = { 'alg21-dp': 'dp', 'alg42-ils': 'ils' };
+
+/**
+ * Lee todos los resultados del Algoritmo 2.1 + DP (`DP_*.json`) y del ILS (`ILS_*.json`).
+ * Los archivos ilegibles o de otro tipo se omiten; si la carpeta no existe devuelve listas vacías.
+ */
+export function readHeuristics(outputsDir) {
+  const dir = path.join(outputsDir, HEURISTICS_SUBDIR);
+  const result = { dp: [], ils: [] };
+  if (!fs.existsSync(dir)) return result;
+  for (const f of fs.readdirSync(dir)) {
+    if (!f.endsWith('.json')) continue;
+    try {
+      const content = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf-8'));
+      const kind = HEURISTIC_KINDS[content?.algorithm];
+      if (kind) result[kind].push({ filename: f, ...content });
+    } catch {
+      // Archivo a medio escribir o corrupto: se ignora.
+    }
+  }
+  const byInstance = (a, b) => (a.numCustomers || 0) - (b.numCustomers || 0) || (a.instanceId || 0) - (b.instanceId || 0);
+  result.dp.sort(byInstance);
+  result.ils.sort(byInstance);
+  return result;
+}

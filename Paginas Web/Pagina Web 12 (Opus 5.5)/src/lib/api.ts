@@ -1,4 +1,5 @@
 import type { DataSource, ModelType, SolutionData, SolutionMeta } from '../types/solution';
+import type { DPFile, HeuristicsBundle, ILSFile } from '../types/heuristics';
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 /** Caché de detalles, válida mientras el archivo no cambie (mtime de Outputs/). */
@@ -100,4 +101,21 @@ async function loadDetail(filename: string, source: DataSource, mtime?: number):
 /** Precarga en segundo plano (p. ej. las otras políticas de la misma instancia). */
 export function prefetchSolutions(items: { filename: string; mtime?: number }[], source: DataSource) {
   for (const it of items) void fetchSolutionDetail(it.filename, source, it.mtime).catch(() => undefined);
+}
+
+/**
+ * Resultados del Algoritmo 2.1 + DP y del ILS (Outputs/Erdogan2012/). Con la API en vivo
+ * se lee `/api/heuristics`; si no responde o aún no hay resultados, se usa el paquete
+ * estático `solutions/heuristics.json`. Devuelve listas vacías si no hay ninguno.
+ */
+export async function fetchHeuristics(source: DataSource): Promise<HeuristicsBundle> {
+  type Raw = { success?: boolean; dp?: DPFile[]; ils?: ILSFile[] };
+  const has = (r: Raw | null): r is Raw => !!r && (Array.isArray(r.dp) || Array.isArray(r.ils)) && (r.dp?.length ?? 0) + (r.ils?.length ?? 0) > 0;
+  if (source === 'api') {
+    const api = await getJson<Raw>(`${BASE}/api/heuristics`);
+    if (api?.success !== false && has(api)) return { dp: api.dp ?? [], ils: api.ils ?? [], source: 'api' };
+  }
+  const bundled = await getJson<Raw>(`${BASE}/solutions/heuristics.json`);
+  if (has(bundled)) return { dp: bundled.dp ?? [], ils: bundled.ils ?? [], source: 'static' };
+  return { dp: [], ils: [], source };
 }

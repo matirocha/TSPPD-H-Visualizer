@@ -18,7 +18,7 @@ export function InstanceData() {
   return (
     <div>
       <SectionHeader
-        index="05"
+        index="06"
         eyebrow="Datos de la instancia"
         title={`${n} clientes · instancia ${id}`}
         description="Instancias euclidianas de Gendreau, Laporte y Vigo (1999) —archivos e_vigo— adaptadas al TSPPD-H como en el paper: p′ᵢ = max(1, pᵢ mod 20), βᵢ = ⌊p′ᵢ·(i mod 5)/5⌋, αᵢ = p′ᵢ − βᵢ, con matriz simétrica de costos c_ij."

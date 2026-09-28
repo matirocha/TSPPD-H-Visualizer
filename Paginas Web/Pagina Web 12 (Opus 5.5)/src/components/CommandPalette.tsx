@@ -5,6 +5,7 @@ import {
   CircleDashed,
   Compass,
   CornerDownLeft,
+  FlaskConical,
   Gauge,
   Keyboard,
   LayoutGrid,
@@ -75,8 +76,15 @@ const SECTIONS: { id: string; label: string; index: string; icon: LucideIcon; ke
   { id: 'simulador', label: 'Simulador', index: '01', icon: Truck, keywords: 'inicio arriba mapa ruta camion compartimiento simulacion' },
   { id: 'bitacora', label: 'Bitácora', index: '02', icon: ScrollText, keywords: 'registro log tramos pasos tabla historial' },
   { id: 'comparativa', label: 'Comparativa', index: '03', icon: ChartColumn, keywords: 'comparar modelos politicas grafico costos' },
-  { id: 'modelo', label: 'Modelo matemático', index: '04', icon: Sigma, keywords: 'formulacion ecuaciones restricciones funcion objetivo latex' },
-  { id: 'datos', label: 'Datos de la instancia', index: '05', icon: Table2, keywords: 'nodos demanda matriz distancias c_ij capacidad' },
+  {
+    id: 'heuristicas',
+    label: 'Heurísticas (Erdoğan 2012)',
+    index: '04',
+    icon: FlaskConical,
+    keywords: 'heuristicas metaheuristica ils iterated local search algoritmo 2.1 4.2 dp programacion dinamica erdogan manipulacion handling gurobi',
+  },
+  { id: 'modelo', label: 'Modelo matemático', index: '05', icon: Sigma, keywords: 'formulacion ecuaciones restricciones funcion objetivo latex' },
+  { id: 'datos', label: 'Datos de la instancia', index: '06', icon: Table2, keywords: 'nodos demanda matriz distancias c_ij capacidad' },
 ];
 
 const GROUP_TITLE: Record<GroupId, string> = { sol: 'Soluciones', act: 'Acciones', nav: 'Ir a sección' };
