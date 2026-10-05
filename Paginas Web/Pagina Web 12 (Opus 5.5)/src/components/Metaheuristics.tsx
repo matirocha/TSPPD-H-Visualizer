@@ -8,8 +8,9 @@
  * la sección se actualiza sola mientras falten ejecuciones. Las cifras del paper llegan aparte
  * (paper_erdogan2012.json), así que con el paper y sin ejecuciones se muestra la estructura pendiente.
  *
- * Barra de control (dirección compartida) · resumen por |Vc| al estilo de las Tablas 2–3 (12) ·
- * gráficos (7) + hallazgos (5) · detalle por instancia como las Tablas 8–9 (12) · cómo se midió (12).
+ * Barra de control (dirección de los gráficos y hallazgos) · resumen por |Vc| al estilo de las
+ * Tablas 2–3, con 1 dir. y 2 dir. lado a lado como las Tablas 3 y 8–9 (12) · gráficos (7) +
+ * hallazgos (5) · detalle por instancia como las Tablas 8–9 (12) · cómo se midió (12).
  */
 import { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
@@ -30,9 +31,9 @@ import { CommandLine, LiveDot, fmtClock, fmtDateTime } from './benchmark/shared'
 import { shortCpu } from './benchmark/format';
 
 /**
- * Qué significa cada dirección (Segmented de la barra de control). Etiquetas «1dir»/«2dir», como los
- * títulos de las tarjetas (Tablas 2–3): «1 dir.»/«2 dir.» quedan para las columnas de las Tablas 8–9,
- * donde «2 dir.» es solo la corrida desde el tour invertido.
+ * Qué significa cada dirección (Segmented de la barra de control, que rige los gráficos y los
+ * hallazgos; las tablas muestran ambas). Etiquetas «1dir»/«2dir», como los títulos de esas tarjetas:
+ * «1 dir.»/«2 dir.» quedan para las columnas de las tablas, como en las Tablas 3 y 8–9 del paper.
  */
 const DIRECTIONS: { value: MetaDirection; label: string; ariaLabel: string; hint: string }[] = [
   {
@@ -121,7 +122,7 @@ export function Metaheuristics() {
               </motion.div>
             )}
             <motion.div variants={staggerChild} className="min-w-0 lg:col-span-12">
-              <MetaSummaryTable rows={rows} paper={paper} dir={dir} file={file} />
+              <MetaSummaryTable rows={rows} paper={paper} file={file} />
             </motion.div>
             <motion.div variants={staggerChild} className="min-w-0 lg:col-span-7">
               <MetaCharts rows={rows} paper={paper} dir={dir} />
@@ -205,13 +206,14 @@ function ControlBar({
   const hint = DIRECTIONS.find((d) => d.value === dir)?.hint;
   return (
     // Fija bajo la barra superior desde sm y con alto suficiente (index.css, [data-bench-bar]): la
-    // dirección rige todas las tablas y gráficos de la sección. Allí se reserva también el scroll-margin.
+    // dirección rige los gráficos y los hallazgos (las tablas muestran 1 dir. y 2 dir. lado a lado).
+    // Allí se reserva también el scroll-margin.
     <div data-bench-bar className="z-20 mt-10">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5 rounded-2xl border border-zinc-800 bg-zinc-950/85 px-3 py-2 shadow-lg shadow-black/30 backdrop-blur-xl supports-[backdrop-filter]:bg-zinc-950/70">
         <div className="flex items-center gap-2">
-          <span className="text-[12px] text-zinc-500">Dirección</span>
+          <span className="text-[12px] text-zinc-500">Dirección de los gráficos</span>
           <Segmented<MetaDirection>
-            ariaLabel="Direcciones del tour de las tablas y los gráficos"
+            ariaLabel="Direcciones del tour de los gráficos y los hallazgos"
             size="sm"
             value={dir}
             onChange={onDir}

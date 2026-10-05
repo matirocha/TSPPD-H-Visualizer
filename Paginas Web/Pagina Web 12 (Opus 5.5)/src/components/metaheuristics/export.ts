@@ -3,8 +3,9 @@
  *  · summaryModel: modelo de la tabla «Resumen por |Vc|» (lo usan la tarjeta MetaSummaryTable, el
  *    LaTeX y el CSV, para que las tres muestren exactamente las mismas cifras).
  *  · toLatexSummary: una fila por |Vc| + «Prom.» con la desviación media (%) respecto del Best del
- *    paper y los segundos medios de los cinco métodos, y entre paréntesis la cifra del paper
- *    (estilo Erdoğan et al. 2012, Tablas 2–3), lista para pegar en la tesis (booktabs).
+ *    paper y los segundos medios de los cinco métodos en «1 dir.» y «2 dir.» lado a lado, y debajo,
+ *    entre paréntesis, la cifra del paper (estilo Erdoğan et al. 2012, Tablas 2–3 y 8–9), lista
+ *    para pegar en la tesis (booktabs).
  *  · toCsvSummary: el mismo resumen en CSV (una o ambas direcciones).
  *  · toCsvInstances: una fila por instancia con Z y segundos de cada método y las cifras del paper.
  *  · Detalle por instancia (Tablas 8–9): columnas «1 dir.» / «2 dir.» de cada método, lecturas de
@@ -228,9 +229,9 @@ const PENDING = '\\ldots';
 const DAGGER = '$^{\\dagger}$';
 const ERDOGAN = 'Erdo\\u{g}an et al.~(2012)';
 
-/** \cmidrule de cada bloque de 2 columnas, desde la columna `start`. */
-const cmidrules = (blocks: number, start: number) =>
-  Array.from({ length: blocks }, (_, i) => `\\cmidrule(lr){${start + 2 * i}-${start + 2 * i + 1}}`).join(' ');
+/** \cmidrule de cada bloque de `width` columnas, desde la columna `start`. */
+const cmidrules = (blocks: number, start: number, width = 2) =>
+  Array.from({ length: blocks }, (_, i) => `\\cmidrule(lr){${start + width * i}-${start + width * (i + 1) - 1}}`).join(' ');
 
 interface TexFlags {
   partial: boolean;
@@ -240,11 +241,16 @@ interface TexFlags {
   paperAll: boolean;
 }
 
-/** Desv. y Seg. de un método: la nuestra (negrita si es la mejor de la fila) y, entre paréntesis, la del paper. */
-function texCells(c: SummaryCell, flags: TexFlags, prom = false): [string, string] {
-  const paperSmall = (s: string) => ` {\\scriptsize(${s})}`;
-  // Los errores se cuentan en las filas por |Vc|; la fila Prom. no los vuelve a sumar.
-  if (!prom) flags.errors += c.errors;
+/** Las dos direcciones del resumen, en el orden de las columnas de las Tablas 3 y 8–9. */
+const SUMMARY_DIRS: readonly MetaDirection[] = ['1dir', '2dir'];
+const DIR_HEAD: Record<MetaDirection, string> = { '1dir': '1~dir.', '2dir': '2~dir.' };
+
+/**
+ * Desv. y Seg. de un método en una dirección: la nuestra (negrita si es la mejor de la fila en esa
+ * dirección) y, aparte, la del paper entre paréntesis (va en la línea de abajo; '' si no se publica).
+ */
+function texCells(c: SummaryCell, flags: TexFlags, prom = false): { ours: [string, string]; paper: [string, string] } {
+  const paperSmall = (s: string) => `{\\scriptsize(${s})}`;
   let dev: string;
   let sec: string;
   if (c.s.done === 0) {
@@ -260,35 +266,52 @@ function texCells(c: SummaryCell, flags: TexFlags, prom = false): [string, strin
     }
     sec = texSec(c.s.timeSec);
   }
+  let paperDev = '';
+  let paperSec = '';
   if (c.paperDev !== null) {
     if (c.paperDevAll) flags.paperAll = true;
-    dev += paperSmall(texDev(c.paperDev));
+    paperDev = paperSmall(texDev(c.paperDev));
   }
   if (c.paperTime !== null) {
     if (c.paperTimeEstimated) flags.estimated = true;
-    sec += paperSmall((c.paperTimeEstimated ? '$\\approx$' : '') + texSec(c.paperTime));
+    paperSec = paperSmall((c.paperTimeEstimated ? '$\\approx$' : '') + texSec(c.paperTime));
   }
-  return [dev, sec];
+  return { ours: [dev, sec], paper: [paperDev, paperSec] };
 }
 
-const DIR_TEXT: Record<MetaDirection, string> = {
-  '1dir': 'una dirección (1dir: corrida desde el tour TSP)',
-  '2dir': 'dos direcciones (2dir: la mejor de las corridas desde el tour TSP y desde el tour invertido)',
-};
+/**
+ * Las dos líneas de una fila del resumen: la nuestra (`head` en las dos primeras columnas) y, si el
+ * paper publica alguna cifra de la fila, debajo la suya, por método «1 dir.» y «2 dir.».
+ */
+function summaryLines(head: string[], pair: Record<MetaDirection, SummaryRow>, flags: TexFlags, prom = false): string[] {
+  const cells = META_METHODS.flatMap((m) => SUMMARY_DIRS.map((d) => texCells(pair[d].cells[m], flags, prom)));
+  // Los errores son del método, no de la dirección: se cuentan una vez, en las filas por |Vc|.
+  if (!prom) flags.errors += META_METHODS.reduce((a, m) => a + pair['1dir'].cells[m].errors, 0);
+  const lines = [row([...head, ...cells.flatMap((c) => c.ours)])];
+  const paperCells = cells.flatMap((c) => c.paper);
+  if (paperCells.some((s) => s !== '')) lines.push(row(['\\multicolumn{2}{r}{\\scriptsize\\emph{paper}}', ...paperCells]));
+  return lines;
+}
 
 /**
- * Resumen por |Vc| en una dirección: |Vc| | h | por método «Desv. (%)» y «Seg.», con la cifra del
- * paper entre paréntesis; al final, «Prom.» sobre las instancias que todos los métodos terminaron.
- * `file` (opcional) aporta el hardware, el runtime y Niter para el caption.
+ * Resumen por |Vc| con las dos direcciones lado a lado, como las Tablas 3 y 8–9 del paper: |Vc| | h |
+ * por método «1 dir.» y «2 dir.», cada una con «Desv. (%)» y «Seg.»; bajo cada fila, la cifra del
+ * paper entre paréntesis; al final, «Prom.» sobre las instancias que todos los métodos terminaron en
+ * esa dirección. `file` (opcional) aporta el hardware, el runtime y Niter para el caption.
  */
-export function toLatexSummary(rows: InstanceRow[], paper: PaperFile | null, dir: MetaDirection, file?: MetaFile | null): string {
-  const model = summaryModel(rows, paper, dir, file);
+export function toLatexSummary(rows: InstanceRow[], paper: PaperFile | null, file?: MetaFile | null): string {
+  const models = {
+    '1dir': summaryModel(rows, paper, '1dir', file),
+    '2dir': summaryModel(rows, paper, '2dir', file),
+  } satisfies Record<MetaDirection, SummaryModel>;
   const flags: TexFlags = { partial: false, errors: 0, estimated: false, paperAll: false };
-  const body = model.byN.map((r) =>
-    row([String(r.n), texH(r.h), ...META_METHODS.flatMap((m) => texCells(r.cells[m], flags))]),
+  // summarizeByN agrupa las mismas filas en ambas direcciones: mismos |Vc| en el mismo orden.
+  const body = models['1dir'].byN.flatMap((r, i) =>
+    summaryLines([String(r.n), texH(r.h)], { '1dir': r, '2dir': models['2dir'].byN[i] }, flags),
   );
-  const prom = row(['\\multicolumn{2}{l}{Prom.}', ...META_METHODS.flatMap((m) => texCells(model.overall.cells[m], flags, true))]);
-  const nCols = 2 + META_METHODS.length * 2;
+  const prom = summaryLines(['\\multicolumn{2}{l}{Prom.}'], { '1dir': models['1dir'].overall, '2dir': models['2dir'].overall }, flags, true);
+  const width = 2 * SUMMARY_DIRS.length;
+  const nCols = 2 + META_METHODS.length * width;
 
   const meta = file?.meta ?? null;
   const nIter = meta?.params?.nIter ?? 200;
@@ -296,15 +319,16 @@ export function toLatexSummary(rows: InstanceRow[], paper: PaperFile | null, dir
   const machine = meta
     ? ` Nuestros tiempos: segundos de pared en ${texText(meta.runtime)}${meta.cpu ? ` (${texText(meta.cpu)})` : ''}, ${meta.workers} ejecuciones en paralelo (\\emph{worker threads} de Node.js), un hilo cada una.`
     : '';
-  const partialProm = model.commonInstances < model.totalInstances;
+  const total = models['1dir'].totalInstances;
+  const common = SUMMARY_DIRS.map((d) => models[d].commonInstances);
+  const partialProm = common.some((c) => c < total);
   // Fila «Time (s)» de la Tabla 9: solo con las 100 instancias del paper terminadas (summarizeOverall).
-  const promPaperTime = META_METHODS.some((m) => model.overall.cells[m].paperTime !== null);
-  const itsGap = model.overall.cells['its-exact'].paperTime !== null ? paperTimeMismatch(paper, 'its-exact') : null;
+  const promPaperTime = SUMMARY_DIRS.some((d) => META_METHODS.some((m) => models[d].overall.cells[m].paperTime !== null));
+  const itsGap = SUMMARY_DIRS.some((d) => models[d].overall.cells['its-exact'].paperTime !== null) ? paperTimeMismatch(paper, 'its-exact') : null;
   const paperTimeText =
     '; tiempo publicado: por $|V_c|$ solo para ILS e ITS exactos en una dirección (Tabla~2' +
-    (flags.estimated ? '; $\\approx$: en 2dir, estimado como el doble' : '') +
-    '); en Prom., para los cuatro ILS e ITS, fila \\emph{Time (s)} de la Tabla~9, promedio de sus 100 instancias' +
-    (dir === '2dir' ? ' (en 2dir, suma de sus dos columnas)' : '') +
+    (flags.estimated ? '; $\\approx$: en 2~dir., estimado como el doble' : '') +
+    '); en Prom., para los cuatro ILS e ITS, fila \\emph{Time (s)} de la Tabla~9, promedio de sus 100 instancias (en 2~dir., suma de sus dos columnas)' +
     (paper && !promPaperTime ? ', que se muestra solo cuando cada método terminó esas 100 instancias' : '') +
     (itsGap
       ? `. Para ITS exacto en una dirección el paper no es consistente: la Tabla~9 da ${texNum(fmtNum(itsGap.table9, 2))}\\,s y la fila \\emph{Avg.} de la Tabla~2, ${texNum(fmtNum(itsGap.table2, 2))}\\,s, sobre las mismas instancias; en Prom. se usa la Tabla~9`
@@ -312,40 +336,44 @@ export function toLatexSummary(rows: InstanceRow[], paper: PaperFile | null, dir
     '. El paper midió en un Intel Core~2 Quad de 2{,}83\\,GHz con código C, por lo que los tiempos no son comparables 1:1 entre máquinas.';
 
   const caption =
-    `Desviación media (\\%) respecto de la mejor solución conocida y tiempo medio por instancia (s), por número de clientes $|V_c|$, con ${DIR_TEXT[dir]}` +
-    ` de cinco métodos en las instancias de ${ERDOGAN} (10 por tamaño; por dirección, ILS con $N_{iter} = ${nIter}$ e ITS con` +
-    ` $\\lfloor\\sqrt{N_{iter}}\\rfloor = ${nIterIts}$ iteraciones externas).` +
+    'Desviación media (\\%) respecto de la mejor solución conocida y tiempo medio por instancia (s), por número de clientes $|V_c|$,' +
+    ` de cinco métodos en las instancias de ${ERDOGAN} (10 por tamaño), con una y con dos direcciones como en sus Tablas~3 y 8--9:` +
+    ' 1~dir.: corrida desde el tour TSP; 2~dir.: la mejor de las corridas desde el tour TSP y desde el tour invertido' +
+    ` (por dirección, ILS con $N_{iter} = ${nIter}$ e ITS con $\\lfloor\\sqrt{N_{iter}}\\rfloor = ${nIterIts}$ iteraciones externas).` +
     ` Desv.\\ $= (z - \\mathit{Best})/\\mathit{Best} \\cdot 100$, con $\\mathit{Best}$ la mejor solución conocida publicada en las Tablas~8--9 de ${ERDOGAN}.` +
-    ' Seg.: incluye el tour TSP' +
-    (dir === '2dir' ? ' y las corridas de ambas direcciones.' : '.') +
+    ' Seg.: incluye el tour TSP y, en 2~dir., las corridas de ambas direcciones.' +
     machine +
     ' Dos fases: tour TSP con el depósito reubicado y manipulación óptima (Algoritmo~2.1 + DP), la \\emph{initial solution} del paper;' +
     ' ILS (Algoritmo~4.2) e ITS (Algoritmo~4.3) heurísticos evalúan el vecindario con la estimación lineal (\\S2.2) y los exactos con el Algoritmo~2.1 + DP.' +
-    ` Entre paréntesis, la cifra del paper con el mismo método y dirección: desviación sobre las mismas instancias` +
+    ` Bajo cada fila, entre paréntesis, la cifra del paper con el mismo método y dirección: desviación sobre las mismas instancias` +
     (flags.paperAll ? ' (sobre todas las del tamaño mientras no haya resultados nuestros)' : '') +
     paperTimeText +
-    ' En negrita, la menor desviación de la fila.' +
+    ' En negrita, la menor desviación de la fila en cada dirección.' +
     (flags.partial ? ` ${DAGGER}~Promedio parcial: el benchmark aún no termina todas las instancias de ese tamaño.` : '') +
     (flags.errors === 1 ? ' Se excluye 1 ejecución con error.' : flags.errors > 1 ? ` Se excluyen ${flags.errors} ejecuciones con error.` : '') +
     (partialProm
-      ? ` Prom.: solo las ${model.commonInstances} de ${model.totalInstances} instancias que todos los métodos ya terminaron, para comparar las columnas sobre el mismo conjunto.`
+      ? common[0] === common[1]
+        ? ` Prom.: solo las ${common[0]} de ${total} instancias que todos los métodos ya terminaron, para comparar las columnas sobre el mismo conjunto.`
+        : ` Prom.: solo las instancias que todos los métodos ya terminaron en esa dirección (${common[0]} en 1~dir.\\ y ${common[1]} en 2~dir., de ${total}), para comparar las columnas sobre el mismo conjunto.`
       : '');
 
   return texSnippet('Metaheurísticas', [
     texTable({
-      setup: ['\\small'],
+      setup: ['\\small', '\\setlength{\\tabcolsep}{4pt}'],
       caption,
-      label: `tab:metaheuristicas-resumen-${dir}`,
-      spec: `rr${' rr'.repeat(META_METHODS.length)}`,
+      label: 'tab:metaheuristicas-resumen',
+      spec: `rr${` ${'r'.repeat(width)}`.repeat(META_METHODS.length)}`,
       rows: [
         '\\toprule',
-        row(['', '', ...META_METHODS.map((m) => `\\multicolumn{2}{c}{${META_INFO[m].label}}`)]),
-        cmidrules(META_METHODS.length, 3),
-        row(['$|V_c|$', '$h$', ...META_METHODS.flatMap(() => ['Desv.\\,(\\%)', 'Seg.'])]),
+        row(['', '', ...META_METHODS.map((m) => `\\multicolumn{${width}}{c}{${META_INFO[m].label}}`)]),
+        cmidrules(META_METHODS.length, 3, width),
+        row(['', '', ...META_METHODS.flatMap(() => SUMMARY_DIRS.map((d) => `\\multicolumn{2}{c}{${DIR_HEAD[d]}}`))]),
+        cmidrules(META_METHODS.length * SUMMARY_DIRS.length, 3),
+        row(['$|V_c|$', '$h$', ...META_METHODS.flatMap(() => SUMMARY_DIRS.flatMap(() => ['Desv.\\,(\\%)', 'Seg.']))]),
         '\\midrule',
         ...(body.length ? body : [`\\multicolumn{${nCols}}{c}{Sin datos} \\\\`]),
         '\\midrule',
-        prom,
+        ...prom,
         '\\bottomrule',
       ],
     }),

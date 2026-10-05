@@ -131,6 +131,7 @@ scripts/
   validate-benchmark.ts        Agregación, formato y LaTeX/CSV del benchmark (fixtures + datos reales)
   validate-metaheuristics.ts   Agregación y LaTeX/CSV del benchmark de metaheurísticas (fixtures,
                                Tablas 2–3 del paper y recálculo desde registros.jsonl)
+  build-report.ts              Informe LaTeX de ambos benchmarks (Outputs/Informe/informe_benchmarks.tex)
 public/solutions/              Soluciones empaquetadas, heuristics.json, benchmark.json y
                                metaheuristics.json
                                (los genera bundle-solutions.js)
@@ -194,7 +195,9 @@ La sección **Metaheurísticas** (06) replica las Tablas 8 y 9 de Erdoğan et al
   - Desviación = (Z − Best) / Best · 100, con Best la mejor solución conocida del paper.
   - Segundos de pared en Node.js: 1dir = tour TSP + solución inicial + metaheurística de la dirección 1; 2dir = tour TSP + ambas direcciones. Los del paper son de código C en un Core 2 Quad de 2,83 GHz: se comparan las razones, no los segundos.
   - h por tamaño: el que reproduce los números del paper (1 · 0,5 · 0,33 · 0,125 · 0,1 · 0,17 · 0,14 · 0,125 · 0,11 · 0,1), no el h·|V<sub>c</sub>| = 20 del texto.
-- **Exportar:** «Copiar LaTeX» (booktabs) del resumen y del detalle por instancia (en la vista elegida), y CSV del resumen o por instancia.
+- **Resumen por |V<sub>c</sub>|:** como las Tablas 3 y 8–9, muestra 1 dir. y 2 dir. lado a lado bajo cada método (desviación y segundos de cada dirección); el selector de dirección de la barra rige solo los gráficos y los hallazgos.
+- **Exportar:** «Copiar LaTeX» (booktabs) del resumen (ambas direcciones) y del detalle por instancia (en la vista elegida), y CSV del resumen o por instancia.
+- **Informe PDF:** `npm run report` escribe `Outputs/Informe/informe_benchmarks.tex` con las secciones Tiempos y Metaheurísticas (las mismas tablas que «Copiar LaTeX», gráficos en pgfplots, hallazgos calculados de los registros y el detalle por instancia en el formato de las Tablas 8–9); compílalo con `latexmk -pdf`, `pdflatex` (dos pasadas) o `tectonic`.
 
 ```bash
 node notebooks/erdogan2012/benchmark.mjs                 # desde la raíz del repositorio; se reanuda desde registros.jsonl

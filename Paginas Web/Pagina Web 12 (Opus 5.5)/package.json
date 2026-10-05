@@ -11,6 +11,7 @@
     "server": "node server.js",
     "start": "node server.js",
     "bundle": "node bundle-solutions.js",
+    "report": "node scripts/build-report.ts",
     "typecheck": "tsc -b",
     "test": "node scripts/validate-engine.ts && node scripts/validate-playback.ts && node scripts/validate-heuristics.ts && node scripts/validate-benchmark.ts && node scripts/validate-metaheuristics.ts",
     "test:engine": "node scripts/validate-engine.ts",

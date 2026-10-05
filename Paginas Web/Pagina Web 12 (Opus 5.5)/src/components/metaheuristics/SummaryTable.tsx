@@ -1,10 +1,12 @@
 /**
  * «Resumen por |Vc|» de la sección «Metaheurísticas», al estilo de las Tablas 2–3 de Erdoğan et al.
- * (2012) pero con los cinco métodos (dos fases, ILS e ITS heurísticos y exactos): una fila por |Vc|
- * con su h, y por método la desviación media respecto del Best del paper y los segundos medios por
- * instancia; bajo cada cifra nuestra, la del paper. Las filas por |Vc| promedian lo terminado de cada
- * método («k/10» mientras falten instancias) y la fila «Prom.» solo las instancias que los cinco
- * métodos ya terminaron. Todo el cálculo vive en export.ts (summaryModel) y aggregate.ts.
+ * (2012) pero con los cinco métodos (dos fases, ILS e ITS heurísticos y exactos) y, como en sus
+ * Tablas 3 y 8–9, las dos direcciones lado a lado: una fila por |Vc| con su h, y por método las
+ * columnas «1 dir.» y «2 dir.», cada una con la desviación media respecto del Best del paper y los
+ * segundos medios por instancia; bajo cada cifra nuestra, la del paper. Las filas por |Vc| promedian
+ * lo terminado de cada método («k/10» mientras falten instancias) y la fila «Prom.», en cada
+ * dirección, solo las instancias que los cinco métodos ya terminaron. Todo el cálculo vive en
+ * export.ts (summaryModel, uno por dirección) y aggregate.ts.
  */
 import { useMemo, type ReactNode } from 'react';
 import { Download } from 'lucide-react';
@@ -25,6 +27,7 @@ import {
   toCsvSummary,
   toLatexSummary,
   type SummaryCell,
+  type SummaryModel,
   type SummaryRow,
 } from './export';
 
@@ -32,9 +35,12 @@ import {
 const FAMILY_TINT: Record<MetaFamily, string> = { twophase: 'bg-dp/[0.07]', ils: 'bg-ils/[0.08]', its: 'bg-its/[0.08]' };
 const FAMILY_TEXT: Record<MetaFamily, string> = { twophase: 'text-dp', ils: 'text-ils', its: 'text-its' };
 
-const DIR_NOTE: Record<MetaDirection, string> = {
-  '1dir': '1dir: una corrida desde el tour TSP.',
-  '2dir': '2dir: la mejor de las corridas desde el tour TSP y desde el tour invertido.',
+/** Las dos direcciones, en el orden de las columnas de las Tablas 3 y 8–9 del paper. */
+const DIRS: readonly MetaDirection[] = ['1dir', '2dir'];
+const DIR_HEAD: Record<MetaDirection, string> = { '1dir': '1 dir.', '2dir': '2 dir.' };
+const DIR_TITLE: Record<MetaDirection, string> = {
+  '1dir': '1 dir.: una corrida desde el tour TSP',
+  '2dir': '2 dir.: la mejor de las corridas desde el tour TSP y desde el tour invertido (como en la Tabla 3 del paper)',
 };
 
 const TD_STRONG = 'num px-2.5 pt-3 pb-2 text-right align-top whitespace-nowrap';
@@ -70,7 +76,7 @@ function devTitle(c: SummaryCell, ctx: CellCtx): string {
     c.method === 'twophase' ? ` Supera ${beats}.` : ` Mejora su solución inicial en ${c.s.improved}; supera ${beats}.`;
   return (
     `${head}: desviación media ${fmtPctValue(c.s.devPct, 2)} respecto del Best del paper, sobre ${scope}.${paper}${counts}` +
-    (c.best ? ' Menor desviación de la fila.' : '') +
+    (c.best ? ` Menor desviación de la fila en ${ctx.dir}.` : '') +
     errors
   );
 }
@@ -118,7 +124,10 @@ function MethodCells({ c, ctx }: { c: SummaryCell; ctx: CellCtx }) {
 
   return (
     <>
-      <td title={devTitle(c, ctx)} className={cn(td, 'border-l border-l-zinc-800', c.best && FAMILY_TINT[family])}>
+      <td
+        title={devTitle(c, ctx)}
+        className={cn(td, 'border-l', ctx.dir === '1dir' ? 'border-l-zinc-800' : 'border-l-zinc-800/50', c.best && FAMILY_TINT[family])}
+      >
         <span className={cn('block', tone)}>
           {c.best && (
             <span aria-hidden className={cn('mr-1 align-[1px] text-[8px]', FAMILY_TEXT[family])}>
@@ -126,7 +135,7 @@ function MethodCells({ c, ctx }: { c: SummaryCell; ctx: CellCtx }) {
             </span>
           )}
           {dev}
-          {c.best && <span className="sr-only"> (menor desviación de la fila)</span>}
+          {c.best && <span className="sr-only"> (menor desviación de la fila en {ctx.dir})</span>}
           {partial && (
             <span className="ml-1.5 rounded-md border border-zinc-800 bg-zinc-950/60 px-1 py-px font-mono text-[10px] font-normal text-zinc-400">
               {c.s.done}/{c.instances}
@@ -164,14 +173,16 @@ function MethodCells({ c, ctx }: { c: SummaryCell; ctx: CellCtx }) {
 
 /* ───────────────────────── Filas ───────────────────────── */
 
-function NRow({ r, dir }: { r: SummaryRow; dir: MetaDirection }) {
+/** Una fila por |Vc|: por método, las celdas de «1 dir.» y de «2 dir.» (las filas de ambos modelos son del mismo |Vc|). */
+function NRow({ pair }: { pair: Record<MetaDirection, SummaryRow> }) {
+  const r = pair['1dir'];
   const n = r.n as number;
-  const ctx: CellCtx = { dir, where: `|Vc| = ${n}`, prom: false };
+  const complete = DIRS.every((d) => pair[d].complete);
   return (
     <tr className="group/row transition-colors hover:bg-zinc-800/25">
       <th
         scope="row"
-        title={`${n} clientes · ${r.instances} instancias${r.complete ? '' : ' · aún incompleto'}`}
+        title={`${n} clientes · ${r.instances} instancias${complete ? '' : ' · aún incompleto'}`}
         className={cn(STICKY_CELL, STICKY_ROW_HOVER, 'border-b border-zinc-800/60 py-2 pr-4 text-left align-top font-normal')}
       >
         <span className="sr-only">|Vc| = </span>
@@ -180,64 +191,64 @@ function NRow({ r, dir }: { r: SummaryRow; dir: MetaDirection }) {
       <td className="num border-b border-zinc-800/60 px-2.5 py-2 text-right align-top whitespace-nowrap text-zinc-400">
         {r.h === null ? '—' : hLabel(r.h)}
       </td>
-      {META_METHODS.map((m) => (
-        <MethodCells key={m} c={r.cells[m]} ctx={ctx} />
-      ))}
+      {META_METHODS.flatMap((m) =>
+        DIRS.map((d) => <MethodCells key={`${m}-${d}`} c={pair[d].cells[m]} ctx={{ dir: d, where: `|Vc| = ${n}`, prom: false }} />),
+      )}
     </tr>
   );
 }
 
 /* ───────────────────────── Tarjeta ───────────────────────── */
 
-export function MetaSummaryTable({
-  rows,
-  paper,
-  dir,
-  file,
-}: {
-  rows: InstanceRow[];
-  paper: PaperFile | null;
-  dir: MetaDirection;
-  file: MetaFile | null;
-}) {
-  const model = useMemo(() => summaryModel(rows, paper, dir, file), [rows, paper, dir, file]);
-  const { overall, commonInstances: common, totalInstances: total } = model;
-  const promPartial = common < total;
+export function MetaSummaryTable({ rows, paper, file }: { rows: InstanceRow[]; paper: PaperFile | null; file: MetaFile | null }) {
+  const models = useMemo(
+    (): Record<MetaDirection, SummaryModel> => ({
+      '1dir': summaryModel(rows, paper, '1dir', file),
+      '2dir': summaryModel(rows, paper, '2dir', file),
+    }),
+    [rows, paper, file],
+  );
+  // summarizeByN agrupa las mismas filas en ambas direcciones: mismos |Vc| en el mismo orden.
+  const pairs = useMemo(() => models['1dir'].byN.map((r, i) => ({ '1dir': r, '2dir': models['2dir'].byN[i] })), [models]);
+  const total = models['1dir'].totalInstances;
+  const common: Record<MetaDirection, number> = { '1dir': models['1dir'].commonInstances, '2dir': models['2dir'].commonInstances };
+  const promPartial = DIRS.some((d) => common[d] < total);
   const meta = file?.meta ?? null;
   const nIter = meta?.params?.nIter ?? 200;
   const nIterIts = meta?.params?.nIterIts ?? Math.floor(Math.sqrt(nIter));
-  const anyEstimated = model.byN.some((r) => META_METHODS.some((m) => r.cells[m].paperTimeEstimated));
+  const anyEstimated = DIRS.some((d) => models[d].byN.some((r) => META_METHODS.some((m) => r.cells[m].paperTimeEstimated)));
   // La fila «Time (s)» de la Tabla 9 solo entra en Prom. con las 100 instancias del paper terminadas.
-  const promPaperTime = META_METHODS.some((m) => overall.cells[m].paperTime !== null);
-  const itsGap = overall.cells['its-exact'].paperTime !== null ? paperTimeMismatch(paper, 'its-exact') : null;
-  // En 1dir la columna del paper es su «1 dir.»: solo las filas «dir. 1 = paper» tienen la misma orientación.
+  const promPaperTime = DIRS.some((d) => META_METHODS.some((m) => models[d].overall.cells[m].paperTime !== null));
+  const itsGapOf = (d: MetaDirection) => (models[d].overall.cells['its-exact'].paperTime !== null ? paperTimeMismatch(paper, 'its-exact') : null);
+  const itsGap = itsGapOf('1dir') ?? itsGapOf('2dir');
+  // La columna «1 dir.» se compara con la «1 dir.» del paper: solo las filas «dir. 1 = paper» tienen la misma orientación.
   const orientation = useMemo(() => {
     const withResults = rows.filter((r) => META_METHODS.some((m) => r.cells[m].dir1 !== null || r.cells[m].dir2 !== null));
     return { aligned: withResults.filter((r) => r.orientation === 'paper').length, of: withResults.length };
   }, [rows]);
-  const promCtx: CellCtx = {
-    dir,
-    where: promPartial ? `Prom. (${common} de ${total} instancias comunes)` : `Prom. (${total} instancias)`,
+  const promCtx = (d: MetaDirection): CellCtx => ({
+    dir: d,
+    where: common[d] < total ? `Prom. (${common[d]} de ${total} instancias comunes)` : `Prom. (${total} instancias)`,
     prom: true,
     hasPaper: paper !== null,
-    itsGap,
-  };
-  const nCols = 2 + META_METHODS.length * 2;
+    itsGap: itsGapOf(d),
+  });
+  const nCols = 2 + META_METHODS.length * DIRS.length * 2;
 
   return (
     <SpotlightCard className="p-5 sm:p-6">
       <CardHead
-        eyebrow="Estilo Erdoğan et al. (2012), Tablas 2–3 · cinco métodos"
+        eyebrow="Estilo Erdoğan et al. (2012), Tablas 2–3 y 8–9 · cinco métodos"
         title={
           <>
             Resumen por |V<sub className="text-[0.7em]">c</sub>| <span className="font-normal text-zinc-500">·</span>{' '}
-            <span className="num font-medium text-zinc-300">{dir}</span>
+            <span className="font-medium text-zinc-300">1 dir. y 2 dir.</span>
           </>
         }
-        note={`Desviación media respecto del Best del paper y segundos medios por instancia de cada método, con la cifra del paper debajo. ${DIR_NOTE[dir]}`}
+        note="Desviación media respecto del Best del paper y segundos medios por instancia de cada método, en una dirección (1 dir.: desde el tour TSP) y en dos (2 dir.: la mejor del tour y del tour invertido), con la cifra del paper debajo."
         actions={
           <>
-            <CopyLatexButton what="Tabla resumen por |Vc|" getText={() => toLatexSummary(rows, paper, dir, file)} />
+            <CopyLatexButton what="Tabla resumen por |Vc|" getText={() => toLatexSummary(rows, paper, file)} />
             <Button
               variant="outline"
               size="xs"
@@ -263,8 +274,8 @@ export function MetaSummaryTable({
       <div className="scrollbar-thin -mx-1 mt-5 overflow-x-auto px-1">
         <table className="w-full min-w-max border-separate border-spacing-0 text-[13px]">
           <caption className="sr-only">
-            Desviación media respecto del Best del paper y segundos medios de cinco métodos ({dir}) por número de clientes |Vc|, con la cifra
-            del paper bajo cada valor y una fila de promedio sobre las instancias que todos los métodos terminaron.
+            Desviación media respecto del Best del paper y segundos medios de cinco métodos por número de clientes |Vc|, en una dirección (1 dir.)
+            y en dos (2 dir.), con la cifra del paper bajo cada valor y una fila de promedio sobre las instancias que todos los métodos terminaron.
           </caption>
           <thead>
             <tr className="text-[12px]">
@@ -273,7 +284,13 @@ export function MetaSummaryTable({
               {META_METHODS.map((m) => {
                 const info = META_INFO[m];
                 return (
-                  <th key={m} scope="colgroup" colSpan={2} title={info.title} className="border-l border-l-zinc-800 px-2.5 pt-0 pb-1.5 text-left align-bottom font-medium">
+                  <th
+                    key={m}
+                    scope="colgroup"
+                    colSpan={DIRS.length * 2}
+                    title={info.title}
+                    className="border-l border-l-zinc-800 px-2.5 pt-0 pb-1.5 text-left align-bottom font-medium"
+                  >
                     <span aria-hidden className="mb-2 block h-0.5 rounded-full opacity-70" style={{ background: methodColor(m) }} />
                     <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
                       <MethodSwatch method={m} />
@@ -283,6 +300,26 @@ export function MetaSummaryTable({
                   </th>
                 );
               })}
+            </tr>
+            <tr className="text-[11px] text-zinc-400">
+              <td className={STICKY_CELL} />
+              <td />
+              {META_METHODS.flatMap((m) =>
+                DIRS.map((d) => (
+                  <th
+                    key={`${m}-${d}`}
+                    scope="colgroup"
+                    colSpan={2}
+                    title={DIR_TITLE[d]}
+                    className={cn(
+                      'border-l px-2.5 pb-1 text-center font-medium whitespace-nowrap',
+                      d === '1dir' ? 'border-l-zinc-800' : 'border-l-zinc-800/50',
+                    )}
+                  >
+                    {DIR_HEAD[d]}
+                  </th>
+                )),
+              )}
             </tr>
             <tr className="text-[11px] text-zinc-500">
               <th scope="col" className={cn(STICKY_CELL, 'border-b border-zinc-800 pr-4 pb-2 text-left font-medium whitespace-nowrap')}>
@@ -295,35 +332,40 @@ export function MetaSummaryTable({
               >
                 h
               </th>
-              {META_METHODS.flatMap((m) => [
-                <th
-                  key={`${m}-d`}
-                  scope="col"
-                  title="Desviación media (Z − Best) / Best · 100 respecto de la mejor solución conocida del paper"
-                  className="border-b border-l border-zinc-800 border-l-zinc-800 px-2.5 pb-2 text-right font-medium whitespace-nowrap"
-                >
-                  Desv. %
-                </th>,
-                <th
-                  key={`${m}-s`}
-                  scope="col"
-                  title={`Segundos medios por instancia, incluido el tour TSP${dir === '2dir' ? ' (ambas direcciones)' : ''}`}
-                  className="border-b border-zinc-800 px-2.5 pb-2 text-right font-medium whitespace-nowrap"
-                >
-                  Seg.
-                </th>,
-              ])}
+              {META_METHODS.flatMap((m) =>
+                DIRS.flatMap((d) => [
+                  <th
+                    key={`${m}-${d}-d`}
+                    scope="col"
+                    title={`${DIR_HEAD[d]} · desviación media (Z − Best) / Best · 100 respecto de la mejor solución conocida del paper`}
+                    className={cn(
+                      'border-b border-l border-zinc-800 px-2.5 pb-2 text-right font-medium whitespace-nowrap',
+                      d === '1dir' ? 'border-l-zinc-800' : 'border-l-zinc-800/50',
+                    )}
+                  >
+                    Desv. %
+                  </th>,
+                  <th
+                    key={`${m}-${d}-s`}
+                    scope="col"
+                    title={`${DIR_HEAD[d]} · segundos medios por instancia, incluido el tour TSP${d === '2dir' ? ' (ambas direcciones)' : ''}`}
+                    className="border-b border-zinc-800 px-2.5 pb-2 text-right font-medium whitespace-nowrap"
+                  >
+                    Seg.
+                  </th>,
+                ]),
+              )}
             </tr>
           </thead>
           <tbody>
-            {model.byN.length === 0 ? (
+            {pairs.length === 0 ? (
               <tr>
                 <td colSpan={nCols} className="border-b border-zinc-800/60 py-6 text-center text-[12.5px] text-zinc-500">
                   Aún no hay instancias en el benchmark.
                 </td>
               </tr>
             ) : (
-              model.byN.map((r) => <NRow key={r.n} r={r} dir={dir} />)
+              pairs.map((pair) => <NRow key={pair['1dir'].n} pair={pair} />)
             )}
           </tbody>
           <tfoot>
@@ -332,7 +374,7 @@ export function MetaSummaryTable({
                 scope="row"
                 title={
                   promPartial
-                    ? `Promedio de las ${common} instancias (de ${total}) que los cinco métodos ya terminaron en ${dir}`
+                    ? `Promedio de las instancias que los cinco métodos ya terminaron: ${common['1dir']} de ${total} en 1 dir. y ${common['2dir']} de ${total} en 2 dir.`
                     : `Promedio de las ${total} instancias`
                 }
                 className={cn(STICKY_CELL, 'pt-3 pr-4 pb-2 text-left align-top text-[12px] font-medium text-zinc-200')}
@@ -340,14 +382,19 @@ export function MetaSummaryTable({
                 Prom.
                 {promPartial && (
                   <span className="mt-0.5 block text-[10.5px] leading-4 font-normal whitespace-nowrap text-zinc-500">
-                    <span className="num">{common}</span> de <span className="num">{total}</span> inst.
+                    {common['1dir'] === common['2dir'] ? (
+                      <span className="num">{common['1dir']}</span>
+                    ) : (
+                      <>
+                        <span className="num">{common['1dir']}</span> · <span className="num">{common['2dir']}</span>
+                      </>
+                    )}{' '}
+                    de <span className="num">{total}</span> inst.
                   </span>
                 )}
               </th>
               <td className="pt-3 pb-2" />
-              {META_METHODS.map((m) => (
-                <MethodCells key={m} c={overall.cells[m]} ctx={promCtx} />
-              ))}
+              {META_METHODS.flatMap((m) => DIRS.map((d) => <MethodCells key={`${m}-${d}`} c={models[d].overall.cells[m]} ctx={promCtx(d)} />))}
             </tr>
           </tfoot>
         </table>
@@ -356,11 +403,11 @@ export function MetaSummaryTable({
       <p className="mt-4 max-w-[110ch] text-[12px] leading-relaxed text-pretty text-zinc-500">
         <span className="text-zinc-400">Desv. %</span>: (Z − Best) / Best · 100, con <span className="text-zinc-400">Best</span> la mejor solución
         conocida que publica el paper en las Tablas 8–9 (el mínimo de todas sus corridas); negativa = mejor que el Best. El punto de color marca la
-        menor desviación de la fila (solo cuando todos los métodos promedian las mismas instancias).{' '}
-        <span className="text-zinc-400">1dir</span>: una corrida desde el tour TSP (ILS: N<sub>iter</sub> = {fmt(nIter, 0)}; ITS:{' '}
-        {fmt(nIterIts, 0)} iteraciones externas); <span className="text-zinc-400">2dir</span>: la mejor de esa corrida y de otra igual desde el
-        tour invertido, como en las Tablas 2–3 (la columna «2 dir.» de las Tablas 8–9 es solo la del tour invertido). <span className="text-zinc-400">Seg.</span>: segundos de
-        pared por instancia, incluido el tour TSP{dir === '2dir' ? ' y ambas direcciones' : ''}
+        menor desviación de la fila en cada dirección (solo cuando todos los métodos promedian las mismas instancias).{' '}
+        <span className="text-zinc-400">1 dir.</span>: una corrida desde el tour TSP (ILS: N<sub>iter</sub> = {fmt(nIter, 0)}; ITS:{' '}
+        {fmt(nIterIts, 0)} iteraciones externas); <span className="text-zinc-400">2 dir.</span>: la mejor de esa corrida y de otra igual desde el
+        tour invertido, como en la Tabla 3 (en el detalle por instancia, la columna «2 dir.» de las Tablas 8–9 es solo la del tour invertido).{' '}
+        <span className="text-zinc-400">Seg.</span>: segundos de pared por instancia, incluido el tour TSP y, en 2 dir., ambas direcciones
         {meta ? (
           <>
             {' '}
@@ -369,16 +416,16 @@ export function MetaSummaryTable({
         ) : null}
         . <span className="text-zinc-400">paper</span>: el mismo método y dirección en el paper, sobre las mismas instancias (mientras no haya
         resultados nuestros, sobre las 10 del tamaño)
-        {dir === '1dir' && orientation.of > orientation.aligned && (
+        {orientation.of > orientation.aligned && (
           <>
-            ; en 1dir es su columna «1 dir.», y nuestra dirección 1 tiene su misma orientación solo en{' '}
+            ; en 1 dir. es su columna «1 dir.», y nuestra dirección 1 tiene su misma orientación solo en{' '}
             <span className="num">{orientation.aligned}</span> de <span className="num">{orientation.of}</span> instancias («dir. 1 = paper» en el
-            detalle): en las demás puede ser la opuesta, así que esa comparación es aproximada (2dir no depende de la orientación)
+            detalle): en las demás puede ser la opuesta, así que esa comparación es aproximada (2 dir. no depende de la orientación)
           </>
         )}
-        . Su tiempo solo se publica por |Vc| para ILS e ITS exactos en 1dir (Tabla 2
-        {anyEstimated ? '; «≈»: en 2dir, estimado como el doble' : ''}) y, en Prom., para los cuatro ILS e ITS en la fila «Time (s)» de la Tabla 9,
-        promedio de sus 100 instancias{dir === '2dir' ? ' (suma de sus dos columnas)' : ''}
+        . Su tiempo solo se publica por |Vc| para ILS e ITS exactos en 1 dir. (Tabla 2
+        {anyEstimated ? '; «≈»: en 2 dir., estimado como el doble' : ''}) y, en Prom., para los cuatro ILS e ITS en la fila «Time (s)» de la Tabla
+        9, promedio de sus 100 instancias (en 2 dir., suma de sus dos columnas)
         {paper && !promPaperTime ? ', que aparece cuando los cinco métodos las terminen' : ''}
         {itsGap && (
           <>
@@ -391,7 +438,9 @@ export function MetaSummaryTable({
         <span className="text-zinc-400">k/10</span>: promedio parcial de las instancias ya terminadas.{' '}
         <span className="text-zinc-400">Prom.</span>:{' '}
         {promPartial
-          ? `solo las ${common} de ${total} instancias que los cinco métodos ya terminaron, para comparar las columnas sobre el mismo conjunto.`
+          ? common['1dir'] === common['2dir']
+            ? `solo las ${common['1dir']} de ${total} instancias que los cinco métodos ya terminaron, para comparar las columnas sobre el mismo conjunto.`
+            : `solo las instancias que los cinco métodos ya terminaron en esa dirección (${common['1dir']} en 1 dir. y ${common['2dir']} en 2 dir., de ${total}), para comparar las columnas sobre el mismo conjunto.`
           : `las ${total} instancias.`}{' '}
         «…»: aún sin registrar.
       </p>
