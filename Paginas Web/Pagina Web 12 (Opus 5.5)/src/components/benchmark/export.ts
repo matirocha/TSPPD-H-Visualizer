@@ -1,5 +1,6 @@
 /**
- * Exportación de las tablas de tiempos: LaTeX (booktabs) para el informe y CSV con los registros.
+ * Exportación de las tablas de tiempos: LaTeX (booktabs, con reservas para pegarlo en cualquier
+ * documento; ver lib/latex.ts) para el informe y CSV con los registros.
  *  · toLatexComparison: una fila por Id dentro de cada |Vc|, con z y segundos de cada método
  *    y una fila «Prom.» por |Vc| (la tabla comparativa principal de la sección).
  *  · toLatexSummary: una fila por |Vc| + «Prom.» (estilo Erdoğan et al. 2012, Tabla 2).
@@ -22,6 +23,7 @@ import {
   type MethodStats,
 } from './aggregate.ts';
 import { fmtNum, fmtPctValue, fmtSec, fmtZ } from './format.ts';
+import { texTable } from '../../lib/latex.ts';
 
 // ---------------------------------------------------------------------------------------------
 // Utilidades LaTeX (todo el texto es fijo; solo los números pasan por texNum)
@@ -177,28 +179,24 @@ export function toLatexSummary(
       ? ` Prom.: solo las ${promInst} de ${rowsInst} instancias que todos los métodos ya terminaron, para comparar las columnas sobre el mismo conjunto.`
       : '');
 
-  return [
-    '% Tabla generada por la Página Web 12 (sección «Tiempos»). Requiere \\usepackage{booktabs}.',
-    '\\begin{table}[htbp]',
-    '\\centering',
-    '\\small',
-    '\\setlength{\\tabcolsep}{4pt}',
-    `\\caption{${caption}}`,
-    `\\label{tab:tiempos-resumen-h${labelOf(opts.h)}}`,
-    `\\begin{tabular}{r${' rr'.repeat(METHOD_ORDER.length)}}`,
-    '\\toprule',
-    row(['', ...METHOD_ORDER.map((m) => `\\multicolumn{2}{c}{${LATEX_METHOD[m]}}`)]),
-    cmidrules(METHOD_ORDER.map(() => 2)),
-    row(['$|V_c|$', ...METHOD_ORDER.flatMap((m) => (isGurobiMethod(m) ? ['Ópt.', 'Seg.'] : ['Desv.\\,(\\%)', 'Seg.']))]),
-    '\\midrule',
-    ...(body.length ? body : [`\\multicolumn{${nCols}}{c}{Sin datos} \\\\`]),
-    '\\midrule',
-    total,
-    '\\bottomrule',
-    '\\end{tabular}',
-    '\\end{table}',
-    '',
-  ].join('\n');
+  return texTable({
+    section: 'Tiempos',
+    setup: ['\\small', '\\setlength{\\tabcolsep}{4pt}'],
+    caption,
+    label: `tab:tiempos-resumen-h${labelOf(opts.h)}`,
+    spec: `r${' rr'.repeat(METHOD_ORDER.length)}`,
+    rows: [
+      '\\toprule',
+      row(['', ...METHOD_ORDER.map((m) => `\\multicolumn{2}{c}{${LATEX_METHOD[m]}}`)]),
+      cmidrules(METHOD_ORDER.map(() => 2)),
+      row(['$|V_c|$', ...METHOD_ORDER.flatMap((m) => (isGurobiMethod(m) ? ['Ópt.', 'Seg.'] : ['Desv.\\,(\\%)', 'Seg.']))]),
+      '\\midrule',
+      ...(body.length ? body : [`\\multicolumn{${nCols}}{c}{Sin datos} \\\\`]),
+      '\\midrule',
+      total,
+      '\\bottomrule',
+    ],
+  });
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -225,10 +223,18 @@ function compareCells(c: Cell): string[] {
 }
 
 /**
- * Tabla comparativa para un h (longtable, para que quepan las 5 × 10 instancias): por cada |Vc|
- * una fila por Id con z y Seg. de los seis métodos y una fila «Prom.» (Gurobi: óptimas k/n y
- * segundos medios; heurísticas: desviación media respecto de la Política 3 y segundos medios);
- * al final, «Total» sobre `overall` (las instancias que todos los métodos terminaron).
+ * Filas por parte de la tabla comparativa para que cada una quepa en una página: la primera, con el
+ * caption (largo y siempre en \normalsize), 2 bloques de 10 Id + «Prom.»; las continuaciones, 3.
+ */
+const COMPARISON_PART_ROWS = { first: 22, rest: 33 };
+
+/**
+ * Tabla comparativa para un h: por cada |Vc| una fila por Id con z y Seg. de los seis métodos y
+ * una fila «Prom.» (Gurobi: óptimas k/n y segundos medios; heurísticas: desviación media respecto
+ * de la Política 3 y segundos medios); al final, «Total» sobre `overall` (las instancias que todos
+ * los métodos terminaron). En vez de longtable (otro paquete en el preámbulo, y se salía del margen)
+ * los bloques de |Vc| se reparten en tablas de hasta COMPARISON_PART_ROWS filas, cada una con el
+ * encabezado y reducida al ancho de línea; la segunda en adelante dice «Tabla N (continuación)».
  */
 export function toLatexComparison(
   instances: BenchInstance[],
@@ -241,16 +247,24 @@ export function toLatexComparison(
   const nCols = 2 + METHOD_ORDER.length * 2;
   const ilsRuns = instances.map((i) => (i.records.ils as ILSRecord | undefined)?.runs).find((r): r is number => typeof r === 'number');
 
-  const body: string[] = [];
-  groups.forEach((g, gi) => {
+  // Un bloque por |Vc| (filas por Id, regla y «Prom.»), repartidos en partes sin pasar de COMPARISON_PART_ROWS filas.
+  const parts: { lines: string[]; rows: number }[][] = [];
+  for (const g of groups) {
     const insts = instances.filter((i) => sameH(i.h, opts.h) && i.numCustomers === g.numCustomers).sort((a, b) => a.instanceId - b.instanceId);
-    insts.forEach((inst, k) => {
-      body.push(row([k === 0 ? String(g.numCustomers) : '', String(inst.instanceId), ...METHOD_ORDER.flatMap((m) => compareCells(cellOf(inst, m)))]));
-    });
-    body.push('\\cmidrule(l){2-' + nCols + '}');
-    body.push(row(['', '\\emph{Prom.}', ...METHOD_ORDER.flatMap((m) => statCells(g.methods[m], onlyOptimal, flags))]));
-    if (gi < groups.length - 1) body.push('\\midrule');
-  });
+    const block = {
+      lines: [
+        ...insts.map((inst, k) => row([k === 0 ? String(g.numCustomers) : '', String(inst.instanceId), ...METHOD_ORDER.flatMap((m) => compareCells(cellOf(inst, m)))])),
+        '\\cmidrule(l){2-' + nCols + '}',
+        row(['', '\\emph{Prom.}', ...METHOD_ORDER.flatMap((m) => statCells(g.methods[m], onlyOptimal, flags))]),
+      ],
+      rows: insts.length + 1,
+    };
+    const last = parts[parts.length - 1];
+    const limit = parts.length === 1 ? COMPARISON_PART_ROWS.first : COMPARISON_PART_ROWS.rest;
+    if (last && last.reduce((a, b) => a + b.rows, 0) + block.rows <= limit) last.push(block);
+    else parts.push([block]);
+  }
+  if (!parts.length) parts.push([]);
   const total = row(['\\multicolumn{2}{l}{Total}', ...METHOD_ORDER.flatMap((m) => statCells(overall[m], onlyOptimal, flags))]);
   const rowsInst = groups.reduce((a, g) => a + g.instances, 0);
   const promInst = instancesOf(overall);
@@ -279,30 +293,24 @@ export function toLatexComparison(
     '\\midrule',
   ];
 
-  return [
-    '% Tabla generada por la Página Web 12 (sección «Tiempos»). Requiere \\usepackage{booktabs,longtable}.',
-    '% Es ancha: si no cabe, envuélvela en \\begin{landscape}...\\end{landscape} (paquete pdflscape).',
-    '\\begingroup',
-    '\\footnotesize',
-    '\\setlength{\\tabcolsep}{3pt}',
-    '\\setlength{\\LTcapwidth}{\\linewidth}',
-    `\\begin{longtable}{rr${' rr'.repeat(METHOD_ORDER.length)}}`,
-    `\\caption{${caption}}`,
-    `\\label{tab:tiempos-comparativa-h${labelOf(opts.h)}} \\\\`,
-    ...head,
-    '\\endfirsthead',
-    `\\multicolumn{${nCols}}{l}{\\emph{(continuación)}} \\\\`,
-    ...head,
-    '\\endhead',
-    '\\bottomrule',
-    '\\endlastfoot',
-    ...(body.length ? body : [`\\multicolumn{${nCols}}{c}{Sin datos} \\\\`]),
-    '\\midrule',
-    total,
-    '\\end{longtable}',
-    '\\endgroup',
-    '',
-  ].join('\n');
+  return parts
+    .map((part, i) =>
+      texTable({
+        section: 'Tiempos',
+        setup: ['\\footnotesize', '\\setlength{\\tabcolsep}{3pt}'],
+        caption,
+        label: `tab:tiempos-comparativa-h${labelOf(opts.h)}`,
+        spec: `rr${' rr'.repeat(METHOD_ORDER.length)}`,
+        continued: i > 0,
+        rows: [
+          ...head,
+          ...(part.length ? part.flatMap((b, j) => (j ? ['\\midrule', ...b.lines] : b.lines)) : [`\\multicolumn{${nCols}}{c}{Sin datos} \\\\`]),
+          ...(i === parts.length - 1 ? ['\\midrule', total] : []),
+          '\\bottomrule',
+        ],
+      }),
+    )
+    .join('\n');
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -422,31 +430,26 @@ export function toLatexDetail(
     (partial ? ` ${DAGGER}~Datos parciales: faltan ejecuciones de ese método.` : '') +
     (skippedAny ? skippedNote(opts.n) : '');
 
-  return [
-    '% Tabla generada por la Página Web 12 (sección «Tiempos»). Requiere \\usepackage{booktabs,graphicx}.',
-    '\\begin{table}[htbp]',
-    '\\centering',
-    '\\small',
-    `\\caption{${caption}}`,
-    `\\label{tab:tiempos-n${opts.n}-h${labelOf(opts.h)}}`,
-    '\\resizebox{\\textwidth}{!}{%',
-    `\\begin{tabular}{r${METHOD_ORDER.map((m) => ' ' + 'r'.repeat(DETAIL_HEAD[m].length)).join('')}}`,
-    '\\toprule',
-    row(['', ...METHOD_ORDER.map((m) => `\\multicolumn{${DETAIL_HEAD[m].length}}{c}{${LATEX_METHOD[m]}}`)]),
-    cmidrules(widths),
-    row(['Id', ...METHOD_ORDER.flatMap((m) => DETAIL_HEAD[m])]),
-    '\\midrule',
-    ...(body.length ? body : [`\\multicolumn{${nCols}}{c}{Sin instancias} \\\\`]),
-    '\\midrule',
-    row(['\\# resueltas', ...solved]),
-    row(['Seg. prom.', ...avgSec]),
-    row(['Desv. prom.', ...avgDev]),
-    '\\bottomrule',
-    '\\end{tabular}%',
-    '}',
-    '\\end{table}',
-    '',
-  ].join('\n');
+  return texTable({
+    section: 'Tiempos',
+    setup: ['\\small'],
+    caption,
+    label: `tab:tiempos-n${opts.n}-h${labelOf(opts.h)}`,
+    spec: `r${METHOD_ORDER.map((m) => ' ' + 'r'.repeat(DETAIL_HEAD[m].length)).join('')}`,
+    rows: [
+      '\\toprule',
+      row(['', ...METHOD_ORDER.map((m) => `\\multicolumn{${DETAIL_HEAD[m].length}}{c}{${LATEX_METHOD[m]}}`)]),
+      cmidrules(widths),
+      row(['Id', ...METHOD_ORDER.flatMap((m) => DETAIL_HEAD[m])]),
+      '\\midrule',
+      ...(body.length ? body : [`\\multicolumn{${nCols}}{c}{Sin instancias} \\\\`]),
+      '\\midrule',
+      row(['\\# resueltas', ...solved]),
+      row(['Seg. prom.', ...avgSec]),
+      row(['Desv. prom.', ...avgDev]),
+      '\\bottomrule',
+    ],
+  });
 }
 
 // ---------------------------------------------------------------------------------------------

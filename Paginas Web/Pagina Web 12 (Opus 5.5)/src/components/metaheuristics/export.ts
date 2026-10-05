@@ -16,6 +16,7 @@
 import type { MetaDirection, MetaFile, MetaMethod, MetaMeta, PaperFile } from '../../types/metaheuristics';
 import { fmtAuto, fmtDelta } from '../../lib/format.ts';
 import { fmtNum, fmtSec } from '../benchmark/format.ts';
+import { texTable, texText } from '../../lib/latex.ts';
 import {
   META_METHODS,
   devPct,
@@ -293,7 +294,7 @@ export function toLatexSummary(rows: InstanceRow[], paper: PaperFile | null, dir
   const nIter = meta?.params?.nIter ?? 200;
   const nIterIts = meta?.params?.nIterIts ?? Math.floor(Math.sqrt(nIter));
   const machine = meta
-    ? ` Nuestros tiempos: segundos de pared en ${meta.runtime}${meta.cpu ? ` (${meta.cpu})` : ''}, ${meta.workers} ejecuciones en paralelo (\\emph{worker threads} de Node.js), un hilo cada una.`
+    ? ` Nuestros tiempos: segundos de pared en ${texText(meta.runtime)}${meta.cpu ? ` (${texText(meta.cpu)})` : ''}, ${meta.workers} ejecuciones en paralelo (\\emph{worker threads} de Node.js), un hilo cada una.`
     : '';
   const partialProm = model.commonInstances < model.totalInstances;
   // Fila «Time (s)» de la Tabla 9: solo con las 100 instancias del paper terminadas (summarizeOverall).
@@ -330,29 +331,24 @@ export function toLatexSummary(rows: InstanceRow[], paper: PaperFile | null, dir
       ? ` Prom.: solo las ${model.commonInstances} de ${model.totalInstances} instancias que todos los métodos ya terminaron, para comparar las columnas sobre el mismo conjunto.`
       : '');
 
-  return [
-    '% Tabla generada por la Página Web 12 (sección «Metaheurísticas»). Requiere \\usepackage{booktabs,graphicx}.',
-    '\\begin{table}[htbp]',
-    '\\centering',
-    '\\small',
-    `\\caption{${caption}}`,
-    `\\label{tab:metaheuristicas-resumen-${dir}}`,
-    '\\resizebox{\\textwidth}{!}{%',
-    `\\begin{tabular}{rr${' rr'.repeat(META_METHODS.length)}}`,
-    '\\toprule',
-    row(['', '', ...META_METHODS.map((m) => `\\multicolumn{2}{c}{${META_INFO[m].label}}`)]),
-    cmidrules(META_METHODS.length, 3),
-    row(['$|V_c|$', '$h$', ...META_METHODS.flatMap(() => ['Desv.\\,(\\%)', 'Seg.'])]),
-    '\\midrule',
-    ...(body.length ? body : [`\\multicolumn{${nCols}}{c}{Sin datos} \\\\`]),
-    '\\midrule',
-    prom,
-    '\\bottomrule',
-    '\\end{tabular}%',
-    '}',
-    '\\end{table}',
-    '',
-  ].join('\n');
+  return texTable({
+    section: 'Metaheurísticas',
+    setup: ['\\small'],
+    caption,
+    label: `tab:metaheuristicas-resumen-${dir}`,
+    spec: `rr${' rr'.repeat(META_METHODS.length)}`,
+    rows: [
+      '\\toprule',
+      row(['', '', ...META_METHODS.map((m) => `\\multicolumn{2}{c}{${META_INFO[m].label}}`)]),
+      cmidrules(META_METHODS.length, 3),
+      row(['$|V_c|$', '$h$', ...META_METHODS.flatMap(() => ['Desv.\\,(\\%)', 'Seg.'])]),
+      '\\midrule',
+      ...(body.length ? body : [`\\multicolumn{${nCols}}{c}{Sin datos} \\\\`]),
+      '\\midrule',
+      prom,
+      '\\bottomrule',
+    ],
+  });
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -551,28 +547,23 @@ export function toLatexMetaDetail(
           marks;
 
   const nCols = 2 + DETAIL_COLS.length;
-  return [
-    '% Tabla generada por la Página Web 12 (sección «Metaheurísticas»). Requiere \\usepackage{booktabs,graphicx}.',
-    '\\begin{table}[htbp]',
-    '\\centering',
-    '\\small',
-    `\\caption{${caption}}`,
-    `\\label{tab:metaheuristicas-detalle-n${n}${view === 'ours' ? '' : `-${view}`}}`,
-    '\\resizebox{\\textwidth}{!}{%',
-    `\\begin{tabular}{rr${' rr'.repeat(META_METHODS.length)}}`,
-    '\\toprule',
-    row(['', '', ...META_METHODS.map((m) => `\\multicolumn{2}{c}{${META_INFO[m].label}}`)]),
-    cmidrules(META_METHODS.length, 3),
-    row(['Id', 'Best', ...DETAIL_COLS.map((c) => `${c.dir}~dir.`)]),
-    '\\midrule',
-    ...(body.length ? body : [`\\multicolumn{${nCols}}{c}{Sin instancias} \\\\`]),
-    ...(foot.length ? ['\\midrule', ...foot] : []),
-    '\\bottomrule',
-    '\\end{tabular}%',
-    '}',
-    '\\end{table}',
-    '',
-  ].join('\n');
+  return texTable({
+    section: 'Metaheurísticas',
+    setup: ['\\small'],
+    caption,
+    label: `tab:metaheuristicas-detalle-n${n}${view === 'ours' ? '' : `-${view}`}`,
+    spec: `rr${' rr'.repeat(META_METHODS.length)}`,
+    rows: [
+      '\\toprule',
+      row(['', '', ...META_METHODS.map((m) => `\\multicolumn{2}{c}{${META_INFO[m].label}}`)]),
+      cmidrules(META_METHODS.length, 3),
+      row(['Id', 'Best', ...DETAIL_COLS.map((c) => `${c.dir}~dir.`)]),
+      '\\midrule',
+      ...(body.length ? body : [`\\multicolumn{${nCols}}{c}{Sin instancias} \\\\`]),
+      ...(foot.length ? ['\\midrule', ...foot] : []),
+      '\\bottomrule',
+    ],
+  });
 }
 
 // ---------------------------------------------------------------------------------------------

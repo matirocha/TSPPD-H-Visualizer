@@ -289,7 +289,28 @@ const find = (h: number, n: number, id: number) => inst.find((i) => A.sameH(i.h,
 
   // Tabla comparativa completa: una fila por Id dentro de cada N, con z y Seg. de cada método.
   const cmp = toLatexComparison(inst, groups, A.summarizeOverall(inst, 0.1, 'common'), { h: 0.1, timeLimitSec: 60 });
-  check(cmp.includes('\\begin{longtable}{rr rr rr rr rr rr rr}') && cmp.includes('\\endfirsthead') && cmp.includes('\\endhead') && cmp.includes('\\endlastfoot'), 'comparativa: longtable con encabezado repetido');
+  check(cmp.includes('\\begin{tabular}{rr rr rr rr rr rr rr}') && !cmp.includes('longtable'), 'comparativa: tabular (sin longtable, que exige otro paquete)');
+  eq(cmp.split('\\begin{table}').length - 1, 1, 'comparativa: 2 grupos de 2 Id caben en una sola tabla');
+  {
+    // Grilla completa (5 |Vc| × 10 Id): dos tablas, |Vc| 5–10 con el caption y 15–25 + Total como continuación.
+    const full = A.buildInstances({
+      ...fixture,
+      records: [5, 10, 15, 20, 25].flatMap((n) => Array.from({ length: 10 }, (_, k) => A.METHOD_ORDER.map((m) => rec(m, n, k + 1, 0.1)))).flat(),
+    });
+    const tex = toLatexComparison(full, A.summarizeByN(full, 0.1), A.summarizeOverall(full, 0.1, 'common'), { h: 0.1, timeLimitSec: 60 });
+    const [first, second, ...rest] = tex.split('\\begin{table}').slice(1);
+    check(second !== undefined && rest.length === 0, 'comparativa completa: dos tablas');
+    check(/^10 & 1 & /m.test(first) && !/^15 & 1 & /m.test(first) && /^15 & 1 & /m.test(second ?? '') && /^25 & 1 & /m.test(second ?? ''), 'comparativa completa: |Vc| 5–10 y luego 15–25');
+    check(first.includes('\\caption{') && first.includes('\\label{tab:tiempos-comparativa-h0-1}'), 'comparativa completa: caption y etiqueta en la primera');
+    check(!second?.includes('\\caption') && !second?.includes('\\label') && !!second?.includes('\\tablename~\\ref{tab:tiempos-comparativa-h0-1} (continuación)'), 'comparativa completa: la segunda es continuación');
+    check(!first.includes('{Total}') && !!second?.includes('\\multicolumn{2}{l}{Total}'), 'comparativa completa: Total solo al final');
+    check([first, second ?? ''].every((t) => t.includes('$|V_c|$ & Id & ')), 'comparativa completa: encabezado en cada tabla');
+  }
+  // Se pega en cualquier preámbulo: reservas sin booktabs/graphicx y reducción al ancho de línea.
+  for (const [tex, tag] of [[sum, 'resumen'], [det, 'detalle'], [cmp, 'comparativa']] as const) {
+    check(tex.includes('\\providecommand{\\toprule}{\\hline}') && tex.includes('\\def\\cmidrule(#1)#2{\\cline{#2}}') && tex.includes('\\providecommand{\\resizebox}[3]{#3}'), `${tag}: reservas sin booktabs/graphicx`);
+    check(tex.includes('\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%'), `${tag}: se reduce al ancho de línea`);
+  }
   check(cmp.includes('\\cmidrule(lr){3-4}') && cmp.includes('\\cmidrule(lr){13-14}'), 'comparativa: bloques de 2 columnas desde la 3');
   const cmpRows = cmp.split('\n').filter((l) => /^(\d+)? & \d+ & /.test(l));
   eq(cmpRows.length, inst.filter((i) => A.sameH(i.h, 0.1)).length, 'comparativa: una fila por instancia de h = 0,1');

@@ -792,8 +792,9 @@ console.log('\n4) Exportación: resumen, detalle por instancia, LaTeX y CSV');
       if (depth < 0) break;
     }
     eq(depth, 0, `${tag}: llaves equilibradas`);
-    const start = tex.indexOf('\\midrule');
-    const end = tex.indexOf('\\bottomrule');
+    // Desde el tabular: antes, las reservas sin booktabs también nombran \midrule y \bottomrule.
+    const start = tex.indexOf('\\midrule', tex.indexOf('\\begin{tabular}'));
+    const end = tex.indexOf('\\bottomrule', start);
     const body = tex
       .slice(start, end)
       .split('\n')
