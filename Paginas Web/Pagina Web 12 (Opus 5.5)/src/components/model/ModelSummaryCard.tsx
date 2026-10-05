@@ -33,8 +33,15 @@ const FLOW_P3_P2: Flow = [{ label: 'Evacuar β de la compuerta (si hay)', tone: 
 const FLOW_GEN: Flow = [
   { label: 'Evacuar lo que bloquea', tone: 'handling' },
   { label: 'Entregar α', tone: 'alpha' },
-  { label: 'Recargar y recoger en cualquier posición', tone: 'beta' },
+  { label: 'Recargar y recoger', tone: 'beta' },
 ];
+
+/** Matiz de cada secuencia (solo como tooltip). */
+const FLOW_NOTE: Partial<Record<ModelMeta['id'], string>> = {
+  'TSPPD-H_1': 'Sin entrega (α_j = 0) no hay evacuación.',
+  'TSPPD-H_2': 'Sin recogida (β_i = 0) la entrega es directa.',
+  'TSPPD-H': 'Posiciones manipuladas: r_i^k = 1.',
+};
 
 const DOT: Record<FlowTone, string> = {
   handling: 'bg-handling',
@@ -122,8 +129,15 @@ export function ModelSummaryCard({ model, isActive }: { model: ModelMeta; isActi
       </div>
 
       <div className="mt-8">
-        <p className="eyebrow mb-3">Cómo se ve en el simulador</p>
-        <motion.div key={model.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={springSoft} className="space-y-2.5">
+        <p className="eyebrow mb-3">En el simulador</p>
+        <motion.div
+          key={model.id}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={springSoft}
+          className="space-y-2.5"
+          title={FLOW_NOTE[model.id]}
+        >
           {model.id === 'TSPPD-H_1' && <FlowRow flow={FLOW_P1} />}
           {model.id === 'TSPPD-H_2' && <FlowRow flow={FLOW_P2} />}
           {model.id === 'TSPPD-H' && <FlowRow flow={FLOW_GEN} />}
@@ -147,14 +161,6 @@ export function ModelSummaryCard({ model, isActive }: { model: ModelMeta; isActi
               />
             </>
           )}
-          <p className="pt-1 text-[12.5px] leading-relaxed text-pretty text-zinc-400">
-            {model.id === 'TSPPD-H_1' && 'Si el cliente no tiene entrega (α_j = 0) no hay evacuación: las β nuevas solo se suman a la compuerta.'}
-            {model.id === 'TSPPD-H_2' && 'Si el cliente no tiene recogida (β_i = 0) no hace falta reubicar las α: la entrega es directa.'}
-            {model.id === 'TSPPD-H_3' && 'Cada cliente toma una de las dos secuencias según su decisión s_i, y el simulador indica en cada parada qué política se aplicó.'}
-            {model.id === 'TSPPD-H' &&
-              'El modelo decide qué posiciones k se manipulan (r_i^k = 1) respetando LIFO y dónde recargar cada unidad; puede intercalar α y β.'}{' '}
-            Cada parada abre con «Llegada» y el tour cierra con la descarga total de β en el depósito.
-          </p>
         </motion.div>
         {model.id === 'TSPPD-H_3' && isActive && <PolicyDecisions />}
       </div>

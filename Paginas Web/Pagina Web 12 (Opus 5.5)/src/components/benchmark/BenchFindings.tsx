@@ -1,5 +1,6 @@
 /**
- * Cuatro cifras calculadas sobre los registros del h elegido (nunca escritas a mano):
+ * Cuatro cifras calculadas sobre los registros del h elegido (nunca escritas a mano), cada una con
+ * a lo más una línea breve (la definición completa va en el `title`):
  * hasta qué N resuelve cada modelo Gurobi todas las instancias, cuántas veces el ILS iguala el
  * óptimo probado de la Política 3, cuánto más rápido es el ILS que P3 en el mayor N con datos
  * y cuánto tarda una evaluación del Algoritmo 2.1 + DP.
@@ -25,6 +26,7 @@ function Finding({
   value,
   unit,
   note,
+  title,
   className,
 }: {
   icon: ReactNode;
@@ -32,10 +34,12 @@ function Finding({
   value: ReactNode;
   unit?: ReactNode;
   note?: ReactNode;
+  /** Definición completa (tooltip), para que la tarjeta muestre solo la cifra. */
+  title?: string;
   className?: string;
 }) {
   return (
-    <div className={cn('flex min-w-0 flex-col bg-zinc-950/70 px-4 py-4', className)}>
+    <div title={title} className={cn('flex min-w-0 flex-col bg-zinc-950/70 px-4 py-4', className)}>
       <dt className="flex items-center gap-1.5 text-[12px] text-zinc-400">
         {icon}
         {term}
@@ -44,7 +48,7 @@ function Finding({
         <span className="num text-[26px] leading-none font-semibold tracking-tight text-zinc-50">{value}</span>
         {unit && <span className="text-[12px] text-zinc-500">{unit}</span>}
       </dd>
-      {note && <dd className="mt-2 text-[12.5px] leading-relaxed text-pretty text-zinc-400">{note}</dd>}
+      {note && <dd className="mt-2 text-[12px] leading-snug text-pretty text-zinc-500">{note}</dd>}
     </div>
   );
 }
@@ -118,7 +122,7 @@ export function BenchFindings({
     if (!rows.length) return null;
     const last = rows[rows.length - 1];
     const two = groups.find((g) => g.numCustomers === last.n)?.methods.dp.meanTimeSec ?? null;
-    return { first: rows[0], last, two };
+    return { last, two };
   }, [instances, groups, h]);
 
   const partial = !progress.complete;
@@ -132,21 +136,20 @@ export function BenchFindings({
             Lo que muestran los tiempos · <span className="num">h = {hText(h)}</span>
           </>
         }
-        note={
-          partial
-            ? `Con los datos registrados hasta ahora (${progress.done} de ${progress.expected} ejecuciones); las cifras cambian a medida que avanza el benchmark.`
-            : 'Calculado sobre todas las ejecuciones de la grilla.'
-        }
+        note={partial ? `Provisional: ${progress.done} de ${progress.expected} ejecuciones.` : undefined}
       />
 
       {/* Columnas según el ancho real de la tarjeta (container queries), no el de la ventana: entre lg y xl
           la tarjeta ocupa 5/12 y cuatro columnas quedarían de ~64 px. */}
       <div className="@container mt-5 flex flex-1 flex-col">
       <dl className="grid flex-1 grid-cols-1 gap-px overflow-hidden rounded-xl border border-zinc-800/80 bg-zinc-800/80 @xs:grid-cols-2">
-        <div className="@container flex min-w-0 flex-col bg-zinc-950/70 px-4 py-4 @xs:col-span-2">
+        <div
+          title="Mayor N en que Gurobi probó el óptimo de todas las instancias (y las de todo N menor)"
+          className="@container flex min-w-0 flex-col bg-zinc-950/70 px-4 py-4 @xs:col-span-2"
+        >
           <dt className="flex items-center gap-1.5 text-[12px] text-zinc-400">
             <CircleCheck className="h-3.5 w-3.5 text-ok" aria-hidden />
-            Mayor N con las 10 instancias óptimas (y las de todo N menor)
+            Mayor N resuelto completo
           </dt>
           <dd className="mt-3 grid grid-cols-2 gap-x-4 gap-y-4 @[25rem]:grid-cols-4">
             {solved.map(({ m, n, next }) => (
@@ -163,7 +166,7 @@ export function BenchFindings({
                   <p className="mt-1 text-[11.5px] leading-snug text-zinc-500">
                     {next.s !== null && next.s.expected === 0 && next.s.skipped > 0 ? (
                       <>
-                        N ≥ <span className="num">{next.n}</span>: no se ejecuta (alto costo computacional)
+                        N ≥ <span className="num">{next.n}</span>: no se ejecuta
                       </>
                     ) : next.s === null ? (
                       <>
@@ -185,7 +188,8 @@ export function BenchFindings({
 
         <Finding
           icon={<MethodMark tone="ils" size={12} />}
-          term="ILS igual al óptimo de Gurobi P3"
+          term="ILS = óptimo de Gurobi P3"
+          title="Instancias con el óptimo de la Política 3 probado por Gurobi en que el ILS lo alcanza"
           value={
             ils.withProven === 0 ? (
               '—'
@@ -198,12 +202,9 @@ export function BenchFindings({
           }
           unit={ils.withProven === 0 ? undefined : 'instancias'}
           note={
-            ils.withProven === 0 ? (
-              'Aún no hay instancias con el óptimo de la Política 3 probado y el ILS terminado.'
-            ) : (
+            ils.withProven > 0 && (
               <>
-                Entre las instancias con óptimo probado. La heurística de dos fases (ruta TSP + Alg. 2.1) lo iguala en{' '}
-                <span className="num text-zinc-200">{ils.dpHits}</span>/<span className="num">{ils.dpWith}</span>.
+                Dos fases: <span className="num text-zinc-300">{ils.dpHits}</span>/<span className="num">{ils.dpWith}</span>
               </>
             )
           }
@@ -211,20 +212,17 @@ export function BenchFindings({
 
         <Finding
           icon={<Zap className="h-3.5 w-3.5 text-ils" aria-hidden />}
-          term={speed ? `ILS frente a Gurobi P3 con N = ${speed.n}` : 'ILS frente a Gurobi P3'}
+          term={speed ? `ILS frente a P3 con N = ${speed.n}` : 'ILS frente a P3'}
+          title={speed?.partial ? 'Con las instancias registradas hasta ahora' : undefined}
           // Si algún P3 se cortó por el límite, su media es una cota inferior del tiempo real.
           value={speed ? `${speed.censored ? (speed.ratio >= 1 ? '≥ ' : '≤ ') : ''}${fmtRatio(speed.ratio >= 1 ? speed.ratio : 1 / speed.ratio)}×` : '—'}
           unit={speed ? (speed.ratio >= 1 ? 'más rápido' : 'más lento') : undefined}
           note={
-            speed ? (
+            speed && (
               <>
-                P3 tarda {speed.censored ? 'al menos ' : ''}
-                <span className="num text-zinc-200">{fmtSec(speed.p3)} s</span> en promedio y una corrida del ILS{' '}
-                <span className="num text-zinc-200">{fmtSec(speed.ils)} s</span>
-                {speed.partial ? ' (con las instancias registradas)' : ''}.
+                P3 {speed.censored ? '≥ ' : ''}
+                <span className="num text-zinc-300">{fmtSec(speed.p3)} s</span> · ILS <span className="num text-zinc-300">{fmtSec(speed.ils)} s</span>
               </>
-            ) : (
-              'Falta un tamaño con tiempos de P3 y del ILS.'
             )
           }
         />
@@ -232,28 +230,15 @@ export function BenchFindings({
         <Finding
           className="@xs:col-span-2"
           icon={<Timer className="h-3.5 w-3.5 text-dp" aria-hidden />}
-          term="Una evaluación del Algoritmo 2.1 + DP"
+          term="Una evaluación del Alg. 2.1 + DP"
+          title="Manipulación óptima de la Política 3 sobre un tour fijo; el ILS la llama en cada vecino"
           value={dp ? fmtMs(dp.last.ms) : '—'}
           unit={dp ? `ms con N = ${dp.last.n}` : undefined}
           note={
-            dp ? (
+            dp?.two != null && (
               <>
-                {dp.first.n !== dp.last.n && (
-                  <>
-                    <span className="num text-zinc-200">{fmtMs(dp.first.ms)} ms</span> con N = <span className="num">{dp.first.n}</span>. {' '}
-                  </>
-                )}
-                Es la manipulación óptima de la Política 3 sobre un tour fijo; el ILS la llama en cada vecino.
-                {dp.two !== null && (
-                  <>
-                    {' '}
-                    Las dos fases completas (tour TSP + reubicación del depósito + DP) tardan{' '}
-                    <span className="num text-zinc-200">{fmtSec(dp.two)} s</span> con N = <span className="num">{dp.last.n}</span>.
-                  </>
-                )}
+                Dos fases completas: <span className="num text-zinc-300">{fmtSec(dp.two)} s</span>
               </>
-            ) : (
-              'Aún no hay registros de la heurística de dos fases.'
             )
           }
         />

@@ -29,7 +29,6 @@ interface Series {
   ch: number[];
   labels: string[];
   longLabels: string[];
-  ops: number;
 }
 
 export function CostCurve() {
@@ -45,15 +44,13 @@ export function CostCurve() {
     const ch = [0];
     const labels = ['D'];
     const longLabels = ['Salida del depósito'];
-    let ops = 0;
     solution.steps.forEach((s, k) => {
       cd.push(cd[k] + s.distance);
       ch.push(ch[k] + s.handlingCost);
       labels.push(nodeShort(s.to));
       longLabels.push(s.to === 0 ? 'Regreso al depósito' : nodeLong(s.to));
-      ops += s.handlingCount;
     });
-    return { cd, ch, labels, longLabels, ops };
+    return { cd, ch, labels, longLabels };
   }, [solution]);
 
   if (!solution || !series) return null;
@@ -127,7 +124,7 @@ export function CostCurve() {
   return (
     <SpotlightCard className="flex h-full flex-col p-5 sm:p-6">
       <p className="eyebrow">Costo acumulado</p>
-      <h3 className="mt-1.5 text-lg font-semibold tracking-tight text-zinc-50">Cómo se construye Z*</h3>
+      <h3 className="mt-1.5 text-lg font-semibold tracking-tight text-zinc-50">Cómo se forma Z*</h3>
 
       <div className="mt-4 flex items-end justify-between gap-4 border-y border-zinc-800/70 py-3">
         <div className="min-w-0">
@@ -139,7 +136,8 @@ export function CostCurve() {
             <span className="num text-zinc-200">{fmtKm(solution.totalDistance)}</span> distancia
           </p>
           <p>
-            <span className="num text-zinc-200">+{fmt(solution.handlingCost)}</span> manipulación
+            <span className="num text-zinc-200">+{fmt(solution.handlingCost)}</span> manipulación{' '}
+            <span className="num text-zinc-500">({fmtPct(share, 1)})</span>
           </p>
         </div>
       </div>
@@ -204,7 +202,7 @@ export function CostCurve() {
                 </text>
               )}
               <text x={ML} y={subTop - 10} fill={COLOR.label} fontSize={10.5}>
-                Manipulación acumulada (escala propia)
+                Manipulación acumulada
               </text>
             </g>
 
@@ -358,17 +356,6 @@ export function CostCurve() {
           Camión ahora
         </LegendItem>
       </div>
-      <p className="mt-3 text-[12.5px] leading-relaxed text-pretty text-zinc-400">
-        La manipulación explica el <span className="num text-zinc-100">{fmtPct(share, 1)}</span> de Z*
-        {series.ops > 0 ? (
-          <>
-            {' '}
-            (<span className="num text-zinc-200">{series.ops}</span> {series.ops === 1 ? 'movimiento' : 'movimientos'} de unidades).
-          </>
-        ) : (
-          '.'
-        )}
-      </p>
     </SpotlightCard>
   );
 }
@@ -420,12 +407,7 @@ const LiveReadout = memo(function LiveReadout({ zStar }: { zStar: number }) {
   const { mode } = useSim();
   if (!live) return null;
   const ratio = zStar > 0 ? Math.min(1, live.zSoFar / zStar) : 0;
-  const text =
-    mode === 'initial'
-      ? 'El camión aún no sale del depósito.'
-      : mode === 'finished'
-        ? 'Tour completo: se alcanzó Z*.'
-        : 'Acumulado hasta la posición actual del camión.';
+  const text = mode === 'initial' ? 'En el depósito' : mode === 'finished' ? 'Tour completo' : 'Acumulado';
   return (
     <div className="mt-3 flex items-center gap-3">
       <div className="min-w-0 flex-1">

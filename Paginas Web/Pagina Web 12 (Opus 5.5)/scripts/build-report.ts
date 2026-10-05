@@ -2,11 +2,11 @@
  * Informe en LaTeX de los dos benchmarks de la página: «¿Cuánto tarda cada método?» (sección
  * «Tiempos») y «¿Exacto o heurístico? ILS e ITS con hasta 200 clientes» (sección «Metaheurísticas»).
  * Lee los consolidados de Outputs/Benchmark y Outputs/BenchmarkErdogan2012 y escribe
- * Outputs/Informe/informe_benchmarks.tex con:
+ * Outputs/Informe/informe_benchmarks.tex, un informe breve (poco texto) con:
  *  · las mismas tablas que «Copiar LaTeX» de la página (export.ts de cada sección), sin el envoltorio
- *    que las vuelve un documento propio;
+ *    que las vuelve un documento propio y con un caption corto (recaption);
  *  · gráficos en pgfplots con las mismas cifras de las tablas (aggregate.ts de cada sección);
- *  · hallazgos con cifras calculadas de los registros (nunca escritas a mano);
+ *  · hallazgos de una frase, con cifras calculadas de los registros (nunca escritas a mano);
  *  · en los anexos, la tabla comparativa por instancia de cada h y el detalle por instancia de las
  *    metaheurísticas en el formato de las Tablas 8–9 de Erdoğan et al. (2012).
  * Compila con cualquier distribución de LaTeX (pdflatex dos veces, latexmk o tectonic).
@@ -47,7 +47,8 @@ const sec = (x: number | null) => tex(fmtSec(x));
 const pct = (x: number | null, d = 2) => `${num(x, d)}\\,\\%`;
 const ratio = (x: number) => tex(fmtNum(x, x >= 10 ? 0 : 1));
 const row = (cells: string[]) => cells.join(' & ') + ' \\\\';
-const listEs = (xs: string[]) => (xs.length <= 1 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} y ${xs[xs.length - 1]}`);
+/** h como en los títulos: 1 sin decimales, 0,1 y 0,5 con uno. */
+const hNum = (h: number) => num(h, h === 1 ? 0 : 1);
 const texText = (s: string) => s.replace(/[\\{}$&#%_^~]/g, (c) => `\\${c}`);
 
 /** Líneas de reserva de texTable: el preámbulo de este documento ya carga booktabs y graphicx. */
@@ -66,10 +67,39 @@ function tablesOf(snippet: string): string {
 }
 
 /**
- * Página apaisada que entra tras la página en curso (afterpage), sin cortar el texto que la precede.
- * `then` (p. ej., la figura que la acompaña) se encola después, para que no se adelante a la tabla.
+ * Cambia el \caption{…} de cada tabla de `tables` por el que arma `make` a partir del cuerpo de esa
+ * tabla sin su caption (para anotar solo los símbolos que de verdad aparecen: ‡, §, *, †).
  */
-const landscape = (body: string, then = '') => ['\\afterpage{%', '\\begin{landscape}', body, '\\end{landscape}', then, '}'].join('\n');
+function recaption(tables: string, make: (body: string) => string): string {
+  let out = '';
+  let from = 0;
+  for (let at = tables.indexOf('\\caption{'); at !== -1; at = tables.indexOf('\\caption{', from)) {
+    let depth = 0;
+    let end = at + '\\caption'.length;
+    for (; end < tables.length; end++) {
+      if (tables[end] === '{') depth++;
+      else if (tables[end] === '}' && --depth === 0) break;
+    }
+    const tableEnd = tables.indexOf('\\end{table}', end);
+    const body = tables.slice(end + 1, tableEnd === -1 ? undefined : tableEnd);
+    out += tables.slice(from, at) + `\\caption{${make(body)}}`;
+    from = end + 1;
+  }
+  return out + tables.slice(from);
+}
+
+/** Primer |Vc| sin Modelo General (nota «§» de los cuadros de tiempos). */
+const generalFrom = () => grid.customers.find((n) => n > (bench.meta?.generalMaxN ?? 10)) ?? null;
+
+/** Notas de los símbolos de los cuadros de tiempos que aparecen en `body`. */
+function benchNotes(body: string): string {
+  const notes: string[] = [];
+  if (body.includes('$^{*}$')) notes.push('$^{*}$~sin óptimo probado al llegar al límite (gap entre paréntesis)');
+  if (body.includes('\\ddagger')) notes.push('$^{\\ddagger}$~P3 sin óptimo probado en parte de las instancias: se compara con su mejor solución conocida');
+  const nGen = generalFrom();
+  if (body.includes('\\S}') && nGen !== null) notes.push(`$^{\\S}$~n.e.: Modelo General no ejecutado con $|V_c| \\geq ${nGen}$`);
+  return notes.length ? ` ${notes.join('; ')}.` : '';
+}
 
 /** Potencias de 10 que encierran los valores (ejes logarítmicos). */
 function logRange(values: number[], floorAt = 1e-4): [number, number] {
@@ -120,7 +150,12 @@ function benchSummaryTables(): string {
     .map((h) => {
       const groups = B.summarizeByN(instances, h);
       const overall = B.summarizeOverall(instances, h, 'common');
-      return tablesOf(BE.toLatexSummary(groups, overall, { h, timeLimitSec: timeLimit, timeLimits }));
+      return recaption(
+        tablesOf(BE.toLatexSummary(groups, overall, { h, timeLimitSec: timeLimit, timeLimits })),
+        (body) =>
+          `Resumen por $|V_c|$ con $h = ${hNum(h)}$. Gurobi: Ópt.\\ = instancias con óptimo probado (límite ${sec(timeLimit)}\\,s), Seg.\\ = tiempo medio (s). Heurísticas: Desv.\\ = desviación media (\\%) respecto de $z^{*}_{P3}$.` +
+          benchNotes(body),
+      );
     })
     .join('\n\n');
 }
@@ -130,7 +165,12 @@ function benchComparisonTables(): string {
     .map((h) => {
       const groups = B.summarizeByN(instances, h);
       const overall = B.summarizeOverall(instances, h, 'common');
-      return tablesOf(BE.toLatexComparison(instances, groups, overall, { h, timeLimitSec: timeLimit, timeLimits }));
+      return recaption(
+        tablesOf(BE.toLatexComparison(instances, groups, overall, { h, timeLimitSec: timeLimit, timeLimits })),
+        (body) =>
+          `Valor objetivo $z$ y tiempo (s) por instancia con $h = ${hNum(h)}$. ILS: mejor de ${bm?.ils?.runs ?? 10} corridas y tiempo medio por corrida. Prom.: Gurobi, óptimos $k/n$ y tiempo medio; heurísticas, desviación media (\\%) respecto de $z^{*}_{P3}$ y tiempo medio.` +
+          benchNotes(body),
+      );
     })
     .join('\n\n\\clearpage\n');
 }
@@ -151,12 +191,12 @@ function benchTimeFigure(): string {
   const [ymin, ymax] = logRange([...all, timeLimit ?? 1]);
   const xs = grid.customers.join(',');
   return [
-    '\\begin{figure}[htbp]',
+    '\\begin{figure}[!t]',
     '\\centering',
     '\\begin{tikzpicture}',
     '\\begin{groupplot}[',
     '  group style={group size=3 by 1, horizontal sep=0.45cm, y descriptions at=edge left},',
-    `  width=0.37\\linewidth, height=6.2cm, ymode=log, ymin=${ymin}, ymax=${ymax}, xmin=3, xmax=27, xtick={${xs}},`,
+    `  width=0.37\\linewidth, height=5.2cm, ymode=log, ymin=${ymin}, ymax=${ymax}, xmin=3, xmax=27, xtick={${xs}},`,
     '  xlabel={$|V_c|$}, ylabel={Tiempo medio (s)}, grid=major, grid style={gray!18},',
     '  tick label style={font=\\footnotesize}, label style={font=\\small}, title style={font=\\small},',
     '  legend columns=6, legend style={font=\\footnotesize, draw=none, column sep=6pt},',
@@ -167,73 +207,40 @@ function benchTimeFigure(): string {
     '',
     '\\smallskip',
     '\\pgfplotslegendfromname{leyTiempos}',
-    `\\caption{Tiempo medio por instancia (s, escala logarítmica) de cada método según el número de clientes $|V_c|$, para cada $h = h_a = h_b$. La línea discontinua gris es el límite de Gurobi (${sec(timeLimit)}\\,s): las ejecuciones que lo alcanzan cuentan con su tiempo, así que en esos puntos el promedio es una cota inferior. El Modelo General solo se ejecuta hasta $|V_c| = ${bm?.generalMaxN ?? 10}$. ILS-2dir: tiempo medio por corrida.}`,
+    `\\caption{Tiempo medio por instancia (s, escala log.) según $|V_c|$ para cada $h$. Línea gris: límite de Gurobi (${sec(timeLimit)}\\,s).}`,
     '\\label{fig:tiempos}',
     '\\end{figure}',
   ].join('\n');
 }
 
-/** Hallazgos de la sección «Tiempos», con cifras calculadas sobre los registros de cada h. */
+/** Hallazgos de la sección «Tiempos»: una frase cada uno, con cifras calculadas de los registros. */
 function benchFindings(): string {
-  const hText = (h: number) => `$h = ${num(h, h === 1 ? 0 : 1)}$`;
+  const hText = (h: number) => `$h = ${hNum(h)}$`;
   const items: string[] = [];
 
-  // 1 · Hasta qué |Vc| resuelve cada modelo todas las instancias.
+  // 1 · Hasta qué |Vc| resuelve cada modelo todas las instancias (y las de los tamaños menores).
   const solved = hs.map((h) => {
-    const parts = B.GUROBI_METHODS.map((m) => {
-      const n = B.largestAllSolvedN(instances, m, h);
-      return `${BENCH_LABEL[m]} (${n === null ? '--' : n})`;
-    });
-    return `${hText(h)}: ${listEs(parts)}`;
+    const parts = B.GUROBI_METHODS.map((m) => `${BENCH_LABEL[m]} ${B.largestAllSolvedN(instances, m, h) ?? '--'}`);
+    return `${hText(h)}: ${parts.join(', ')}`;
   });
-  // La última frase solo si ningún modelo llega más lejos con un h mayor (h ascendente).
-  const harder = B.GUROBI_METHODS.every((m) =>
-    hs.every((h, i) => i === 0 || (B.largestAllSolvedN(instances, m, h) ?? 0) <= (B.largestAllSolvedN(instances, m, hs[i - 1]) ?? 0)),
-  );
-  items.push(
-    `\\textbf{Hasta qué tamaño resuelve Gurobi todas las instancias.} Mayor $|V_c|$ con todas sus instancias (y las de los tamaños menores) resueltas a optimalidad dentro de ${sec(timeLimit)}\\,s: ${solved.join('; ')}.` +
-      (harder ? ' Con un $h$ mayor ningún modelo llega más lejos: el costo de manipulación hace más difícil probar el óptimo.' : ''),
-  );
+  items.push(`\\textbf{Mayor $|V_c|$ con todo resuelto a optimalidad.} ${solved.join('; ')}.`);
 
-  // 2 · Instancias resueltas a optimalidad por modelo y h.
-  const opt = hs.map((h) => {
-    const s = B.summarizeOverall(instances, h);
-    return `${hText(h)}: ${listEs(B.GUROBI_METHODS.map((m) => `${BENCH_LABEL[m]} (${s[m].optimal}/${s[m].expected})`))}`;
-  });
-  items.push(
-    `\\textbf{Instancias resueltas a optimalidad} (el Modelo General, sobre las que se ejecutan): ${opt.join('; ')}.`,
-  );
-
-  // 3 · Calidad del ILS y de dos fases frente a z*_P3 probado.
+  // 2 · Calidad de las heurísticas frente a z*_P3 probado.
   const quality = hs.map((h) => {
     const s = B.summarizeOverall(instances, h);
-    return `${hText(h)}: ILS iguala $z^{*}_{P3}$ en ${s.ils.hitsProvenRef} de ${s.ils.withProvenRef} y dos fases en ${s.dp.hitsProvenRef} de ${s.dp.withProvenRef} (desviación media de dos fases ${pct(s.dp.meanDevPct)})`;
+    return `${hText(h)}: ILS ${s.ils.hitsProvenRef}/${s.ils.withProvenRef}, dos fases ${s.dp.hitsProvenRef}/${s.dp.withProvenRef} (desv.\\ ${pct(s.dp.meanDevPct)})`;
   });
-  items.push(
-    `\\textbf{Calidad de las heurísticas.} Instancias en que la heurística alcanza el óptimo probado de la Política 3: ${quality.join('; ')}. En ninguna instancia con óptimo probado el ILS queda sobre $z^{*}_{P3}$ más allá de la tolerancia.`,
-  );
+  items.push(`\\textbf{Instancias con óptimo probado en que la heurística alcanza $z^{*}_{P3}$.} ${quality.join('; ')}.`);
 
-  // 4 · Velocidad en el mayor |Vc|.
+  // 3 · Velocidad en el mayor |Vc|. Si P3 llega al límite en alguna instancia, la razón es una cota inferior.
   const nMax = Math.max(...grid.customers);
-  // Si P3 llega al límite en alguna instancia, su promedio (y la razón) es una cota inferior.
   const speed = hs.map((h) => {
     const g = B.summarizeGroup(instances, h, nMax).methods;
     const r = g.p3.meanTimeSec !== null && g.ils.meanTimeSec ? g.p3.meanTimeSec / g.ils.meanTimeSec : null;
-    const capped = g.p3.done - g.p3.optimal;
-    const note = capped > 0 ? `; P3 llega al límite en ${capped} de ${g.p3.done}` : '';
-    return `${hText(h)}: ILS ${sec(g.ils.meanTimeSec)}\\,s por corrida frente a ${sec(g.p3.meanTimeSec)}\\,s de P3${r === null ? '' : ` (${capped > 0 ? 'al menos ' : ''}${ratio(r)} veces menos${note})`}`;
+    const capped = g.p3.done > g.p3.optimal;
+    return `${hText(h)}: ILS ${sec(g.ils.meanTimeSec)}\\,s frente a ${sec(g.p3.meanTimeSec)}\\,s de P3${r === null ? '' : ` (${capped ? '$\\geq$ ' : ''}$\\times$${ratio(r)})`}`;
   });
-  const dpMax = Math.max(...hs.map((h) => B.summarizeGroup(instances, h, nMax).methods.dp.meanTimeSec ?? 0));
-  items.push(
-    `\\textbf{Tiempo con $|V_c| = ${nMax}$.} ${speed.join('; ')}. Dos fases tarda a lo más ${sec(dpMax)}\\,s por instancia (ruta TSP + Algoritmo~2.1 + DP).`,
-  );
-
-  // Hallazgo 3: comprobación de la afirmación «nunca queda sobre z*_P3» antes de escribirla.
-  const ilsMisses = hs.reduce((a, h) => {
-    const s = B.summarizeOverall(instances, h).ils;
-    return a + (s.withProvenRef - s.hitsProvenRef);
-  }, 0);
-  if (ilsMisses > 0) items[2] = items[2].replace(/ En ninguna instancia[^.]*\./, '');
+  items.push(`\\textbf{Tiempo con $|V_c| = ${nMax}$.} ${speed.join('; ')}.`);
 
   return ['\\begin{itemize}', ...items.map((i) => `  \\item ${i}`), '\\end{itemize}'].join('\n');
 }
@@ -279,8 +286,8 @@ function metaFigure(): string {
     '\\centering',
     '\\begin{tikzpicture}',
     '\\begin{groupplot}[',
-    '  group style={group size=2 by 2, horizontal sep=1.6cm, vertical sep=2.3cm},',
-    `  width=0.49\\linewidth, height=5.6cm, xmin=10, xmax=210, xtick={${sizes.join(',')}},`,
+    '  group style={group size=2 by 2, horizontal sep=1.6cm, vertical sep=1.9cm},',
+    `  width=0.49\\linewidth, height=4.6cm, xmin=10, xmax=210, xtick={${sizes.join(',')}},`,
     '  xlabel={$|V_c|$}, grid=major, grid style={gray!18},',
     '  tick label style={font=\\footnotesize}, label style={font=\\small}, title style={font=\\small},',
     '  legend columns=5, legend style={font=\\footnotesize, draw=none, column sep=6pt},',
@@ -294,85 +301,59 @@ function metaFigure(): string {
     '',
     '\\smallskip',
     '\\pgfplotslegendfromname{leyMeta}',
-    `\\caption{Desviación media respecto del \\emph{Best} del paper (arriba) y tiempo medio por instancia en segundos, escala logarítmica (abajo), según $|V_c|$, con una dirección (izquierda) y con dos (derecha). Mismas cifras que el Cuadro~\\ref{tab:metaheuristicas-resumen}. Trazo continuo y marca rellena: evaluación exacta del vecindario (Algoritmo~2.1 + DP); discontinuo y marca hueca: evaluación heurística lineal (\\S2.2).}`,
+    `\\caption{Desviación media (\\%) respecto del \\emph{Best} del paper (arriba) y tiempo medio por instancia (s, escala log., abajo) según $|V_c|$, con 1 y 2 direcciones. Trazo continuo: evaluación exacta; discontinuo: heurística.}`,
     '\\label{fig:metaheuristicas}',
     '\\end{figure}',
   ].join('\n');
 }
 
-/** Hallazgos de la sección «Metaheurísticas» (sobre las instancias que los cinco métodos terminaron). */
+/** Hallazgos de la sección «Metaheurísticas» (instancias que los cinco métodos terminaron): una frase cada uno. */
 function metaFindings(): string {
   const ov = Object.fromEntries(DIRS.map((d) => [d, A.summarizeOverall(rows, d, paper, 'common')])) as Record<MetaDirection, Record<MetaMethod, A.MethodSummary>>;
   const items: string[] = [];
   const label = (m: MetaMethod) => META_INFO[m].label;
 
-  // 1 · Menor desviación por dirección (nuestra y del paper).
-  const bestOf = (d: MetaDirection, key: 'devPct' | 'paperDevPct') =>
-    A.META_METHODS.reduce((b, m) => ((ov[d][m][key] ?? Infinity) < (ov[d][b][key] ?? Infinity) ? m : b), A.META_METHODS[0]);
+  // 1 · Menor z medio por dirección (mismas instancias para todos los métodos), con su desviación y la del
+  // paper, y en cuántas instancias alguna corrida nuestra queda bajo el Best del paper.
+  const below = rows.filter((r) => r.ourBest !== null && r.best !== null && r.ourBest < r.best - E.Z_TOL).length;
+  const bestOf = (d: MetaDirection) => A.META_METHODS.reduce((b, m) => ((ov[d][m].avgZ ?? Infinity) < (ov[d][b].avgZ ?? Infinity) ? m : b), A.META_METHODS[0]);
   items.push(
-    '\\textbf{Método con menor desviación.} ' +
+    '\\textbf{Mejor método.} ' +
       DIRS.map((d) => {
-        const ours = bestOf(d, 'devPct');
-        const pap = bestOf(d, 'paperDevPct');
-        return `En ${DIR_TEX[d]}, ${label(ours)} (${pct(ov[d][ours].devPct)} respecto del \\emph{Best}; en el paper, ${label(pap)} con ${pct(ov[d][pap].paperDevPct)})`;
-      }).join('. ') +
-      '. Como en el paper, la familia ITS queda por delante del ILS y la evaluación exacta mejora a la heurística dentro de cada familia.',
+        const m = bestOf(d);
+        return `${DIR_TEX[d]}: ${label(m)}, $z$ medio ${num(ov[d][m].avgZ)} (desv.\\ ${pct(ov[d][m].devPct)}; paper ${pct(ov[d][m].paperDevPct)})`;
+      }).join('; ') +
+      `. Bajo el \\emph{Best} del paper en ${below} de ${rows.length} instancias.`,
   );
-  // La última frase solo se deja si los datos la respaldan en ambas direcciones.
-  const itsAhead = DIRS.every((d) => Math.max(ov[d]['its-exact'].devPct ?? Infinity, ov[d]['its-heuristic'].devPct ?? Infinity) < Math.min(ov[d]['ils-exact'].devPct ?? -Infinity, ov[d]['ils-heuristic'].devPct ?? -Infinity));
-  const exactBetter = DIRS.every(
-    (d) => (ov[d]['its-exact'].devPct ?? Infinity) < (ov[d]['its-heuristic'].devPct ?? -Infinity) && (ov[d]['ils-exact'].devPct ?? Infinity) < (ov[d]['ils-heuristic'].devPct ?? -Infinity),
-  );
-  if (!itsAhead || !exactBetter) items[0] = items[0].replace(/ Como en el paper,[^.]*\./, '');
 
   // 2 · Exacto / heurístico: razón de tiempos (1 dir.) frente a la del paper (Tabla 9).
   const t9 = paper.timeRowTable9;
   const famRatio = (fam: 'ils' | 'its') => {
     const e = ov['1dir'][`${fam}-exact`].timeSec;
     const h = ov['1dir'][`${fam}-heuristic`].timeSec;
-    const ours = e !== null && h ? e / h : null;
     const pap = fam === 'ils' ? t9.ilsE1 / t9.ilsH1 : t9.itsE1 / t9.itsH1;
-    return `${fam.toUpperCase()}: exacto ${sec(e)}\\,s frente a heurístico ${sec(h)}\\,s, ${ours === null ? '--' : ratio(ours)} veces (paper: ${ratio(pap)} veces, fila \\emph{Time (s)} de la Tabla~9)`;
+    return `${fam.toUpperCase()} $\\times$${e !== null && h ? ratio(e / h) : '--'} (paper $\\times$${ratio(pap)})`;
   };
-  items.push(`\\textbf{Costo de la evaluación exacta (1~dir.).} ${famRatio('ils')}; ${famRatio('its')}.`);
+  items.push(`\\textbf{Costo de la evaluación exacta frente a la heurística (1~dir.).} ${famRatio('ils')}; ${famRatio('its')}.`);
 
-  // 3 · Efecto de la segunda dirección.
-  const drop = A.META_METHODS.map((m) => {
-    const d1 = ov['1dir'][m].devPct;
-    const d2 = ov['2dir'][m].devPct;
-    return `${label(m)} ${d1 === null || d2 === null ? '--' : `${num(d1)} $\\to$ ${num(d2)}`}`;
+  // 3 · Efecto de la segunda dirección: rango de la baja (%) del z medio entre los cinco métodos.
+  const drops = A.META_METHODS.map((m) => {
+    const z1 = ov['1dir'][m].avgZ;
+    const z2 = ov['2dir'][m].avgZ;
+    return z1 && z2 !== null ? ((z1 - z2) / z1) * 100 : null;
+  }).filter((d): d is number => d !== null);
+  // «Casi se duplica» solo si la razón de tiempos 2 dir. / 1 dir. de las cuatro metaheurísticas está entre 1,6 y 2,2.
+  const doubles = A.META_METHODS.filter((m) => m !== 'twophase').every((m) => {
+    const t1 = ov['1dir'][m].timeSec;
+    const t2 = ov['2dir'][m].timeSec;
+    return t1 !== null && t2 !== null && t1 > 0 && t2 / t1 >= 1.6 && t2 / t1 <= 2.2;
   });
-  items.push(`\\textbf{De 1~dir.\\ a 2~dir.} La desviación media (\\%) baja en todos los métodos: ${listEs(drop)}; el tiempo de las metaheurísticas casi se duplica, igual que en el paper.`);
-  const allDrop = A.META_METHODS.every((m) => (ov['2dir'][m].devPct ?? Infinity) <= (ov['1dir'][m].devPct ?? -Infinity));
-  if (!allDrop) items[2] = items[2].replace(' baja en todos los métodos', ' cambia así');
+  if (drops.length)
+    items.push(
+      `\\textbf{De 1 a 2~dir.} El $z$ medio baja entre ${pct(Math.min(...drops))} y ${pct(Math.max(...drops))} según el método` +
+        (doubles ? '; en ILS e ITS el tiempo casi se duplica.' : '.'),
+    );
 
-  // 4 · Mejores que el Best del paper.
-  const below = rows.filter((r) => r.ourBest !== null && r.best !== null && r.ourBest < r.best - E.Z_TOL);
-  const bySize = sizes
-    .map((n) => [n, below.filter((r) => r.n === n).length] as const)
-    .filter(([, k]) => k > 0)
-    .map(([n, k]) => `${k} con $|V_c| = ${n}$`);
-  items.push(
-    `\\textbf{Bajo el \\emph{Best} del paper.} En ${below.length} de ${rows.length} instancias alguna de nuestras corridas encuentra un valor menor que la mejor solución conocida publicada${bySize.length ? ` (${listEs(bySize)})` : ''}; ITS exacto con 2~dir.\\ lo logra en ${ov['2dir']['its-exact'].beatsBest}.`,
-  );
-
-  // 5 · Diferencias con el paper: cota de la diferencia de desviación en los métodos que la reproducen
-  // y, en ITS exacto, cuántas veces mejora la solución inicial (alguna dirección) en cada mitad de la grilla.
-  const itsE = ov['2dir']['its-exact'];
-  const close: MetaMethod[] = ['twophase', 'ils-heuristic', 'ils-exact'];
-  const maxGap = Math.max(...close.flatMap((m) => DIRS.map((d) => Math.abs((ov[d][m].devPct ?? 0) - (ov[d][m].paperDevPct ?? 0)))));
-  const improves = (list: A.InstanceRow[]) => {
-    const ours = list.filter((r) => r.cells['its-exact'].dir1?.improved || r.cells['its-exact'].dir2?.improved).length;
-    const pap = list.filter(
-      (r) => r.paper && (r.paper['its-exact'].z1 < r.paper.twophase.z1 - E.Z_TOL || r.paper['its-exact'].zRev < r.paper.twophase.zRev - E.Z_TOL),
-    ).length;
-    return { ours, pap, of: list.length };
-  };
-  const small = improves(rows.filter((r) => r.n < sizes[half]));
-  const large = improves(rows.filter((r) => r.n >= sizes[half]));
-  items.push(
-    `\\textbf{Diferencia con el paper.} ${listEs(close.map(label))} reproducen las desviaciones del paper con diferencias menores a ${num(Math.floor(maxGap * 100 + 1) / 100)} puntos porcentuales en ambas direcciones. ITS exacto queda más lejos (${pct(itsE.devPct)} frente a ${pct(itsE.paperDevPct)} en 2~dir.): con $|V_c| \\geq ${sizes[half]}$ nuestra corrida mejora la solución inicial en ${large.ours} de ${large.of} instancias y la del paper en ${large.pap} de ${large.of} (con $|V_c| < ${sizes[half]}$, en ${small.ours} y ${small.pap} de ${small.of}).`,
-  );
 
   return ['\\begin{itemize}', ...items.map((i) => `  \\item ${i}`), '\\end{itemize}'].join('\n');
 }
@@ -422,9 +403,9 @@ function metaDetailTable(part: 1 | 2, partSizes: number[]): string {
   }
   const range = `$|V_c| = ${partSizes[0]}$ a $${partSizes[partSizes.length - 1]}$`;
   const caption =
-    part === 1
-      ? `Resultados por instancia de dos fases, ILS e ITS ($N_{iter} = ${meta.meta?.params?.nIter ?? 200}$), en el formato de las Tablas~8--9 de Erdo\\u{g}an et al.~(2012) (primera parte: ${range}). Valor objetivo $z$; 1~dir.: corrida desde el tour TSP; 2~dir.: corrida desde el tour TSP invertido, por sí sola, como en el paper (el resultado con dos direcciones del Cuadro~\\ref{tab:metaheuristicas-resumen} es el mínimo de ambas columnas). Best: mejor solución conocida publicada en el paper. En negrita, el menor $z$ de la fila${star ? '; $^{*}$menor que el Best del paper' : ''}. Nuestra dirección~1 reproduce la orientación de la columna 1~dir.\\ del paper en ${rows.filter((r) => r.orientation === 'paper').length} de las ${rows.length} instancias; en las demás, la orientación por convención puede corresponder a la opuesta, lo que no afecta el mínimo de ambas columnas.`
-      : `Resultados por instancia de dos fases, ILS e ITS en el formato de las Tablas~8--9 de Erdo\\u{g}an et al.~(2012) (segunda parte: ${range}); notación del Cuadro~\\ref{tab:metaheuristicas-detalle-1}${star ? '; $^{*}$menor que el Best del paper' : ''}. Tiempo (s): promedio de las ${rows.length} instancias por columna, en segundos de pared; ILS e ITS sin el tour TSP, dos fases con el tour TSP y la reubicación del depósito. Paper (s): fila \\emph{Time (s)} de su Tabla~9 (Intel Core~2 Quad de 2{,}83\\,GHz, código C; el paper no publica el tiempo de la solución inicial).`;
+    `Detalle por instancia (${range}), formato de las Tablas~8--9 de Erdo\\u{g}an et al.~(2012): $z$ de cada método; 1~dir.: desde el tour TSP; 2~dir.: desde el tour invertido. En negrita, el menor $z$ de la fila` +
+    (star ? '; $^{*}$~menor que el Best del paper.' : '.') +
+    (part === 2 ? ' Tiempo (s): media de las ' + rows.length + ' instancias; Paper (s): fila \\emph{Time (s)} de su Tabla~9.' : '');
   return [
     '\\begin{table}[!htbp]',
     '\\centering',
@@ -448,6 +429,18 @@ function metaDetailTable(part: 1 | 2, partSizes: number[]): string {
   ].join('\n');
 }
 
+/** Resumen por |Vc| de las metaheurísticas (el de «Copiar LaTeX») con un caption corto. */
+function metaSummaryTable(): string {
+  return recaption(tablesOf(E.toLatexSummary(rows, paper, meta)), (body) => {
+    const notes = [
+      'Entre paréntesis, la cifra del paper con el mismo método y dirección',
+      ...(body.includes('$\\approx$') ? ['$\\approx$: tiempo estimado (2 $\\times$ 1~dir.)'] : []),
+      ...(body.includes('\\dagger') ? ['$^{\\dagger}$~promedio parcial'] : []),
+    ];
+    return `Valor objetivo medio $z$ y tiempo medio por instancia (s) según $|V_c|$, con 1 y 2 direcciones. ${notes.join('; ')}. En negrita, el menor $z$ medio de la fila en cada dirección.`;
+  });
+}
+
 // ---------------------------------------------------------------------------------------------
 // Documento
 // ---------------------------------------------------------------------------------------------
@@ -455,7 +448,6 @@ function metaDetailTable(part: 1 | 2, partSizes: number[]): string {
 const mm = meta.meta;
 const nIter = mm?.params?.nIter ?? 200;
 const nIterIts = mm?.params?.nIterIts ?? Math.floor(Math.sqrt(nIter));
-const hBySize = sizes.map((n) => `${n}: ${tex(E.hLabel(E.hFor(n, rows.find((r) => r.n === n && r.h !== null)?.h ?? null, mm) ?? 0))}`);
 const half = Math.ceil(sizes.length / 2);
 const benchRecords = bench.records.length;
 const metaRecords = meta.records.length;
@@ -474,9 +466,10 @@ const doc = String.raw`% Informe generado por scripts/build-report.ts (Página W
 % Sin es-tabla: nuestras tablas son «Cuadro N», para no confundirlas con las «Tablas N» del paper.
 \usepackage[spanish,es-noshorthands,es-nodecimaldot]{babel}
 \usepackage[margin=2.2cm]{geometry}
-\usepackage{booktabs,graphicx,pdflscape,afterpage,amsmath,microtype}
+\usepackage{booktabs,graphicx,pdflscape,amsmath,microtype}
 \usepackage[font=small,labelfont=bf]{caption}
 \usepackage{xcolor}
+\usepackage{placeins}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
 \usepgfplotslibrary{groupplots}
@@ -491,6 +484,10 @@ const doc = String.raw`% Informe generado por scripts/build-report.ts (Página W
 \definecolor{cITS}{HTML}{C026D3}
 \setlength{\parskip}{0.45em}
 \setlength{\parindent}{0pt}
+% Páginas solo de tablas (continuaciones, anexos): arriba, no centradas en la página.
+\makeatletter
+\setlength{\@fptop}{0pt}
+\makeatother
 
 \title{Benchmarks del TSPPD-H\\[4pt]\large Tiempos de cómputo de los modelos exactos y metaheurísticas ILS e ITS}
 \author{Taller de Investigación}
@@ -499,59 +496,39 @@ const doc = String.raw`% Informe generado por scripts/build-report.ts (Página W
 \begin{document}
 \maketitle
 
-Este informe reúne los dos benchmarks de la Página Web~12. El primero, \emph{¿Cuánto tarda cada método?}, compara el tiempo de cómputo de los cuatro modelos exactos resueltos con Gurobi frente a la heurística de dos fases y al ILS, en las instancias de Battarra et al.~(2010) con 5 a 25 clientes. El segundo, \emph{¿Exacto o heurístico?}, replica las Tablas~8 y~9 de Erdo\u{g}an et al.~(2012): la solución inicial de dos fases y, a partir de ella, el ILS y el ITS con evaluación exacta o heurística del vecindario, en instancias de 20 a 200 clientes, con una y con dos direcciones del tour. Todas las cifras salen de los registros consolidados (${benchRecords} y ${metaRecords} ejecuciones, respectivamente) con las mismas funciones que usa la página, y las tablas son las que exporta su botón \emph{Copiar LaTeX}.
-
-\tableofcontents
+Resultados de los dos benchmarks de la Página Web~12, calculados de los registros consolidados (${benchRecords} y ${metaRecords} ejecuciones). Las tablas son las de \emph{Copiar LaTeX} de la página.
 
 \section{¿Cuánto tarda cada método?}
 \label{sec:tiempos}
 
-\subsection{Configuración}
-\begin{itemize}
-  \item \textbf{Instancias:} Battarra et al.~(2010), $|V_c| \in \{${grid.customers.join(', ')}\}$, Id ${grid.ids[0]} a ${grid.ids[grid.ids.length - 1]}, con $h = h_a = h_b \in \{${hs.map((h) => num(h, h === 1 ? 0 : 1)).join('; ')}\}$: ${instances.length} combinaciones de instancia y $h$.
-  \item \textbf{Modelos exactos (Gurobi ${texText(bm?.gurobi ?? '')}):} Modelo General y las formulaciones de las Políticas~1, 2 y~3 (TSPPD-H$_1$, H$_2$ y H$_3$), con límite de ${sec(timeLimit)}\,s y ${bm?.threads ?? 1} hilo por modelo (${bm?.workers ?? '--'} modelos en paralelo). El Modelo General solo se ejecuta hasta $|V_c| = ${bm?.generalMaxN ?? 10}$ por su alto costo computacional.
-  \item \textbf{Dos fases:} ruta TSP con el depósito reubicado y, sobre ella, la manipulación óptima de la Política~3 con el Algoritmo~2.1 + DP.
-  \item \textbf{ILS-2dir:} Algoritmo~4.2 de Erdo\u{g}an et al.~(2012) con evaluación exacta, $N_{iter} = ${bm?.ils?.nIter ?? 200}$ y ${bm?.ils?.runs ?? 10} corridas por instancia (se informa la mejor y el tiempo medio por corrida).
-  \item \textbf{Equipo:} ${texText(bm?.cpu ?? '')}, ${texText(bm?.os ?? '')}, Python ${texText(bm?.python ?? '')}.
-\end{itemize}
-La desviación de las heurísticas se mide respecto de $z^{*}_{P3}$, el óptimo de la Política~3 probado por Gurobi; donde Gurobi no lo prueba, contra la mejor solución conocida de esa política (marca $^{\ddagger}$ en los cuadros).
-
-\subsection{Resultados por número de clientes}
-Los Cuadros~\ref{tab:tiempos-resumen-h0-1}, \ref{tab:tiempos-resumen-h0-5} y~\ref{tab:tiempos-resumen-h1} resumen cada $h$ por $|V_c|$, y la Figura~\ref{fig:tiempos} muestra los tiempos medios. El detalle por instancia está en el Anexo~\ref{anx:tiempos}.
+Instancias de Battarra et al.~(2010) con $|V_c| \in \{${grid.customers.join(', ')}\}$, 10 por tamaño, y $h = h_a = h_b \in \{${hs.map(hNum).join('; ')}\}$. Gurobi ${texText(bm?.gurobi ?? '')} con límite de ${sec(timeLimit)}\,s y ${bm?.threads ?? 1} hilo por modelo; dos fases = ruta TSP + Algoritmo~2.1 + DP; ILS-2dir con $N_{iter} = ${bm?.ils?.nIter ?? 200}$. Equipo: ${texText(bm?.cpu ?? '')}.
 
 ${benchSummaryTables()}
 
 ${benchTimeFigure()}
 
-\subsection{Hallazgos}
+\FloatBarrier
 ${benchFindings()}
 
-\clearpage
 \section{¿Exacto o heurístico? ILS e ITS con hasta 200 clientes}
 \label{sec:metaheuristicas}
 
-\subsection{Configuración}
-\begin{itemize}
-  \item \textbf{Instancias:} las de Erdo\u{g}an et al.~(2012), $|V_c| \in \{${sizes.join(', ')}\}$, Id 1 a 10 (${rows.length} instancias), con el $h = h_a = h_b$ que reproduce sus Tablas~8--9 (${hBySize.join('; ')}).
-  \item \textbf{Métodos:} dos fases (la \emph{initial solution} del paper), ILS (Algoritmo~4.2) e ITS (Algoritmo~4.3) con evaluación heurística lineal del vecindario (\S2.2) o exacta (Algoritmo~2.1 + DP). ILS con $N_{iter} = ${nIter}$; ITS con $\lfloor\sqrt{N_{iter}}\rfloor = ${nIterIts}$ iteraciones externas de ${nIterIts} iteraciones de Tabu Search.
-  \item \textbf{Direcciones:} 1~dir.\ es una corrida desde el tour TSP; 2~dir.\ es la mejor de esa corrida y de otra igual desde el tour invertido (Tabla~3 del paper). En el detalle por instancia, como en las Tablas~8--9, la columna 2~dir.\ es solo la corrida desde el tour invertido.
-  \item \textbf{Equipo:} ${texText(mm?.cpu ?? '')}, ${texText(mm?.runtime ?? '')}, ${mm?.workers ?? '--'} ejecuciones en paralelo (un hilo cada una). El paper usó un Intel Core~2 Quad de 2{,}83\,GHz con código C: se comparan razones entre métodos, no segundos.
-\end{itemize}
-La desviación es $(z - \mathit{Best})/\mathit{Best} \cdot 100$, con $\mathit{Best}$ la mejor solución conocida publicada en las Tablas~8--9 del paper.
+Instancias de Erdo\u{g}an et al.~(2012) con $|V_c| = ${sizes[0]}$ a $${sizes[sizes.length - 1]}$ (${rows.length} en total). ILS con $N_{iter} = ${nIter}$ e ITS con ${nIterIts} iteraciones externas; evaluación del vecindario heurística (lineal, \S2.2) o exacta (Algoritmo~2.1 + DP). 1~dir.: desde el tour TSP; 2~dir.: la mejor de esa corrida y otra desde el tour invertido. Equipo: ${texText(mm?.cpu ?? '')}, ${texText(mm?.runtime ?? '')}; el paper usó un Core~2 Quad de 2{,}83\,GHz, así que se comparan razones de tiempo, no segundos.
 
-\subsection{Resumen por número de clientes}
-El Cuadro~\ref{tab:metaheuristicas-resumen} pone las dos direcciones lado a lado, como las Tablas~3 y 8--9 del paper, y debajo de cada fila la cifra del paper con el mismo método y dirección. La Figura~\ref{fig:metaheuristicas} muestra las mismas cifras y los Cuadros~\ref{tab:metaheuristicas-detalle-1} y~\ref{tab:metaheuristicas-detalle-2} (Anexo~\ref{anx:metaheuristicas}) el detalle por instancia.
+${metaFigure()}
 
-${landscape(tablesOf(E.toLatexSummary(rows, paper, meta)), `${metaFigure()}\n\\clearpage`)}
-
-\subsection{Hallazgos}
+\FloatBarrier
 ${metaFindings()}
 
 \clearpage
+\begin{landscape}
+${metaSummaryTable()}
+\end{landscape}
+
+\clearpage
 \appendix
-\section{Tiempos: tabla comparativa por instancia}
+\section{Tiempos: detalle por instancia}
 \label{anx:tiempos}
-Valor objetivo y tiempo de cada método en cada instancia, para cada $h$.
 
 ${benchComparisonTables()}
 

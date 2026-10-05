@@ -127,19 +127,6 @@ function arcStateAt(i: number, mode: string, k: number): ArcState {
   return 'todo';
 }
 
-function LayoutHelp() {
-  return (
-    <span className="block space-y-1">
-      <span className="block">
-        <span className="font-medium text-zinc-50">Geométrico:</span> posiciones reconstruidas por MDS desde la matriz c_ij; las longitudes son proporcionales a las distancias reales.
-      </span>
-      <span className="block">
-        <span className="font-medium text-zinc-50">Circular:</span> disposición radial esquemática, depósito al centro. Atajo <span className="font-mono">G</span>.
-      </span>
-    </span>
-  );
-}
-
 interface MapCardProps extends FollowProps {
   fullscreen: boolean;
 }
@@ -487,7 +474,7 @@ function MapCard({ fullscreen, follow, setFollow }: MapCardProps) {
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <Tooltip side="bottom" align="end" content={<LayoutHelp />}>
+          <Tooltip side="bottom" align="end" content="Geométrico: a escala (MDS de c_ij) · Circular: esquema radial · tecla G">
             <Segmented
               size="sm"
               ariaLabel="Disposición del mapa"

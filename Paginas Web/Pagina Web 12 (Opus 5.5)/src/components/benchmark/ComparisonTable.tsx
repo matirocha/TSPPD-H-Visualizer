@@ -10,7 +10,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import type { BenchMethod, BenchmarkFile, GurobiRecord, ILSRecord } from '../../types/benchmark';
 import { cn } from '../../lib/cn';
 import { fmt } from '../../lib/format';
-import { Segmented, SpotlightCard } from '../ui';
+import { Disclosure, Segmented, SpotlightCard } from '../ui';
 import { MethodMark } from '../heuristics/methods';
 import { cellOf, instancesOf, isGurobiMethod, METHOD_ORDER, sameCost, sameH, type BenchInstance, type Cell, type GroupStats, type MethodStats } from './aggregate';
 import { fmtPctValue, fmtSec, fmtZ } from './format';
@@ -61,7 +61,8 @@ function NotRunBlock({ rows, reason }: { rows: number; reason: string }) {
   return (
     <td rowSpan={rows} colSpan={2} title={reason} className="border-b border-l border-zinc-800/60 border-l-zinc-800 bg-zinc-950/30 px-3 py-2 text-center align-middle">
       <span className="inline-block max-w-[13ch] text-[11.5px] leading-snug text-pretty text-zinc-500">
-        No se ejecuta: alto costo computacional<span aria-hidden className="text-zinc-400"> §</span>
+        No se ejecuta<span aria-hidden className="text-zinc-400"> §</span>
+        <span className="sr-only">: alto costo computacional</span>
       </span>
     </td>
   );
@@ -392,13 +393,12 @@ export function ComparisonTable({
   return (
     <SpotlightCard className="p-5 sm:p-6">
       <CardHead
-        eyebrow="Tabla comparativa · estilo Battarra et al. (2010), Tablas 2–4"
+        eyebrow="Tabla comparativa · estilo Battarra et al. (2010)"
         title={
           <>
-            Valor objetivo y tiempo de cada instancia con <span className="num">h = {hText(h)}</span>
+            Costo z y segundos por instancia · <span className="num">h = {hText(h)}</span>
           </>
         }
-        note="Una fila por Id dentro de cada N: z = costo total (ruteo + manipulación) y Seg. = segundos que tardó cada método. Al cierre de cada N, la fila «Prom.» resume las óptimas y el tiempo medio."
         actions={
           <>
             <span className="text-[12px] text-zinc-500">Tiempo medio</span>
@@ -542,23 +542,38 @@ export function ComparisonTable({
         </table>
       </div>
 
-      <p className="mt-4 max-w-[110ch] text-[12px] leading-relaxed text-pretty text-zinc-500">
-        <span className="text-zinc-400">z</span>: valor objetivo (ruteo + manipulación); en negrita, el menor z de la fila entre los métodos que buscan
-        dentro de la Política 3 (Gurobi P3, dos fases e ILS). <span className="text-zinc-400">*</span>: Gurobi llegó a {limitText} sin probar el
-        óptimo; z es su mejor solución entera y debajo va el gap con la cota. <span className="text-zinc-400">Seg.</span>: segundos de cada ejecución
-        (Gurobi: Runtime sin construir el modelo; debajo, «límite» si se detuvo por tiempo); del ILS, el promedio por corrida y su z es el mejor de
-        las corridas (debajo, cuántas lo alcanzan si no fueron todas). <span className="text-zinc-400">Prom.</span>: en Gurobi, óptimas de las n y
-        tiempo medio («≥» si incluye ejecuciones cortadas por el límite); en las heurísticas, desviación media respecto de z*<sub>P3</sub> y tiempo
-        medio. <span className="text-zinc-400">°</span>: parte de las instancias aún no tiene z*<sub>P3</sub> probado y se compara con el mejor z
-        conocido.{' '}
-        {notRunFrom !== null && (
-          <>
-            <span className="text-zinc-400">§</span>: el Modelo General no se ejecuta con N ≥ {notRunFrom} por su alto costo computacional (ver «Cómo se
-            midió»); en el Total promedia solo las instancias en que sí se ejecutó.{' '}
-          </>
-        )}
-        <span className="text-zinc-400">Total</span>: {totalPartial ? 'solo las instancias que todos los métodos ya terminaron.' : 'todas las instancias.'} «…»: aún sin registrar.
+      <p className="mt-4 text-[12px] text-zinc-500">
+        <span className="text-zinc-300">Negrita</span>: menor z de la fila · <span className="text-zinc-300">*</span>: sin óptimo probado ·{' '}
+        <span className="text-zinc-300">«…»</span>: pendiente
       </p>
+      <Disclosure summary="Notas de la tabla" className="mt-3">
+        <ul className="space-y-1">
+          <li>
+            <span className="text-zinc-300">z</span>: ruteo + manipulación; en negrita, el menor entre los métodos de la Política 3 (Gurobi P3, dos
+            fases e ILS).
+          </li>
+          <li>
+            <span className="text-zinc-300">*</span>: Gurobi llegó a {limitText} sin probar el óptimo; z es su mejor solución entera y debajo va el gap.
+          </li>
+          <li>
+            <span className="text-zinc-300">Seg.</span>: Runtime de Gurobi («límite» si se detuvo por tiempo); en el ILS, media por corrida y z = mejor
+            corrida.
+          </li>
+          <li>
+            <span className="text-zinc-300">Prom.</span>: Gurobi, óptimas/n y tiempo medio («≥» si incluye cortes por límite); heurísticas, desviación
+            media respecto de z*<sub>P3</sub>. <span className="text-zinc-300">°</span>: algunas referencias usan el mejor z conocido.
+          </li>
+          {notRunFrom !== null && (
+            <li>
+              <span className="text-zinc-300">§</span>: el Modelo General no se ejecuta con N ≥ {notRunFrom} (alto costo computacional); el Total
+              promedia solo donde se ejecutó.
+            </li>
+          )}
+          <li>
+            <span className="text-zinc-300">Total</span>: {totalPartial ? 'solo las instancias que todos los métodos ya terminaron.' : 'todas las instancias.'}
+          </li>
+        </ul>
+      </Disclosure>
     </SpotlightCard>
   );
 }

@@ -8,7 +8,7 @@
  * la sección se actualiza sola mientras falten ejecuciones. Las cifras del paper llegan aparte
  * (paper_erdogan2012.json), así que con el paper y sin ejecuciones se muestra la estructura pendiente.
  *
- * Barra de control (dirección de los gráficos y hallazgos) · resumen por |Vc| al estilo de las
+ * Barra de control (avance y recarga) · resumen por |Vc| al estilo de las
  * Tablas 2–3, con 1 dir. y 2 dir. lado a lado como las Tablas 3 y 8–9 (12) · gráficos (7) +
  * hallazgos (5) · detalle por instancia como las Tablas 8–9 (12) · cómo se midió (12).
  */
@@ -19,7 +19,7 @@ import type { MetaDirection, MetaFile, PaperFile } from '../types/metaheuristics
 import { fmt } from '../lib/format';
 import { cn } from '../lib/cn';
 import { springSoft, staggerChild, staggerParent } from '../lib/motion';
-import { Button, Chip, SectionHeader, Segmented, SpotlightCard, Tooltip } from './ui';
+import { Button, Chip, SectionHeader, SpotlightCard, Tooltip } from './ui';
 import { useMetaheuristics } from './metaheuristics/useMetaheuristics';
 import { buildInstances, gridOf, progressOf, type Progress } from './metaheuristics/aggregate';
 import { MetaSummaryTable } from './metaheuristics/SummaryTable';
@@ -29,26 +29,6 @@ import { MetaDetailTable } from './metaheuristics/DetailTable';
 import { META_RUN, MetaMethodNote } from './metaheuristics/MethodNote';
 import { CommandLine, LiveDot, fmtClock, fmtDateTime } from './benchmark/shared';
 import { shortCpu } from './benchmark/format';
-
-/**
- * Qué significa cada dirección (Segmented de la barra de control, que rige los gráficos y los
- * hallazgos; las tablas muestran ambas). Etiquetas «1dir»/«2dir», como los títulos de esas tarjetas:
- * «1 dir.»/«2 dir.» quedan para las columnas de las tablas, como en las Tablas 3 y 8–9 del paper.
- */
-const DIRECTIONS: { value: MetaDirection; label: string; ariaLabel: string; hint: string }[] = [
-  {
-    value: '1dir',
-    label: '1dir',
-    ariaLabel: 'Una dirección: corrida desde el tour TSP',
-    hint: 'una corrida desde el tour TSP',
-  },
-  {
-    value: '2dir',
-    label: '2dir',
-    ariaLabel: 'Dos direcciones: la mejor de las corridas desde el tour TSP y desde el tour invertido',
-    hint: 'la mejor del tour y del tour invertido',
-  },
-];
 
 /** «Node.js v24.20.0» → «Node.js 24.20.0». */
 const shortRuntime = (runtime: string) => runtime.replace(/\bv(?=\d)/, '').trim();
@@ -69,6 +49,7 @@ export function Metaheuristics() {
   const grid = useMemo(() => gridOf(file), [file]);
   const progress = useMemo(() => progressOf(file), [file]);
 
+  // Dirección de los gráficos y los hallazgos (el selector vive en la tarjeta de gráficos; las tablas muestran ambas).
   const [dir, setDir] = useState<MetaDirection>('2dir');
 
   // Con el paper basta para dibujar la estructura (todo pendiente); sin nada, estado vacío.
@@ -84,10 +65,8 @@ export function Metaheuristics() {
         title="¿Exacto o heurístico? ILS e ITS con hasta 200 clientes"
         description={
           <>
-            Réplica de las Tablas 8 y 9 del paper: la solución inicial de <span className="text-zinc-200">dos fases</span> y, a partir de ella, el{' '}
-            <span className="text-zinc-200">ILS</span> y el <span className="text-zinc-200">ITS</span>, estos dos evaluando el vecindario con la DP
-            exacta o con la heurística lineal, en instancias de 20 a 200 clientes. Se comparan la función objetivo, como desviación respecto del mejor
-            valor conocido del paper, y el tiempo, con una dirección del tour o con las dos.
+            Réplica de las Tablas 8–9: <span className="text-zinc-200">dos fases</span>, <span className="text-zinc-200">ILS</span> e{' '}
+            <span className="text-zinc-200">ITS</span> (exactos o heurísticos) con 20 a 200 clientes, en calidad y tiempo.
           </>
         }
         aside={hasAny ? <ConfigAside file={file} paper={paper} progress={progress} live={live} /> : undefined}
@@ -100,8 +79,6 @@ export function Metaheuristics() {
       ) : (
         <>
           <ControlBar
-            dir={dir}
-            onDir={setDir}
             progress={progress}
             loading={loading}
             reload={reload}
@@ -125,10 +102,10 @@ export function Metaheuristics() {
               <MetaSummaryTable rows={rows} paper={paper} file={file} />
             </motion.div>
             <motion.div variants={staggerChild} className="min-w-0 lg:col-span-7">
-              <MetaCharts rows={rows} paper={paper} dir={dir} />
+              <MetaCharts rows={rows} paper={paper} dir={dir} onDir={setDir} />
             </motion.div>
             <motion.div variants={staggerChild} className="min-w-0 lg:col-span-5">
-              <MetaFindings rows={rows} paper={paper} dir={dir} itsNrand={itsNrand} />
+              <MetaFindings rows={rows} paper={paper} dir={dir} />
             </motion.div>
             <motion.div variants={staggerChild} className="min-w-0 lg:col-span-12">
               <MetaDetailTable rows={rows} paper={paper} sizes={grid.sizes} />
@@ -185,8 +162,6 @@ function ConfigAside({ file, paper, progress, live }: { file: MetaFile | null; p
 }
 
 function ControlBar({
-  dir,
-  onDir,
   progress,
   loading,
   reload,
@@ -194,8 +169,6 @@ function ControlBar({
   lastLoadedAt,
   error,
 }: {
-  dir: MetaDirection;
-  onDir: (d: MetaDirection) => void;
   progress: Progress;
   loading: boolean;
   reload: () => void;
@@ -203,29 +176,11 @@ function ControlBar({
   lastLoadedAt: number | null;
   error: string | null;
 }) {
-  const hint = DIRECTIONS.find((d) => d.value === dir)?.hint;
   return (
-    // Fija bajo la barra superior desde sm y con alto suficiente (index.css, [data-bench-bar]): la
-    // dirección rige los gráficos y los hallazgos (las tablas muestran 1 dir. y 2 dir. lado a lado).
-    // Allí se reserva también el scroll-margin.
+    // Fija bajo la barra superior desde sm y con alto suficiente (index.css, [data-bench-bar]), con el
+    // avance del benchmark. Allí se reserva también el scroll-margin.
     <div data-bench-bar className="z-20 mt-10">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5 rounded-2xl border border-zinc-800 bg-zinc-950/85 px-3 py-2 shadow-lg shadow-black/30 backdrop-blur-xl supports-[backdrop-filter]:bg-zinc-950/70">
-        <div className="flex items-center gap-2">
-          <span className="text-[12px] text-zinc-500">Dirección de los gráficos</span>
-          <Segmented<MetaDirection>
-            ariaLabel="Direcciones del tour de los gráficos y los hallazgos"
-            size="sm"
-            value={dir}
-            onChange={onDir}
-            options={DIRECTIONS.map((d) => ({ value: d.value, label: d.label, ariaLabel: d.ariaLabel, title: d.ariaLabel }))}
-          />
-          {hint && (
-            <span className="hidden text-[12px] text-zinc-500 lg:inline">
-              {hint}
-            </span>
-          )}
-        </div>
-
         <div className="flex min-w-[12rem] flex-1 items-center gap-3">
           {!progress.complete ? (
             <div className="min-w-0 flex-1">
@@ -304,12 +259,11 @@ function PendingNotice({ hasFile, tspDone, instances }: { hasFile: boolean; tspD
         {hasFile ? (
           <>
             Tours TSP listos en <span className="num text-zinc-200">{tspDone}</span> de <span className="num">{instances}</span> instancias; las
-            metaheurísticas aún no registran resultados. Las cifras del paper ya están: lo nuestro aparece como «…» hasta que cada ejecución termine.
+            metaheurísticas aún no tienen resultados («…»).
           </>
         ) : (
           <>
-            Aún no hay ejecuciones propias: las tablas muestran las cifras del paper y lo nuestro queda pendiente («…»). Lanza el benchmark desde la
-            raíz del repositorio; se reanuda solo y la sección se actualiza mientras corre.
+            Aún sin ejecuciones propias: solo se ven las cifras del paper. Lanza el benchmark desde la raíz del repositorio.
           </>
         )}
       </p>
@@ -348,9 +302,8 @@ function EmptyState({ error, loading, reload }: { error: string | null; loading:
           <p className="mt-2 max-w-[65ch] text-[14px] leading-relaxed text-pretty text-zinc-400">
             {error
               ? `No se pudieron leer: ${error}.`
-              : 'No se encontró Outputs/BenchmarkErdogan2012/ (benchmark_metaheuristicas.json, registros.jsonl ni paper_erdogan2012.json) ni el paquete estático solutions/metaheuristics.json.'}{' '}
-            Lánzalo desde la raíz del repositorio; la grilla completa (10 tamaños × 10 instancias × 10 ejecuciones) tarda horas, pero la página muestra
-            cada ejecución apenas termina (con la API local se actualiza sola cada minuto):
+              : 'No se encontró Outputs/BenchmarkErdogan2012/ ni solutions/metaheuristics.json.'}{' '}
+            Lánzalo desde la raíz del repositorio (tarda horas; la página se actualiza mientras corre):
           </p>
           <div className="mt-4 max-w-xl">
             <CommandLine>{META_RUN}</CommandLine>

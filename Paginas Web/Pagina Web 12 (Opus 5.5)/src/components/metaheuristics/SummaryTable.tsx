@@ -2,24 +2,29 @@
  * «Resumen por |Vc|» de la sección «Metaheurísticas», al estilo de las Tablas 2–3 de Erdoğan et al.
  * (2012) pero con los cinco métodos (dos fases, ILS e ITS heurísticos y exactos) y, como en sus
  * Tablas 3 y 8–9, las dos direcciones lado a lado: una fila por |Vc| con su h, y por método las
- * columnas «1 dir.» y «2 dir.», cada una con la desviación media respecto del Best del paper y los
- * segundos medios por instancia; bajo cada cifra nuestra, la del paper. Las filas por |Vc| promedian
+ * columnas «1 dir.» y «2 dir.», cada una con el valor objetivo medio Z y los segundos medios por
+ * instancia; bajo cada cifra nuestra, la del paper (la desviación respecto del Best va en el tooltip). Las filas por |Vc| promedian
  * lo terminado de cada método («k/10» mientras falten instancias) y la fila «Prom.», en cada
  * dirección, solo las instancias que los cinco métodos ya terminaron. Todo el cálculo vive en
  * export.ts (summaryModel, uno por dirección) y aggregate.ts.
+ *
+ * Selectores de |Vc| y de h: filtran las filas, la fila «Prom.» y las exportaciones (LaTeX y CSV).
+ * Cada |Vc| se despliega en sus instancias (una fila por Id) con el Z y los segundos de cada método
+ * en ambas direcciones y, bajo cada Z, el del paper para esa instancia.
  */
-import { useMemo, type ReactNode } from 'react';
-import { Download } from 'lucide-react';
-import type { MetaDirection, MetaFile, PaperFile } from '../../types/metaheuristics';
+import { useMemo, useState, type ReactNode } from 'react';
+import { ChevronRight, Download } from 'lucide-react';
+import type { MetaDirection, MetaFile, MetaMethod, PaperFile } from '../../types/metaheuristics';
 import { cn } from '../../lib/cn';
 import { fmt } from '../../lib/format';
-import { Button, SpotlightCard } from '../ui';
+import { Button, Disclosure, Segmented, SpotlightCard } from '../ui';
 import { CardHead, CopyLatexButton, Pending, STICKY_CELL, STICKY_ROW_HOVER, downloadText } from '../benchmark/shared';
 import { fmtNum, fmtPctValue, fmtSec } from '../benchmark/format';
-import { META_METHODS, type InstanceRow } from './aggregate';
+import { META_METHODS, devPct, paperZOf, timeOf, zOf, type InstanceRow } from './aggregate';
 import { META_INFO, methodColor, type MetaFamily } from './labels';
 import { MethodSwatch, Sub, TD_NUM } from './shared';
 import {
+  hFor,
   hLabel,
   paperTimeMismatch,
   summaryModel,
@@ -58,25 +63,26 @@ interface CellCtx {
   itsGap?: { table2: number; table9: number } | null;
 }
 
-function devTitle(c: SummaryCell, ctx: CellCtx): string {
+function zTitle(c: SummaryCell, ctx: CellCtx): string {
   const info = META_INFO[c.method];
   const head = `${info.label} · ${ctx.where} · ${ctx.dir}`;
+  const paperDev = c.paperDev === null ? '' : ` (desviación ${fmtPctValue(c.paperDev, 2)})`;
   const paper =
-    c.paperDev === null
+    c.paperZ === null
       ? ''
       : c.paperDevAll
-        ? ` Paper (mismo método y dirección, las ${c.instances} instancias): ${fmtPctValue(c.paperDev, 2)}.`
-        : ` Paper (mismo método y dirección, mismas instancias): ${fmtPctValue(c.paperDev, 2)}.`;
+        ? ` Paper (mismo método y dirección, las ${c.instances} instancias): Z medio ${fmtNum(c.paperZ, 2)}${paperDev}.`
+        : ` Paper (mismo método y dirección, mismas instancias): Z medio ${fmtNum(c.paperZ, 2)}${paperDev}.`;
   const errors = c.errors > 0 ? ` ${c.errors} ${c.errors === 1 ? 'ejecución' : 'ejecuciones'} con error, fuera del promedio.` : '';
   if (c.s.done === 0) return `${head}: aún sin instancias terminadas.${paper}${errors}`;
-  if (c.s.devPct === null) return `${head}: sin Best del paper con qué comparar.${errors}`;
   const scope = ctx.prom ? `${c.s.done} instancias que todos los métodos terminaron` : `${c.s.done} de ${c.instances} instancias`;
+  const dev = c.s.devPct === null ? '' : `; desviación media ${fmtPctValue(c.s.devPct, 2)} respecto del Best del paper`;
   const beats = `al paper en ${c.s.beatsPaper} y al Best en ${c.s.beatsBest}`;
   const counts =
     c.method === 'twophase' ? ` Supera ${beats}.` : ` Mejora su solución inicial en ${c.s.improved}; supera ${beats}.`;
   return (
-    `${head}: desviación media ${fmtPctValue(c.s.devPct, 2)} respecto del Best del paper, sobre ${scope}.${paper}${counts}` +
-    (c.best ? ` Menor desviación de la fila en ${ctx.dir}.` : '') +
+    `${head}: valor objetivo medio Z = ${fmtNum(c.s.avgZ, 2)} sobre ${scope}${dev}.${paper}${counts}` +
+    (c.best ? ` Menor Z medio de la fila en ${ctx.dir}.` : '') +
     errors
   );
 }
@@ -117,15 +123,12 @@ function MethodCells({ c, ctx }: { c: SummaryCell; ctx: CellCtx }) {
   const td = ctx.prom ? TD_STRONG : TD_NUM;
   const tone = pending ? '' : c.best ? 'font-semibold text-zinc-50' : ctx.prom ? 'font-medium text-zinc-100' : 'text-zinc-200';
 
-  let dev: ReactNode;
-  if (pending) dev = <Pending />;
-  else if (c.s.devPct === null) dev = <span className="text-zinc-500">—</span>;
-  else dev = fmtPctValue(c.s.devPct, 2);
+  const z: ReactNode = pending ? <Pending /> : fmtNum(c.s.avgZ, 2);
 
   return (
     <>
       <td
-        title={devTitle(c, ctx)}
+        title={zTitle(c, ctx)}
         className={cn(td, 'border-l', ctx.dir === '1dir' ? 'border-l-zinc-800' : 'border-l-zinc-800/50', c.best && FAMILY_TINT[family])}
       >
         <span className={cn('block', tone)}>
@@ -134,8 +137,8 @@ function MethodCells({ c, ctx }: { c: SummaryCell; ctx: CellCtx }) {
               ●
             </span>
           )}
-          {dev}
-          {c.best && <span className="sr-only"> (menor desviación de la fila en {ctx.dir})</span>}
+          {z}
+          {c.best && <span className="sr-only"> (menor Z medio de la fila en {ctx.dir})</span>}
           {partial && (
             <span className="ml-1.5 rounded-md border border-zinc-800 bg-zinc-950/60 px-1 py-px font-mono text-[10px] font-normal text-zinc-400">
               {c.s.done}/{c.instances}
@@ -143,7 +146,7 @@ function MethodCells({ c, ctx }: { c: SummaryCell; ctx: CellCtx }) {
             </span>
           )}
         </span>
-        {c.paperDev !== null && <Sub>paper {fmtPctValue(c.paperDev, 2)}</Sub>}
+        {c.paperZ !== null && <Sub>paper {fmtNum(c.paperZ, 2)}</Sub>}
         {c.errors > 0 && (
           <Sub className="text-handling">
             {c.errors} {c.errors === 1 ? 'error' : 'errores'}
@@ -174,7 +177,7 @@ function MethodCells({ c, ctx }: { c: SummaryCell; ctx: CellCtx }) {
 /* ───────────────────────── Filas ───────────────────────── */
 
 /** Una fila por |Vc|: por método, las celdas de «1 dir.» y de «2 dir.» (las filas de ambos modelos son del mismo |Vc|). */
-function NRow({ pair }: { pair: Record<MetaDirection, SummaryRow> }) {
+function NRow({ pair, open, onToggle }: { pair: Record<MetaDirection, SummaryRow>; open: boolean; onToggle: () => void }) {
   const r = pair['1dir'];
   const n = r.n as number;
   const complete = DIRS.every((d) => pair[d].complete);
@@ -183,10 +186,20 @@ function NRow({ pair }: { pair: Record<MetaDirection, SummaryRow> }) {
       <th
         scope="row"
         title={`${n} clientes · ${r.instances} instancias${complete ? '' : ' · aún incompleto'}`}
-        className={cn(STICKY_CELL, STICKY_ROW_HOVER, 'border-b border-zinc-800/60 py-2 pr-4 text-left align-top font-normal')}
+        className={cn(STICKY_CELL, STICKY_ROW_HOVER, 'border-b border-zinc-800/60 py-1.5 pr-4 text-left align-top font-normal')}
       >
-        <span className="sr-only">|Vc| = </span>
-        <span className="num font-medium text-zinc-100">{n}</span>
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={open}
+          title={open ? `Ocultar las ${r.instances} instancias de |Vc| = ${n}` : `Ver las ${r.instances} instancias (Id) de |Vc| = ${n}`}
+          className="-ml-1 inline-flex items-center gap-1 rounded-md py-0.5 pr-1.5 pl-0.5 outline-none hover:bg-zinc-800/60 focus-visible:ring-2 focus-visible:ring-zinc-50/80"
+        >
+          <ChevronRight aria-hidden className={cn('h-3.5 w-3.5 text-zinc-500 transition-transform', open && 'rotate-90 text-zinc-300')} />
+          <span className="sr-only">|Vc| = </span>
+          <span className="num font-medium text-zinc-100">{n}</span>
+          <span className="sr-only">{open ? ', ocultar instancias' : ', ver instancias'}</span>
+        </button>
       </th>
       <td className="num border-b border-zinc-800/60 px-2.5 py-2 text-right align-top whitespace-nowrap text-zinc-400">
         {r.h === null ? '—' : hLabel(r.h)}
@@ -198,9 +211,153 @@ function NRow({ pair }: { pair: Record<MetaDirection, SummaryRow> }) {
   );
 }
 
+/** Celdas Z y Seg. de un método en una dirección para una sola instancia (fila de un Id). */
+function IdCells({ row, m, dir, best }: { row: InstanceRow; m: MetaMethod; dir: MetaDirection; best: boolean }) {
+  const c = row.cells[m];
+  const family = META_INFO[m].family;
+  const z = zOf(c, dir);
+  const t = timeOf(c, dir);
+  const pz = row.paper ? paperZOf(row.paper[m], dir) : null;
+  const head = `${META_INFO[m].label} · |Vc| = ${row.n}, Id ${row.id} · ${dir}`;
+  const dev = devPct(z, row.best);
+  const pDev = devPct(pz, row.best);
+  const zTip =
+    z === null
+      ? `${head}: ${c.errors > 0 ? `${c.errors} ${c.errors === 1 ? 'ejecución' : 'ejecuciones'} con error.` : 'aún sin resultado.'}`
+      : `${head}: Z = ${fmtNum(z, 2)}${dev === null ? '' : ` (desviación ${fmtPctValue(dev, 2)} respecto del Best ${fmtNum(row.best, 2)})`}.` +
+        (pz === null ? '' : ` Paper: ${fmtNum(pz, 2)}${pDev === null ? '' : ` (${fmtPctValue(pDev, 2)})`}.`) +
+        (best ? ` Menor Z de la instancia en ${dir}.` : '');
+  const tTip =
+    t === null
+      ? `${head}: aún sin resultado.`
+      : `${head}: ${fmtSec(t)} s de pared, incluido el tour TSP${dir === '2dir' ? ' y las dos direcciones' : ''}.`;
+  const td = 'num border-b border-zinc-800/40 px-2.5 py-1.5 text-right align-top whitespace-nowrap';
+  return (
+    <>
+      <td
+        title={zTip}
+        className={cn(td, 'border-l', dir === '1dir' ? 'border-l-zinc-800' : 'border-l-zinc-800/50', best && FAMILY_TINT[family])}
+      >
+        <span className={cn('block', z === null ? '' : best ? 'font-semibold text-zinc-50' : 'text-zinc-300')}>
+          {best && (
+            <span aria-hidden className={cn('mr-1 align-[1px] text-[8px]', FAMILY_TEXT[family])}>
+              ●
+            </span>
+          )}
+          {z === null ? c.errors > 0 ? <span className="text-handling">error</span> : <Pending /> : fmtNum(z, 2)}
+          {best && <span className="sr-only"> (menor Z de la instancia en {dir})</span>}
+        </span>
+        {pz !== null && <Sub>paper {fmtNum(pz, 2)}</Sub>}
+      </td>
+      <td title={tTip} className={cn(td, best && FAMILY_TINT[family])}>
+        <span className={cn('block', t === null ? '' : 'text-zinc-400')}>{t === null ? <Pending /> : fmtSec(t)}</span>
+      </td>
+    </>
+  );
+}
+
+/** Métodos con el menor Z de una instancia en una dirección (a 2 decimales), si los cinco terminaron. */
+function bestOf(row: InstanceRow, dir: MetaDirection): Set<MetaMethod> {
+  const zs = META_METHODS.map((m) => zOf(row.cells[m], dir));
+  if (zs.some((z) => z === null)) return new Set();
+  const key = (z: number) => Math.round(z * 100);
+  const min = Math.min(...zs.map((z) => key(z as number)));
+  return new Set(META_METHODS.filter((_, i) => key(zs[i] as number) === min));
+}
+
+/** Una instancia (Id) bajo su |Vc|, con el Best del paper bajo el Id. */
+function IdRow({ row, h }: { row: InstanceRow; h: number | null }) {
+  const best = { '1dir': bestOf(row, '1dir'), '2dir': bestOf(row, '2dir') } satisfies Record<MetaDirection, Set<MetaMethod>>;
+  return (
+    <tr className="group/row bg-zinc-900/30 text-[12px] transition-colors hover:bg-zinc-800/25">
+      <th
+        scope="row"
+        title={`|Vc| = ${row.n}, Id ${row.id}${row.best !== null ? ` · Best del paper ${fmtNum(row.best, 2)}` : ''}`}
+        className={cn(STICKY_CELL, STICKY_ROW_HOVER, 'border-b border-zinc-800/40 py-1.5 pr-4 pl-5 text-left align-top font-normal')}
+      >
+        <span className="text-zinc-500">Id </span>
+        <span className="num text-zinc-200">{row.id}</span>
+        {row.best !== null && <Sub>Best {fmtNum(row.best, 2)}</Sub>}
+      </th>
+      <td className="num border-b border-zinc-800/40 px-2.5 py-1.5 text-right align-top whitespace-nowrap text-zinc-600">
+        {h === null ? '—' : hLabel(h)}
+      </td>
+      {META_METHODS.flatMap((m) => DIRS.map((d) => <IdCells key={`${m}-${d}`} row={row} m={m} dir={d} best={best[d].has(m)} />))}
+    </tr>
+  );
+}
+
 /* ───────────────────────── Tarjeta ───────────────────────── */
 
-export function MetaSummaryTable({ rows, paper, file }: { rows: InstanceRow[]; paper: PaperFile | null; file: MetaFile | null }) {
+type Pick = number | 'all';
+/** Clave estable de un h en los selectores (0,125 y 0,1 se repiten en dos tamaños). */
+const hKey = (h: number) => Math.round(h * 1000);
+const hKeyIn = (hByN: ReadonlyMap<number, number | null>, n: number) => {
+  const h = hByN.get(n);
+  return h === null || h === undefined ? null : hKey(h);
+};
+
+export function MetaSummaryTable({ rows: allRows, paper, file }: { rows: InstanceRow[]; paper: PaperFile | null; file: MetaFile | null }) {
+  const meta = file?.meta ?? null;
+  // h de cada |Vc| (registros, meta.h o Tablas 8–9) y opciones de los selectores.
+  const hByN = useMemo(() => {
+    const out = new Map<number, number | null>();
+    for (const r of allRows) if (!out.has(r.n) || (out.get(r.n) === null && r.h !== null)) out.set(r.n, r.h);
+    return new Map([...out].map(([n, h]) => [n, hFor(n, h, meta)]));
+  }, [allRows, meta]);
+  const sizes = useMemo(() => [...hByN.keys()].sort((a, b) => a - b), [hByN]);
+  const hOptions = useMemo(() => {
+    const byKey = new Map<number, { h: number; ns: number[] }>();
+    for (const n of sizes) {
+      const h = hByN.get(n);
+      if (h === null || h === undefined) continue;
+      const k = hKey(h);
+      byKey.set(k, { h, ns: [...(byKey.get(k)?.ns ?? []), n] });
+    }
+    return [...byKey.entries()].sort((a, b) => b[1].h - a[1].h).map(([key, v]) => ({ key, ...v }));
+  }, [sizes, hByN]);
+
+  const [nPick, setNPick] = useState<Pick>('all');
+  const [hPick, setHPick] = useState<Pick>('all');
+  const [open, setOpen] = useState<ReadonlySet<number>>(() => new Set());
+  const nSel: Pick = nPick !== 'all' && sizes.includes(nPick) ? nPick : 'all';
+  const hSel: Pick = hPick !== 'all' && hOptions.some((o) => o.key === hPick) ? hPick : 'all';
+  const hKeyOf = (n: number) => hKeyIn(hByN, n);
+  // Un |Vc| fuera del h elegido (o al revés) suelta el otro selector, para no dejar la tabla vacía.
+  const pickN = (n: Pick) => {
+    setNPick(n);
+    if (n !== 'all') {
+      if (hSel !== 'all' && hKeyOf(n) !== hSel) setHPick('all');
+      setOpen((s) => new Set(s).add(n));
+    }
+  };
+  const pickH = (k: Pick) => {
+    setHPick(k);
+    if (k !== 'all' && nSel !== 'all' && hKeyOf(nSel) !== k) setNPick('all');
+  };
+  const toggle = (n: number) =>
+    setOpen((s) => {
+      const next = new Set(s);
+      if (next.has(n)) next.delete(n);
+      else next.add(n);
+      return next;
+    });
+
+  const rows = useMemo(
+    () => allRows.filter((r) => (nSel === 'all' || r.n === nSel) && (hSel === 'all' || hKeyIn(hByN, r.n) === hSel)),
+    [allRows, nSel, hSel, hByN],
+  );
+  const rowsByN = useMemo(() => {
+    const out = new Map<number, InstanceRow[]>();
+    for (const r of rows) out.set(r.n, [...(out.get(r.n) ?? []), r]);
+    return out;
+  }, [rows]);
+  const filtered = nSel !== 'all' || hSel !== 'all';
+  const visibleNs = [...rowsByN.keys()];
+  const allOpen = visibleNs.length > 0 && visibleNs.every((n) => open.has(n));
+  const fileSuffix = (nSel !== 'all' ? `_n${nSel}` : '') + (hSel !== 'all' ? `_h${String(hSel / 1000).replace('.', '_')}` : '');
+  const selLabel = [nSel !== 'all' ? `|Vc| = ${nSel}` : null, hSel !== 'all' ? `h = ${hLabel(hSel / 1000)}` : null].filter(Boolean).join(', ');
+
   const models = useMemo(
     (): Record<MetaDirection, SummaryModel> => ({
       '1dir': summaryModel(rows, paper, '1dir', file),
@@ -213,7 +370,6 @@ export function MetaSummaryTable({ rows, paper, file }: { rows: InstanceRow[]; p
   const total = models['1dir'].totalInstances;
   const common: Record<MetaDirection, number> = { '1dir': models['1dir'].commonInstances, '2dir': models['2dir'].commonInstances };
   const promPartial = DIRS.some((d) => common[d] < total);
-  const meta = file?.meta ?? null;
   const nIter = meta?.params?.nIter ?? 200;
   const nIterIts = meta?.params?.nIterIts ?? Math.floor(Math.sqrt(nIter));
   const anyEstimated = DIRS.some((d) => models[d].byN.some((r) => META_METHODS.some((m) => r.cells[m].paperTimeEstimated)));
@@ -238,22 +394,27 @@ export function MetaSummaryTable({ rows, paper, file }: { rows: InstanceRow[]; p
   return (
     <SpotlightCard className="p-5 sm:p-6">
       <CardHead
-        eyebrow="Estilo Erdoğan et al. (2012), Tablas 2–3 y 8–9 · cinco métodos"
+        eyebrow="Tablas 2–3 y 8–9 del paper"
         title={
           <>
             Resumen por |V<sub className="text-[0.7em]">c</sub>| <span className="font-normal text-zinc-500">·</span>{' '}
             <span className="font-medium text-zinc-300">1 dir. y 2 dir.</span>
           </>
         }
-        note="Desviación media respecto del Best del paper y segundos medios por instancia de cada método, en una dirección (1 dir.: desde el tour TSP) y en dos (2 dir.: la mejor del tour y del tour invertido), con la cifra del paper debajo."
+        note={
+          <>
+            Z y segundos medios por instancia; bajo cada cifra, la del paper. Despliega un |V<sub>c</sub>| para ver sus Id.
+            {filtered && <span className="text-zinc-400"> Filtrado: {selLabel}.</span>}
+          </>
+        }
         actions={
           <>
             <CopyLatexButton what="Tabla resumen por |Vc|" getText={() => toLatexSummary(rows, paper, file)} />
             <Button
               variant="outline"
               size="xs"
-              onClick={() => downloadText('metaheuristicas_resumen.csv', toCsvSummary(rows, paper, undefined, file))}
-              title="Descargar el resumen por |Vc| de ambas direcciones (metaheuristicas_resumen.csv)"
+              onClick={() => downloadText(`metaheuristicas_resumen${fileSuffix}.csv`, toCsvSummary(rows, paper, undefined, file))}
+              title={`Descargar el resumen por |Vc| de ambas direcciones${filtered ? ` (${selLabel})` : ''} (metaheuristicas_resumen${fileSuffix}.csv)`}
             >
               <Download className="h-3.5 w-3.5" aria-hidden />
               CSV resumen
@@ -261,8 +422,8 @@ export function MetaSummaryTable({ rows, paper, file }: { rows: InstanceRow[]; p
             <Button
               variant="outline"
               size="xs"
-              onClick={() => downloadText('metaheuristicas_instancias.csv', toCsvInstances(rows))}
-              title="Descargar una fila por instancia con Z, tiempos y cifras del paper de cada método, en ambas direcciones (metaheuristicas_instancias.csv)"
+              onClick={() => downloadText(`metaheuristicas_instancias${fileSuffix}.csv`, toCsvInstances(rows))}
+              title={`Descargar una fila por instancia con Z, tiempos y cifras del paper de cada método, en ambas direcciones${filtered ? ` (${selLabel})` : ''} (metaheuristicas_instancias${fileSuffix}.csv)`}
             >
               <Download className="h-3.5 w-3.5" aria-hidden />
               CSV instancias
@@ -271,10 +432,70 @@ export function MetaSummaryTable({ rows, paper, file }: { rows: InstanceRow[]; p
         }
       />
 
-      <div className="scrollbar-thin -mx-1 mt-5 overflow-x-auto px-1">
+      <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2.5">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <span className="text-[12px] text-zinc-500">
+            Clientes |V<sub>c</sub>|
+          </span>
+          <Segmented<Pick>
+            ariaLabel="Clientes |Vc| de la tabla resumen"
+            size="xs"
+            className="max-w-full flex-wrap gap-y-0.5"
+            value={nSel}
+            onChange={pickN}
+            options={[
+              { value: 'all', label: 'Todos', title: 'Todos los tamaños' },
+              ...sizes.map((n) => {
+                const h = hByN.get(n);
+                return {
+                  value: n,
+                  label: <span className="num">{n}</span>,
+                  ariaLabel: `|Vc| = ${n}`,
+                  title: `|Vc| = ${n}${h === null || h === undefined ? '' : ` · h = ${hLabel(h)}`}`,
+                };
+              }),
+            ]}
+          />
+        </div>
+        {hOptions.length > 0 && (
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <span className="text-[12px] text-zinc-500">h</span>
+            <Segmented<Pick>
+              ariaLabel="Parámetro h de la tabla resumen"
+              size="xs"
+              className="max-w-full flex-wrap gap-y-0.5"
+              value={hSel}
+              onChange={pickH}
+              options={[
+                { value: 'all', label: 'Todos', title: 'Todos los h' },
+                ...hOptions.map((o) => ({
+                  value: o.key,
+                  label: <span className="num">{hLabel(o.h)}</span>,
+                  ariaLabel: `h = ${hLabel(o.h)}`,
+                  title: `h_a = h_b = ${hLabel(o.h)} · |Vc| = ${o.ns.join(', ')}`,
+                })),
+              ]}
+            />
+          </div>
+        )}
+        {visibleNs.length > 0 && (
+          <Button
+            variant="outline"
+            size="xs"
+            onClick={() => setOpen(allOpen ? new Set() : new Set([...open, ...visibleNs]))}
+            aria-pressed={allOpen}
+            title={allOpen ? 'Ocultar las instancias de cada |Vc|' : 'Ver las instancias (Id) de cada |Vc| visible'}
+          >
+            <ChevronRight aria-hidden className={cn('h-3.5 w-3.5 transition-transform', allOpen && 'rotate-90')} />
+            {allOpen ? 'Ocultar Id' : 'Ver todos los Id'}
+          </Button>
+        )}
+      </div>
+
+      <div className="scrollbar-thin -mx-1 mt-4 overflow-x-auto px-1">
         <table className="w-full min-w-max border-separate border-spacing-0 text-[13px]">
           <caption className="sr-only">
-            Desviación media respecto del Best del paper y segundos medios de cinco métodos por número de clientes |Vc|, en una dirección (1 dir.)
+            Valor objetivo medio Z y segundos medios de cinco métodos por número de clientes |Vc|, en una dirección (1 dir.)
             y en dos (2 dir.), con la cifra del paper bajo cada valor y una fila de promedio sobre las instancias que todos los métodos terminaron.
           </caption>
           <thead>
@@ -337,13 +558,13 @@ export function MetaSummaryTable({ rows, paper, file }: { rows: InstanceRow[]; p
                   <th
                     key={`${m}-${d}-d`}
                     scope="col"
-                    title={`${DIR_HEAD[d]} · desviación media (Z − Best) / Best · 100 respecto de la mejor solución conocida del paper`}
+                    title={`${DIR_HEAD[d]} · valor objetivo medio Z (ruteo + manipulación) por instancia`}
                     className={cn(
                       'border-b border-l border-zinc-800 px-2.5 pb-2 text-right font-medium whitespace-nowrap',
                       d === '1dir' ? 'border-l-zinc-800' : 'border-l-zinc-800/50',
                     )}
                   >
-                    Desv. %
+                    Z
                   </th>,
                   <th
                     key={`${m}-${d}-s`}
@@ -361,11 +582,18 @@ export function MetaSummaryTable({ rows, paper, file }: { rows: InstanceRow[]; p
             {pairs.length === 0 ? (
               <tr>
                 <td colSpan={nCols} className="border-b border-zinc-800/60 py-6 text-center text-[12.5px] text-zinc-500">
-                  Aún no hay instancias en el benchmark.
+                  {filtered ? `No hay instancias con ${selLabel}.` : 'Aún no hay instancias en el benchmark.'}
                 </td>
               </tr>
             ) : (
-              pairs.map((pair) => <NRow key={pair['1dir'].n} pair={pair} />)
+              pairs.flatMap((pair) => {
+                const n = pair['1dir'].n as number;
+                const isOpen = open.has(n);
+                return [
+                  <NRow key={n} pair={pair} open={isOpen} onToggle={() => toggle(n)} />,
+                  ...(isOpen ? (rowsByN.get(n) ?? []).map((r) => <IdRow key={`${n}-${r.id}`} row={r} h={pair['1dir'].h} />) : []),
+                ];
+              })
             )}
           </tbody>
           <tfoot>
@@ -400,50 +628,56 @@ export function MetaSummaryTable({ rows, paper, file }: { rows: InstanceRow[]; p
         </table>
       </div>
 
-      <p className="mt-4 max-w-[110ch] text-[12px] leading-relaxed text-pretty text-zinc-500">
-        <span className="text-zinc-400">Desv. %</span>: (Z − Best) / Best · 100, con <span className="text-zinc-400">Best</span> la mejor solución
-        conocida que publica el paper en las Tablas 8–9 (el mínimo de todas sus corridas); negativa = mejor que el Best. El punto de color marca la
-        menor desviación de la fila en cada dirección (solo cuando todos los métodos promedian las mismas instancias).{' '}
-        <span className="text-zinc-400">1 dir.</span>: una corrida desde el tour TSP (ILS: N<sub>iter</sub> = {fmt(nIter, 0)}; ITS:{' '}
-        {fmt(nIterIts, 0)} iteraciones externas); <span className="text-zinc-400">2 dir.</span>: la mejor de esa corrida y de otra igual desde el
-        tour invertido, como en la Tabla 3 (en el detalle por instancia, la columna «2 dir.» de las Tablas 8–9 es solo la del tour invertido).{' '}
-        <span className="text-zinc-400">Seg.</span>: segundos de pared por instancia, incluido el tour TSP y, en 2 dir., ambas direcciones
-        {meta ? (
-          <>
-            {' '}
-            ({meta.runtime}, {meta.workers} ejecuciones en paralelo en worker threads de Node.js, un hilo cada una)
-          </>
-        ) : null}
-        . <span className="text-zinc-400">paper</span>: el mismo método y dirección en el paper, sobre las mismas instancias (mientras no haya
-        resultados nuestros, sobre las 10 del tamaño)
-        {orientation.of > orientation.aligned && (
-          <>
-            ; en 1 dir. es su columna «1 dir.», y nuestra dirección 1 tiene su misma orientación solo en{' '}
-            <span className="num">{orientation.aligned}</span> de <span className="num">{orientation.of}</span> instancias («dir. 1 = paper» en el
-            detalle): en las demás puede ser la opuesta, así que esa comparación es aproximada (2 dir. no depende de la orientación)
-          </>
-        )}
-        . Su tiempo solo se publica por |Vc| para ILS e ITS exactos en 1 dir. (Tabla 2
-        {anyEstimated ? '; «≈»: en 2 dir., estimado como el doble' : ''}) y, en Prom., para los cuatro ILS e ITS en la fila «Time (s)» de la Tabla
-        9, promedio de sus 100 instancias (en 2 dir., suma de sus dos columnas)
-        {paper && !promPaperTime ? ', que aparece cuando los cinco métodos las terminen' : ''}
-        {itsGap && (
-          <>
-            {' '}
-            (en ITS exacto el paper no es consistente: la Tabla 9 da <span className="num">{fmtNum(itsGap.table9, 2)}</span> s y la fila «Avg.» de
-            la Tabla 2, <span className="num">{fmtNum(itsGap.table2, 2)}</span> s; Prom. usa la Tabla 9, así que no es la media de las filas)
-          </>
-        )}
-        . El paper midió en un Core 2 Quad de 2,83 GHz con código C: compárense las razones entre métodos, no los segundos 1:1.{' '}
-        <span className="text-zinc-400">k/10</span>: promedio parcial de las instancias ya terminadas.{' '}
-        <span className="text-zinc-400">Prom.</span>:{' '}
-        {promPartial
-          ? common['1dir'] === common['2dir']
-            ? `solo las ${common['1dir']} de ${total} instancias que los cinco métodos ya terminaron, para comparar las columnas sobre el mismo conjunto.`
-            : `solo las instancias que los cinco métodos ya terminaron en esa dirección (${common['1dir']} en 1 dir. y ${common['2dir']} en 2 dir., de ${total}), para comparar las columnas sobre el mismo conjunto.`
-          : `las ${total} instancias.`}{' '}
-        «…»: aún sin registrar.
+      <p className="mt-4 text-[12px] text-zinc-500">
+        <span className="text-zinc-400">●</span> menor Z de la fila · <span className="text-zinc-400">k/10</span> promedio parcial ·{' '}
+        <span className="text-zinc-400">«…»</span> pendiente · cursor sobre una celda: desviación vs Best.
       </p>
+      <Disclosure summary="Notas de la tabla" className="mt-3">
+        <ul className="list-disc space-y-1 pl-4">
+          <li>
+            <span className="text-zinc-400">Z</span>: valor objetivo medio (ruteo + manipulación); desviación = (Z − Best) / Best · 100, con Best la
+            mejor solución conocida de las Tablas 8–9.
+          </li>
+          <li>
+            <span className="text-zinc-400">1 dir.</span>: una corrida desde el tour TSP (ILS: N<sub>iter</sub> = {fmt(nIter, 0)}; ITS:{' '}
+            {fmt(nIterIts, 0)} iteraciones externas). <span className="text-zinc-400">2 dir.</span>: la mejor de esa y otra desde el tour invertido
+            (Tabla 3).
+          </li>
+          <li>
+            <span className="text-zinc-400">Seg.</span>: segundos de pared por instancia, con el tour TSP y, en 2 dir., ambas direcciones
+            {meta ? ` (${meta.runtime}, ${meta.workers} en paralelo)` : ''}.
+          </li>
+          <li>
+            <span className="text-zinc-400">paper</span>: mismo método y dirección, mismas instancias. Su tiempo solo existe por |Vc| para ILS e ITS
+            exactos en 1 dir. (Tabla 2{anyEstimated ? '; «≈» en 2 dir. = el doble' : ''}) y, en Prom., en la fila «Time (s)» de la Tabla 9
+            {paper && !promPaperTime ? ' (aparece al completar las 100 instancias)' : ''}
+            {itsGap && (
+              <>
+                {' '}
+                (ITS exacto: Tabla 9 <span className="num">{fmtNum(itsGap.table9, 2)}</span> s vs Tabla 2{' '}
+                <span className="num">{fmtNum(itsGap.table2, 2)}</span> s)
+              </>
+            )}
+            .
+          </li>
+          <li>
+            <span className="text-zinc-400">Prom.</span>:{' '}
+            {promPartial
+              ? `solo instancias que los cinco métodos terminaron (${common['1dir']} en 1 dir., ${common['2dir']} en 2 dir., de ${total}).`
+              : `las ${total} instancias.`}
+          </li>
+          <li>
+            Otra máquina (Core 2 Quad 2,83 GHz, C): compara razones entre métodos, no segundos.
+            {orientation.of > orientation.aligned && (
+              <>
+                {' '}
+                En 1 dir. la orientación coincide con el paper solo en <span className="num">{orientation.aligned}</span>/
+                <span className="num">{orientation.of}</span> instancias.
+              </>
+            )}
+          </li>
+        </ul>
+      </Disclosure>
     </SpotlightCard>
   );
 }

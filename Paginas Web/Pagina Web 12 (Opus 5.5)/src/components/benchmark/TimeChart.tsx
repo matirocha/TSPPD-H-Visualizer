@@ -1,6 +1,7 @@
 /**
  * Tiempo medio por método frente a N (escala logarítmica), para el h elegido. Una serie por
- * método con su marca (○ ● ■ ◆ ▲ ★) y una línea punteada en el límite de tiempo de Gurobi.
+ * método con su marca (○ ● ■ ◆ ▲ ★) y una línea punteada (rotulada en el propio gráfico) en el
+ * límite de tiempo de Gurobi.
  * Dos avisos que no alteran la forma de la marca (la del Modelo General ya es hueca):
  *  · una flecha ↑ sobre el punto si alguna ejecución terminada no fue óptima (el promedio es una
  *    cota inferior: «≥», como en la tabla);
@@ -13,7 +14,7 @@ import type { BenchMethod } from '../../types/benchmark';
 import { fmt } from '../../lib/format';
 import { springSoft } from '../../lib/motion';
 import { SpotlightCard } from '../ui';
-import { COLOR, ChartTooltip, LegendItem, TipHeader, clamp, useElementWidth } from '../analysis/chart';
+import { COLOR, ChartTooltip, TipHeader, clamp, useElementWidth } from '../analysis/chart';
 import { METHOD_COLOR, MethodMark, MethodMarkSvg } from '../heuristics/methods';
 import { isGurobiMethod, METHOD_ORDER, type GroupStats, type MethodStats } from './aggregate';
 import { fmtSec } from './format';
@@ -181,10 +182,10 @@ export function TimeChart({ groups, h, timeLimit }: { groups: GroupStats[]; h: n
         eyebrow="Tiempo medio frente a N"
         title={
           <>
-            Cómo crece el tiempo con los clientes · <span className="num">h = {hText(h)}</span>
+            Cómo crece el tiempo con N · <span className="num">h = {hText(h)}</span>
           </>
         }
-        note="Escala logarítmica: cada línea de la grilla es 10 veces más tiempo. Las ejecuciones cortadas por el límite cuentan con su tiempo."
+        note="Escala logarítmica: cada línea es 10× más tiempo."
       />
 
       <div ref={wrapRef} className="relative mt-5 w-full" style={{ height: HEIGHT }} onPointerLeave={() => setHover(null)}>
@@ -239,7 +240,7 @@ export function TimeChart({ groups, h, timeLimit }: { groups: GroupStats[]; h: n
                   shapeRendering="crispEdges"
                 />
                 <text x={0} y={TOP - 14} fill={COLOR.label} fontSize={10.5}>
-                  segundos · escala log
+                  segundos
                 </text>
                 {ns.map((n, i) => (
                   <text
@@ -406,31 +407,26 @@ export function TimeChart({ groups, h, timeLimit }: { groups: GroupStats[]; h: n
             >
               <MethodMark tone={BENCH_INFO[m].tone} size={11} />
               {BENCH_INFO[m].label}
-              {cut !== null && <span className="text-zinc-500">(solo N ≤ {cut}: alto costo computacional)</span>}
+              {cut !== null && <span className="text-zinc-500">(N ≤ {cut})</span>}
             </span>
           );
         })}
         {anyCensored && (
-          <span className="inline-flex items-center gap-1.5 text-[12px] text-zinc-400">
+          <span className="inline-flex items-center gap-1.5 text-[12px] text-zinc-500" title="El promedio incluye ejecuciones cortadas por el límite: el tiempo real es mayor">
             <svg aria-hidden width={12} height={14} viewBox="0 0 12 14" className="shrink-0 overflow-visible">
               <CensorArrow x={6} y={18} r={2} color={COLOR.label} />
             </svg>
-            ≥: incluye ejecuciones cortadas por el límite
+            ≥ (con cortes por límite)
           </span>
         )}
         {anyPartial && (
-          <span className="inline-flex items-center gap-1.5 text-[12px] text-zinc-400">
+          <span className="inline-flex items-center gap-1.5 text-[12px] text-zinc-500" title="Faltan ejecuciones de ese tamaño: el promedio es provisional">
             <svg aria-hidden width={22} height={12} viewBox="0 0 22 12" className="shrink-0 overflow-visible">
               <line x1={1} x2={21} y1={6} y2={6} stroke={COLOR.label} strokeWidth={1.5} strokeDasharray="3 3.5" strokeLinecap="round" />
               <circle cx={11} cy={6} r={3.2} fill={COLOR.label} opacity={0.5} />
             </svg>
-            datos parciales (faltan ejecuciones)
+            parcial
           </span>
-        )}
-        {timeLimit !== null && (
-          <LegendItem kind="dash" color={COLOR.label}>
-            límite de tiempo
-          </LegendItem>
         )}
       </div>
 

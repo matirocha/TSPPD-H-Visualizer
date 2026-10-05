@@ -1,9 +1,9 @@
 /**
  * Algoritmo 2.1 sobre la ruta de cada modelo: se deja fija la ruta que encontró Gurobi y
  * el algoritmo recalcula la menor manipulación posible con la Política 3. Tabla de cuatro
- * filas: manipulación de Gurobi, la del Algoritmo 2.1 y la diferencia entre ambas.
+ * filas: manipulación de Gurobi, la del Algoritmo 2.1 y la diferencia entre ambas
+ * (la explicación de una diferencia positiva va como tooltip).
  */
-import type { ReactNode } from 'react';
 import { MODELS } from '../../lib/models';
 import { fmt, fmtDelta, fmtPct } from '../../lib/format';
 import { cn } from '../../lib/cn';
@@ -18,9 +18,8 @@ export function RouteDpTable({ inst }: { inst: HeurInstance | null }) {
     <SpotlightCard className="flex h-full flex-col p-5 sm:p-6">
       <p className="eyebrow">Algoritmo 2.1</p>
       <h3 className="mt-1.5 text-lg font-semibold tracking-tight text-zinc-50">La misma ruta, con la mejor carga</h3>
-      <p className="mt-2 text-[13px] leading-relaxed text-pretty text-zinc-400">
-        Se toma la ruta que encontró cada modelo de Gurobi y el Algoritmo 2.1 calcula su menor manipulación posible, eligiendo en cada cliente
-        entre la <span className="text-p1">Política 1</span> y la <span className="text-p2">Política 2</span>.
+      <p className="mt-1 text-[12.5px] text-zinc-500">
+        Ruta de Gurobi fija; el algoritmo elige <span className="text-p1">P1</span> o <span className="text-p2">P2</span> en cada cliente.
       </p>
 
       {rows.length === 0 ? (
@@ -66,7 +65,10 @@ export function RouteDpTable({ inst }: { inst: HeurInstance | null }) {
                       {equal ? (
                         <span className="text-[12px] text-ok">igual</span>
                       ) : (
-                        <span className={cn('num', d < 0 ? 'text-dp' : 'text-zinc-400')}>
+                        <span
+                          className={cn('num', d < 0 ? 'text-dp' : 'text-zinc-400')}
+                          title={d > 0 ? 'Gurobi manipula menos: acomoda la carga sin limitarse a P1 y P2' : undefined}
+                        >
                           {fmtDelta(d)}
                           {rel !== null && <span className="ml-1 hidden text-[11.5px] text-zinc-500 sm:inline">({fmtPct(rel)})</span>}
                         </span>
@@ -80,34 +82,11 @@ export function RouteDpTable({ inst }: { inst: HeurInstance | null }) {
         </div>
       )}
 
-      <Notes rows={rows.map((r) => ({ id: r.m.id, gurobi: r.e!.gurobiHandling, dp: r.e!.handlingDP }))} />
+      {rows.length > 0 && (
+        <p className="mt-4 text-[12px] text-zinc-500">
+          Diferencia <span className="text-dp">negativa</span> = el Alg. 2.1 manipula menos que Gurobi.
+        </p>
+      )}
     </SpotlightCard>
-  );
-}
-
-function Notes({ rows }: { rows: { id: string; gurobi: number; dp: number }[] }) {
-  const gen = rows.find((r) => r.id === 'TSPPD-H');
-  const items: ReactNode[] = [
-    <>
-      Diferencia <span className="text-dp">negativa</span>: con la misma ruta, el Algoritmo 2.1 manipula menos que Gurobi, porque combina ambas
-      políticas en vez de usar una sola.
-    </>,
-  ];
-  if (gen && gen.gurobi < gen.dp && !sameCost(gen.gurobi, gen.dp)) {
-    items.push(
-      <>
-        Diferencia positiva en el Modelo General: ese modelo puede acomodar la carga libremente, sin limitarse a las Políticas 1 y 2.
-      </>,
-    );
-  }
-  return (
-    <ul className="mt-5 space-y-2 text-[12.5px] leading-relaxed text-pretty text-zinc-400">
-      {items.map((node, i) => (
-        <li key={i} className="flex gap-2.5">
-          <span aria-hidden className="mt-[8px] h-1 w-1 shrink-0 rounded-full bg-zinc-500" />
-          <span>{node}</span>
-        </li>
-      ))}
-    </ul>
   );
 }

@@ -57,7 +57,7 @@ function ConstraintGroup({ group, index }: { group: EqGroup; index: number }) {
           <span className="num text-[11px] text-zinc-400">{range(group.eqs)}</span>
         </div>
       </div>
-      <p className="mt-1 pl-[3.25rem] text-[13px] leading-relaxed text-pretty text-zinc-400">{group.note}</p>
+      <p className="mt-0.5 pl-[3.25rem] text-[12.5px] text-zinc-400">{group.note}</p>
       <div className="mt-2.5 space-y-0.5">
         {group.eqs.map((eq) => (
           <EquationRow key={eq.n} eq={eq} />
@@ -73,7 +73,7 @@ function ConstraintGroup({ group, index }: { group: EqGroup; index: number }) {
               <div className="flex w-max items-center gap-x-4 py-1 pr-2 text-zinc-300">
                 <Tex tex={group.impl.tex} />
                 <Tex tex={String.raw`i \ne j \in V_c`} className="text-[0.9em] text-zinc-400" />
-                <span className="text-[12px] text-zinc-400">Así se implementa en los scripts Gurobi</span>
+                <span className="text-[12px] text-zinc-400">en los scripts</span>
               </div>
             </div>
           </div>
@@ -143,13 +143,13 @@ export function MathCard({ model }: { model: ModelMeta }) {
                 {copied === 'objective' ? <Check className="h-3.5 w-3.5 text-ok" /> : <Copy className="h-3.5 w-3.5" />}
               </button>
             </div>
-            <p className="mt-2 max-w-[65ch] text-[13px] leading-relaxed text-pretty text-zinc-400">{f.objective.note}</p>
+            <p className="mt-2 max-w-[65ch] text-[12.5px] text-pretty text-zinc-400">{f.objective.note}</p>
 
             <div className="mt-4 border-t border-zinc-800/80 pt-3.5">
               {sibling ? (
                 <>
                   <p className="text-[11.5px] text-zinc-400">
-                    Solución Gurobi en la instancia actual · {meta?.numCustomers ?? sibling.numCustomers} clientes · ID{' '}
+                    Instancia actual · {meta?.numCustomers ?? sibling.numCustomers} clientes · ID{' '}
                     {meta?.instanceId ?? sibling.instanceId}
                   </p>
                   <dl className="mt-2 flex flex-wrap items-baseline gap-x-6 gap-y-2">
@@ -168,7 +168,7 @@ export function MathCard({ model }: { model: ModelMeta }) {
                   </dl>
                 </>
               ) : (
-                <p className="text-[12px] text-zinc-400">No hay solución de este modelo para la instancia actual.</p>
+                <p className="text-[12px] text-zinc-400">Sin solución para esta instancia.</p>
               )}
             </div>
           </div>

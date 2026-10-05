@@ -49,7 +49,7 @@ const COLUMNS: Column[] = [
     key: 'ils',
     tone: 'ils',
     label: HEUR_METHODS.ils.short,
-    title: HEUR_METHODS.ils.label,
+    title: `${HEUR_METHODS.ils.label}: ruta y manipulación propias`,
     value: (inst, metric) => {
       const b = inst.ils?.best;
       return b ? (metric === 'handling' ? b.handlingCost : b.objectiveValue) : null;
@@ -91,9 +91,7 @@ export function AllInstancesTable({ instances }: { instances: HeurInstance[] }) 
             {metric === 'handling' ? 'Costo de manipulación' : 'Costo total Z'} en las{' '}
             <span className="num">{rows.length}</span> instancias de <span className="num">{n}</span> clientes
           </h3>
-          <p className="mt-1 text-[12.5px] text-zinc-500">
-            Pulsa una instancia para abrirla. En cada fila se destaca el menor valor.
-          </p>
+          <p className="mt-1 text-[12.5px] text-zinc-500">Pulsa una instancia para abrirla · en negrita, el menor.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {counts.length > 1 && (
@@ -225,10 +223,6 @@ export function AllInstancesTable({ instances }: { instances: HeurInstance[] }) 
         </div>
       )}
 
-      <p className="mt-4 text-[12px] leading-relaxed text-pretty text-zinc-500">
-        {HEUR_METHODS.dp.short}: manipulación del Algoritmo 2.1 sobre la ruta de Gurobi P3 · ILS: ruta y manipulación propias ·{' '}
-        <span className="text-zinc-400">ILS vs P3</span> compara el costo total Z del ILS con el óptimo exacto de la Política 3.
-      </p>
     </SpotlightCard>
   );
 }

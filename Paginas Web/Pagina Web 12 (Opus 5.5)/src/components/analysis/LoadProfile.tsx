@@ -73,9 +73,8 @@ export function LoadProfile() {
     const peak = legs.reduce((m, l) => (l.load > m.load ? l : m), legs[0]);
     const meanOcc = legs.reduce((acc, l) => acc + l.load / (Q || 1), 0) / legs.length;
     const ops = legs.reduce((acc, l) => acc + l.ops, 0);
-    const stopsWithOps = legs.filter((l) => l.ops > 0).length;
     const maxOps = Math.max(0, ...legs.map((l) => l.ops));
-    return { peak, meanOcc, ops, stopsWithOps, maxOps };
+    return { peak, meanOcc, ops, maxOps };
   }, [legs, Q]);
 
   if (!solution || !stats) return null;
@@ -139,8 +138,8 @@ export function LoadProfile() {
     <SpotlightCard className="flex h-full flex-col p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
         <div className="min-w-0">
-          <p className="eyebrow">Perfil de carga</p>
-          <h3 className="mt-1.5 text-lg font-semibold tracking-tight text-zinc-50">Ocupación del camión en cada tramo</h3>
+          <p className="eyebrow">Carga a bordo</p>
+          <h3 className="mt-1.5 text-lg font-semibold tracking-tight text-zinc-50">Ocupación por tramo</h3>
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1" aria-label="Leyenda">
           <LegendItem kind="bar" color={COLOR.alpha}>
@@ -148,9 +147,6 @@ export function LoadProfile() {
           </LegendItem>
           <LegendItem kind="bar" color={COLOR.beta}>
             β a bordo
-          </LegendItem>
-          <LegendItem kind="dash" color={COLOR.tick}>
-            Capacidad Q
           </LegendItem>
           <LegendItem kind="dot" color={COLOR.handling}>
             Manipulaciones
@@ -161,11 +157,8 @@ export function LoadProfile() {
       <dl className="mt-4 grid grid-cols-3 gap-4 border-y border-zinc-800/70 py-3 sm:max-w-xl">
         <div className="min-w-0">
           <dt className="text-[11.5px] text-zinc-500">Pico a bordo</dt>
-          <dd className="mt-0.5 truncate text-sm text-zinc-100">
-            <span className="num">
-              {stats.peak.load}/{Q}
-            </span>
-            <span className="text-zinc-500"> · tramo {stats.peak.k + 1}</span>
+          <dd className="num mt-0.5 truncate text-sm text-zinc-100">
+            {stats.peak.load}/{Q}
           </dd>
         </div>
         <div className="min-w-0">
@@ -174,13 +167,7 @@ export function LoadProfile() {
         </div>
         <div className="min-w-0">
           <dt className="text-[11.5px] text-zinc-500">Manipulaciones</dt>
-          <dd className="mt-0.5 truncate text-sm text-zinc-100">
-            <span className="num">{stats.ops}</span>
-            <span className="text-zinc-500">
-              {' '}
-              · {stats.stopsWithOps} {stats.stopsWithOps === 1 ? 'parada' : 'paradas'}
-            </span>
-          </dd>
+          <dd className="num mt-0.5 truncate text-sm text-zinc-100">{stats.ops}</dd>
         </div>
       </dl>
 
@@ -419,9 +406,6 @@ export function LoadProfile() {
         </ChartTooltip>
       </div>
 
-      <p className="mt-auto pt-2 text-[12px] text-zinc-500">
-        Carga medida durante el recorrido del arco (al llegar al destino). Selecciona un tramo para llevar el simulador a esa parada.
-      </p>
     </SpotlightCard>
   );
 }

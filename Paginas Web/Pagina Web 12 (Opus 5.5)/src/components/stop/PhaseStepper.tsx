@@ -163,7 +163,7 @@ export function PhaseStepper({ stop, choreo, solution, current, preview, playing
                       )}
                       {reload && (
                         <span className="mt-1.5 block text-[11.5px] text-zinc-500">
-                          Recarga desde el andén: el costo ya se imputó al evacuar.
+                          Sin costo extra: ya se imputó al evacuar.
                         </span>
                       )}
                       {playing && (

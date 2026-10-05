@@ -12,9 +12,10 @@
 % Sin es-tabla: nuestras tablas son «Cuadro N», para no confundirlas con las «Tablas N» del paper.
 \usepackage[spanish,es-noshorthands,es-nodecimaldot]{babel}
 \usepackage[margin=2.2cm]{geometry}
-\usepackage{booktabs,graphicx,pdflscape,afterpage,amsmath,microtype}
+\usepackage{booktabs,graphicx,pdflscape,amsmath,microtype}
 \usepackage[font=small,labelfont=bf]{caption}
 \usepackage{xcolor}
+\usepackage{placeins}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
 \usepgfplotslibrary{groupplots}
@@ -29,6 +30,10 @@
 \definecolor{cITS}{HTML}{C026D3}
 \setlength{\parskip}{0.45em}
 \setlength{\parindent}{0pt}
+% Páginas solo de tablas (continuaciones, anexos): arriba, no centradas en la página.
+\makeatletter
+\setlength{\@fptop}{0pt}
+\makeatother
 
 \title{Benchmarks del TSPPD-H\\[4pt]\large Tiempos de cómputo de los modelos exactos y metaheurísticas ILS e ITS}
 \author{Taller de Investigación}
@@ -37,31 +42,18 @@
 \begin{document}
 \maketitle
 
-Este informe reúne los dos benchmarks de la Página Web~12. El primero, \emph{¿Cuánto tarda cada método?}, compara el tiempo de cómputo de los cuatro modelos exactos resueltos con Gurobi frente a la heurística de dos fases y al ILS, en las instancias de Battarra et al.~(2010) con 5 a 25 clientes. El segundo, \emph{¿Exacto o heurístico?}, replica las Tablas~8 y~9 de Erdo\u{g}an et al.~(2012): la solución inicial de dos fases y, a partir de ella, el ILS y el ITS con evaluación exacta o heurística del vecindario, en instancias de 20 a 200 clientes, con una y con dos direcciones del tour. Todas las cifras salen de los registros consolidados (900 y 1000 ejecuciones, respectivamente) con las mismas funciones que usa la página, y las tablas son las que exporta su botón \emph{Copiar LaTeX}.
-
-\tableofcontents
+Resultados de los dos benchmarks de la Página Web~12, calculados de los registros consolidados (900 y 1000 ejecuciones). Las tablas son las de \emph{Copiar LaTeX} de la página.
 
 \section{¿Cuánto tarda cada método?}
 \label{sec:tiempos}
 
-\subsection{Configuración}
-\begin{itemize}
-  \item \textbf{Instancias:} Battarra et al.~(2010), $|V_c| \in \{5, 10, 15, 20, 25\}$, Id 1 a 10, con $h = h_a = h_b \in \{0{,}1; 0{,}5; 1\}$: 150 combinaciones de instancia y $h$.
-  \item \textbf{Modelos exactos (Gurobi 13.0.3):} Modelo General y las formulaciones de las Políticas~1, 2 y~3 (TSPPD-H$_1$, H$_2$ y H$_3$), con límite de 1.800\,s y 1 hilo por modelo (8 modelos en paralelo). El Modelo General solo se ejecuta hasta $|V_c| = 10$ por su alto costo computacional.
-  \item \textbf{Dos fases:} ruta TSP con el depósito reubicado y, sobre ella, la manipulación óptima de la Política~3 con el Algoritmo~2.1 + DP.
-  \item \textbf{ILS-2dir:} Algoritmo~4.2 de Erdo\u{g}an et al.~(2012) con evaluación exacta, $N_{iter} = 200$ y 10 corridas por instancia (se informa la mejor y el tiempo medio por corrida).
-  \item \textbf{Equipo:} AMD Ryzen 7 7700 8-Core Processor, Windows 11, Python 3.12.10.
-\end{itemize}
-La desviación de las heurísticas se mide respecto de $z^{*}_{P3}$, el óptimo de la Política~3 probado por Gurobi; donde Gurobi no lo prueba, contra la mejor solución conocida de esa política (marca $^{\ddagger}$ en los cuadros).
-
-\subsection{Resultados por número de clientes}
-Los Cuadros~\ref{tab:tiempos-resumen-h0-1}, \ref{tab:tiempos-resumen-h0-5} y~\ref{tab:tiempos-resumen-h1} resumen cada $h$ por $|V_c|$, y la Figura~\ref{fig:tiempos} muestra los tiempos medios. El detalle por instancia está en el Anexo~\ref{anx:tiempos}.
+Instancias de Battarra et al.~(2010) con $|V_c| \in \{5, 10, 15, 20, 25\}$, 10 por tamaño, y $h = h_a = h_b \in \{0{,}1; 0{,}5; 1\}$. Gurobi 13.0.3 con límite de 1.800\,s y 1 hilo por modelo; dos fases = ruta TSP + Algoritmo~2.1 + DP; ILS-2dir con $N_{iter} = 200$. Equipo: AMD Ryzen 7 7700 8-Core Processor.
 
 \begin{table}[htbp]
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
-\caption{Tiempo de cómputo y calidad por número de clientes $|V_c|$ para $h = h_a = h_b = 0{,}1$. Límite de tiempo de Gurobi: 1.800\,s por modelo. Modelos Gurobi: \emph{Ópt.} = instancias resueltas a optimalidad; \emph{Seg.} = tiempo medio en segundos sobre las ejecuciones terminadas (las que alcanzan el límite cuentan con su tiempo). Heurísticas: \emph{Desv.} = desviación media (\%) respecto de $z^{*}_{P3}$, el óptimo de la Política 3 probado por Gurobi; ILS: desviación de la mejor de sus corridas y tiempo medio por corrida. $^{\S}$~n.e.: Modelo General no ejecutado con $|V_c| \geq 15$ por su alto costo computacional (formulación indexada por posiciones de carga); en los totales, solo sus instancias ejecutadas.}
+\caption{Resumen por $|V_c|$ con $h = 0{,}1$. Gurobi: Ópt.\ = instancias con óptimo probado (límite 1.800\,s), Seg.\ = tiempo medio (s). Heurísticas: Desv.\ = desviación media (\%) respecto de $z^{*}_{P3}$. $^{\S}$~n.e.: Modelo General no ejecutado con $|V_c| \geq 15$.}
 \label{tab:tiempos-resumen-h0-1}
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{r rr rr rr rr rr rr}
@@ -86,7 +78,7 @@ Prom. & 19/20$^{\S}$ & 546 & 47/50 & 151 & 45/50 & 242 & 50/50 & 49{,}9 & 0{,}76
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
-\caption{Tiempo de cómputo y calidad por número de clientes $|V_c|$ para $h = h_a = h_b = 0{,}5$. Límite de tiempo de Gurobi: 1.800\,s por modelo. Modelos Gurobi: \emph{Ópt.} = instancias resueltas a optimalidad; \emph{Seg.} = tiempo medio en segundos sobre las ejecuciones terminadas (las que alcanzan el límite cuentan con su tiempo). Heurísticas: \emph{Desv.} = desviación media (\%) respecto de $z^{*}_{P3}$, el óptimo de la Política 3 probado por Gurobi; ILS: desviación de la mejor de sus corridas y tiempo medio por corrida. $^{\ddagger}$~Gurobi P3 no probó (o aún no prueba) el óptimo de parte de esas instancias: se comparan con la mejor solución conocida de la Política 3, que puede ser la del propio método, y el valor puede cambiar. $^{\S}$~n.e.: Modelo General no ejecutado con $|V_c| \geq 15$ por su alto costo computacional (formulación indexada por posiciones de carga); en los totales, solo sus instancias ejecutadas.}
+\caption{Resumen por $|V_c|$ con $h = 0{,}5$. Gurobi: Ópt.\ = instancias con óptimo probado (límite 1.800\,s), Seg.\ = tiempo medio (s). Heurísticas: Desv.\ = desviación media (\%) respecto de $z^{*}_{P3}$. $^{\ddagger}$~P3 sin óptimo probado en parte de las instancias: se compara con su mejor solución conocida; $^{\S}$~n.e.: Modelo General no ejecutado con $|V_c| \geq 15$.}
 \label{tab:tiempos-resumen-h0-5}
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{r rr rr rr rr rr rr}
@@ -111,7 +103,7 @@ Prom. & 13/20$^{\S}$ & 822 & 32/50 & 729 & 31/50 & 722 & 33/50 & 651 & 1{,}19$^{
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
-\caption{Tiempo de cómputo y calidad por número de clientes $|V_c|$ para $h = h_a = h_b = 1$. Límite de tiempo de Gurobi: 1.800\,s por modelo. Modelos Gurobi: \emph{Ópt.} = instancias resueltas a optimalidad; \emph{Seg.} = tiempo medio en segundos sobre las ejecuciones terminadas (las que alcanzan el límite cuentan con su tiempo). Heurísticas: \emph{Desv.} = desviación media (\%) respecto de $z^{*}_{P3}$, el óptimo de la Política 3 probado por Gurobi; ILS: desviación de la mejor de sus corridas y tiempo medio por corrida. $^{\ddagger}$~Gurobi P3 no probó (o aún no prueba) el óptimo de parte de esas instancias: se comparan con la mejor solución conocida de la Política 3, que puede ser la del propio método, y el valor puede cambiar. $^{\S}$~n.e.: Modelo General no ejecutado con $|V_c| \geq 15$ por su alto costo computacional (formulación indexada por posiciones de carga); en los totales, solo sus instancias ejecutadas.}
+\caption{Resumen por $|V_c|$ con $h = 1$. Gurobi: Ópt.\ = instancias con óptimo probado (límite 1.800\,s), Seg.\ = tiempo medio (s). Heurísticas: Desv.\ = desviación media (\%) respecto de $z^{*}_{P3}$. $^{\ddagger}$~P3 sin óptimo probado en parte de las instancias: se compara con su mejor solución conocida; $^{\S}$~n.e.: Modelo General no ejecutado con $|V_c| \geq 15$.}
 \label{tab:tiempos-resumen-h1}
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{r rr rr rr rr rr rr}
@@ -132,12 +124,12 @@ Prom. & 10/20$^{\S}$ & 903 & 28/50 & 870 & 25/50 & 1.015 & 26/50 & 943 & 2{,}59$
 }
 \end{table}
 
-\begin{figure}[htbp]
+\begin{figure}[!t]
 \centering
 \begin{tikzpicture}
 \begin{groupplot}[
   group style={group size=3 by 1, horizontal sep=0.45cm, y descriptions at=edge left},
-  width=0.37\linewidth, height=6.2cm, ymode=log, ymin=0.0001, ymax=10000, xmin=3, xmax=27, xtick={5,10,15,20,25},
+  width=0.37\linewidth, height=5.2cm, ymode=log, ymin=0.0001, ymax=10000, xmin=3, xmax=27, xtick={5,10,15,20,25},
   xlabel={$|V_c|$}, ylabel={Tiempo medio (s)}, grid=major, grid style={gray!18},
   tick label style={font=\footnotesize}, label style={font=\small}, title style={font=\small},
   legend columns=6, legend style={font=\footnotesize, draw=none, column sep=6pt},
@@ -177,85 +169,28 @@ Prom. & 10/20$^{\S}$ & 903 & 28/50 & 870 & 25/50 & 1.015 & 26/50 & 943 & 2{,}59$
 
 \smallskip
 \pgfplotslegendfromname{leyTiempos}
-\caption{Tiempo medio por instancia (s, escala logarítmica) de cada método según el número de clientes $|V_c|$, para cada $h = h_a = h_b$. La línea discontinua gris es el límite de Gurobi (1.800\,s): las ejecuciones que lo alcanzan cuentan con su tiempo, así que en esos puntos el promedio es una cota inferior. El Modelo General solo se ejecuta hasta $|V_c| = 10$. ILS-2dir: tiempo medio por corrida.}
+\caption{Tiempo medio por instancia (s, escala log.) según $|V_c|$ para cada $h$. Línea gris: límite de Gurobi (1.800\,s).}
 \label{fig:tiempos}
 \end{figure}
 
-\subsection{Hallazgos}
+\FloatBarrier
 \begin{itemize}
-  \item \textbf{Hasta qué tamaño resuelve Gurobi todas las instancias.} Mayor $|V_c|$ con todas sus instancias (y las de los tamaños menores) resueltas a optimalidad dentro de 1.800\,s: $h = 0{,}1$: General (5), Política 1 (20), Política 2 (20) y Política 3 (25); $h = 0{,}5$: General (5), Política 1 (15), Política 2 (15) y Política 3 (15); $h = 1$: General (5), Política 1 (10), Política 2 (10) y Política 3 (10). Con un $h$ mayor ningún modelo llega más lejos: el costo de manipulación hace más difícil probar el óptimo.
-  \item \textbf{Instancias resueltas a optimalidad} (el Modelo General, sobre las que se ejecutan): $h = 0{,}1$: General (19/20), Política 1 (47/50), Política 2 (45/50) y Política 3 (50/50); $h = 0{,}5$: General (13/20), Política 1 (32/50), Política 2 (31/50) y Política 3 (33/50); $h = 1$: General (10/20), Política 1 (28/50), Política 2 (25/50) y Política 3 (26/50).
-  \item \textbf{Calidad de las heurísticas.} Instancias en que la heurística alcanza el óptimo probado de la Política 3: $h = 0{,}1$: ILS iguala $z^{*}_{P3}$ en 50 de 50 y dos fases en 32 de 50 (desviación media de dos fases 0{,}76\,\%); $h = 0{,}5$: ILS iguala $z^{*}_{P3}$ en 33 de 33 y dos fases en 21 de 33 (desviación media de dos fases 1{,}19\,\%); $h = 1$: ILS iguala $z^{*}_{P3}$ en 26 de 26 y dos fases en 17 de 26 (desviación media de dos fases 2{,}59\,\%). En ninguna instancia con óptimo probado el ILS queda sobre $z^{*}_{P3}$ más allá de la tolerancia.
-  \item \textbf{Tiempo con $|V_c| = 25$.} $h = 0{,}1$: ILS 22{,}2\,s por corrida frente a 236\,s de P3 (11 veces menos); $h = 0{,}5$: ILS 128\,s por corrida frente a 1.800\,s de P3 (al menos 14 veces menos; P3 llega al límite en 10 de 10); $h = 1$: ILS 167\,s por corrida frente a 1.800\,s de P3 (al menos 11 veces menos; P3 llega al límite en 10 de 10). Dos fases tarda a lo más 0{,}02\,s por instancia (ruta TSP + Algoritmo~2.1 + DP).
+  \item \textbf{Mayor $|V_c|$ con todo resuelto a optimalidad.} $h = 0{,}1$: General 5, Política 1 20, Política 2 20, Política 3 25; $h = 0{,}5$: General 5, Política 1 15, Política 2 15, Política 3 15; $h = 1$: General 5, Política 1 10, Política 2 10, Política 3 10.
+  \item \textbf{Instancias con óptimo probado en que la heurística alcanza $z^{*}_{P3}$.} $h = 0{,}1$: ILS 50/50, dos fases 32/50 (desv.\ 0{,}76\,\%); $h = 0{,}5$: ILS 33/33, dos fases 21/33 (desv.\ 1{,}19\,\%); $h = 1$: ILS 26/26, dos fases 17/26 (desv.\ 2{,}59\,\%).
+  \item \textbf{Tiempo con $|V_c| = 25$.} $h = 0{,}1$: ILS 22{,}2\,s frente a 236\,s de P3 ($\times$11); $h = 0{,}5$: ILS 128\,s frente a 1.800\,s de P3 ($\geq$ $\times$14); $h = 1$: ILS 167\,s frente a 1.800\,s de P3 ($\geq$ $\times$11).
 \end{itemize}
 
-\clearpage
 \section{¿Exacto o heurístico? ILS e ITS con hasta 200 clientes}
 \label{sec:metaheuristicas}
 
-\subsection{Configuración}
-\begin{itemize}
-  \item \textbf{Instancias:} las de Erdo\u{g}an et al.~(2012), $|V_c| \in \{20, 40, 60, 80, 100, 120, 140, 160, 180, 200\}$, Id 1 a 10 (100 instancias), con el $h = h_a = h_b$ que reproduce sus Tablas~8--9 (20: 1; 40: 0{,}5; 60: 0{,}33; 80: 0{,}125; 100: 0{,}1; 120: 0{,}17; 140: 0{,}14; 160: 0{,}125; 180: 0{,}11; 200: 0{,}1).
-  \item \textbf{Métodos:} dos fases (la \emph{initial solution} del paper), ILS (Algoritmo~4.2) e ITS (Algoritmo~4.3) con evaluación heurística lineal del vecindario (\S2.2) o exacta (Algoritmo~2.1 + DP). ILS con $N_{iter} = 200$; ITS con $\lfloor\sqrt{N_{iter}}\rfloor = 14$ iteraciones externas de 14 iteraciones de Tabu Search.
-  \item \textbf{Direcciones:} 1~dir.\ es una corrida desde el tour TSP; 2~dir.\ es la mejor de esa corrida y de otra igual desde el tour invertido (Tabla~3 del paper). En el detalle por instancia, como en las Tablas~8--9, la columna 2~dir.\ es solo la corrida desde el tour invertido.
-  \item \textbf{Equipo:} AMD Ryzen 7 7700 8-Core Processor, Node.js v24.20.0, 6 ejecuciones en paralelo (un hilo cada una). El paper usó un Intel Core~2 Quad de 2{,}83\,GHz con código C: se comparan razones entre métodos, no segundos.
-\end{itemize}
-La desviación es $(z - \mathit{Best})/\mathit{Best} \cdot 100$, con $\mathit{Best}$ la mejor solución conocida publicada en las Tablas~8--9 del paper.
+Instancias de Erdo\u{g}an et al.~(2012) con $|V_c| = 20$ a $200$ (100 en total). ILS con $N_{iter} = 200$ e ITS con 14 iteraciones externas; evaluación del vecindario heurística (lineal, \S2.2) o exacta (Algoritmo~2.1 + DP). 1~dir.: desde el tour TSP; 2~dir.: la mejor de esa corrida y otra desde el tour invertido. Equipo: AMD Ryzen 7 7700 8-Core Processor, Node.js v24.20.0; el paper usó un Core~2 Quad de 2{,}83\,GHz, así que se comparan razones de tiempo, no segundos.
 
-\subsection{Resumen por número de clientes}
-El Cuadro~\ref{tab:metaheuristicas-resumen} pone las dos direcciones lado a lado, como las Tablas~3 y 8--9 del paper, y debajo de cada fila la cifra del paper con el mismo método y dirección. La Figura~\ref{fig:metaheuristicas} muestra las mismas cifras y los Cuadros~\ref{tab:metaheuristicas-detalle-1} y~\ref{tab:metaheuristicas-detalle-2} (Anexo~\ref{anx:metaheuristicas}) el detalle por instancia.
-
-\afterpage{%
-\begin{landscape}
-\begin{table}[htbp]
-\centering
-\small
-\setlength{\tabcolsep}{4pt}
-\caption{Desviación media (\%) respecto de la mejor solución conocida y tiempo medio por instancia (s), por número de clientes $|V_c|$, de cinco métodos en las instancias de Erdo\u{g}an et al.~(2012) (10 por tamaño), con una y con dos direcciones como en sus Tablas~3 y 8--9: 1~dir.: corrida desde el tour TSP; 2~dir.: la mejor de las corridas desde el tour TSP y desde el tour invertido (por dirección, ILS con $N_{iter} = 200$ e ITS con $\lfloor\sqrt{N_{iter}}\rfloor = 14$ iteraciones externas). Desv.\ $= (z - \mathit{Best})/\mathit{Best} \cdot 100$, con $\mathit{Best}$ la mejor solución conocida publicada en las Tablas~8--9 de Erdo\u{g}an et al.~(2012). Seg.: incluye el tour TSP y, en 2~dir., las corridas de ambas direcciones. Nuestros tiempos: segundos de pared en Node.js v24.20.0 (AMD Ryzen 7 7700 8-Core Processor), 6 ejecuciones en paralelo (\emph{worker threads} de Node.js), un hilo cada una. Dos fases: tour TSP con el depósito reubicado y manipulación óptima (Algoritmo~2.1 + DP), la \emph{initial solution} del paper; ILS (Algoritmo~4.2) e ITS (Algoritmo~4.3) heurísticos evalúan el vecindario con la estimación lineal (\S2.2) y los exactos con el Algoritmo~2.1 + DP. Bajo cada fila, entre paréntesis, la cifra del paper con el mismo método y dirección: desviación sobre las mismas instancias; tiempo publicado: por $|V_c|$ solo para ILS e ITS exactos en una dirección (Tabla~2; $\approx$: en 2~dir., estimado como el doble); en Prom., para los cuatro ILS e ITS, fila \emph{Time (s)} de la Tabla~9, promedio de sus 100 instancias (en 2~dir., suma de sus dos columnas). Para ITS exacto en una dirección el paper no es consistente: la Tabla~9 da 471{,}79\,s y la fila \emph{Avg.} de la Tabla~2, 491{,}79\,s, sobre las mismas instancias; en Prom. se usa la Tabla~9. El paper midió en un Intel Core~2 Quad de 2{,}83\,GHz con código C, por lo que los tiempos no son comparables 1:1 entre máquinas. En negrita, la menor desviación de la fila en cada dirección.}
-\label{tab:metaheuristicas-resumen}
-\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
-\begin{tabular}{rr rrrr rrrr rrrr rrrr rrrr}
-\toprule
- &  & \multicolumn{4}{c}{Dos fases} & \multicolumn{4}{c}{ILS heurístico} & \multicolumn{4}{c}{ILS exacto} & \multicolumn{4}{c}{ITS heurístico} & \multicolumn{4}{c}{ITS exacto} \\
-\cmidrule(lr){3-6} \cmidrule(lr){7-10} \cmidrule(lr){11-14} \cmidrule(lr){15-18} \cmidrule(lr){19-22}
- &  & \multicolumn{2}{c}{1~dir.} & \multicolumn{2}{c}{2~dir.} & \multicolumn{2}{c}{1~dir.} & \multicolumn{2}{c}{2~dir.} & \multicolumn{2}{c}{1~dir.} & \multicolumn{2}{c}{2~dir.} & \multicolumn{2}{c}{1~dir.} & \multicolumn{2}{c}{2~dir.} & \multicolumn{2}{c}{1~dir.} & \multicolumn{2}{c}{2~dir.} \\
-\cmidrule(lr){3-4} \cmidrule(lr){5-6} \cmidrule(lr){7-8} \cmidrule(lr){9-10} \cmidrule(lr){11-12} \cmidrule(lr){13-14} \cmidrule(lr){15-16} \cmidrule(lr){17-18} \cmidrule(lr){19-20} \cmidrule(lr){21-22}
-$|V_c|$ & $h$ & Desv.\,(\%) & Seg. & Desv.\,(\%) & Seg. & Desv.\,(\%) & Seg. & Desv.\,(\%) & Seg. & Desv.\,(\%) & Seg. & Desv.\,(\%) & Seg. & Desv.\,(\%) & Seg. & Desv.\,(\%) & Seg. & Desv.\,(\%) & Seg. & Desv.\,(\%) & Seg. \\
-\midrule
-20 & 1 & 7{,}84 & 0{,}27 & 2{,}47 & 0{,}27 & 1{,}24 & 0{,}31 & 0{,}66 & 0{,}35 & 0{,}24 & 0{,}34 & $-$0{,}01 & 0{,}41 & \textbf{$-$0{,}02} & 0{,}30 & $-$0{,}07 & 0{,}34 & 0{,}38 & 0{,}34 & \textbf{$-$0{,}16} & 0{,}40 \\
-\multicolumn{2}{r}{\scriptsize\emph{paper}} & {\scriptsize(6{,}83)} &  & {\scriptsize(2{,}30)} &  & {\scriptsize(1{,}13)} &  & {\scriptsize(0{,}64)} &  & {\scriptsize(0{,}31)} & {\scriptsize(0{,}56)} & {\scriptsize(0{,}07)} & {\scriptsize($\approx$1{,}12)} & {\scriptsize(1{,}35)} &  & {\scriptsize(1{,}12)} &  & {\scriptsize(0{,}10)} & {\scriptsize(0{,}28)} & {\scriptsize(0{,}05)} & {\scriptsize($\approx$0{,}56)} \\
-40 & 0{,}5 & 4{,}80 & 0{,}61 & 3{,}22 & 0{,}61 & 4{,}80 & 0{,}95 & 3{,}22 & 1{,}28 & 4{,}80 & 1{,}48 & 2{,}84 & 2{,}36 & 1{,}13 & 0{,}94 & 0{,}86 & 1{,}28 & \textbf{0{,}36} & 1{,}45 & \textbf{0{,}36} & 2{,}33 \\
-\multicolumn{2}{r}{\scriptsize\emph{paper}} & {\scriptsize(5{,}21)} &  & {\scriptsize(3{,}46)} &  & {\scriptsize(5{,}21)} &  & {\scriptsize(3{,}46)} &  & {\scriptsize(4{,}89)} & {\scriptsize(7{,}64)} & {\scriptsize(3{,}44)} & {\scriptsize($\approx$15{,}3)} & {\scriptsize(3{,}13)} &  & {\scriptsize(1{,}88)} &  & {\scriptsize(0{,}24)} & {\scriptsize(3{,}77)} & {\scriptsize(0{,}10)} & {\scriptsize($\approx$7{,}54)} \\
-60 & 0{,}33 & 6{,}17 & 0{,}97 & 2{,}69 & 0{,}97 & 6{,}17 & 2{,}05 & 2{,}69 & 3{,}13 & 6{,}17 & 4{,}71 & 2{,}69 & 8{,}56 & 1{,}57 & 2{,}04 & 0{,}97 & 3{,}09 & \textbf{0{,}29} & 4{,}59 & \textbf{$-$0{,}06} & 8{,}26 \\
-\multicolumn{2}{r}{\scriptsize\emph{paper}} & {\scriptsize(6{,}22)} &  & {\scriptsize(2{,}61)} &  & {\scriptsize(6{,}22)} &  & {\scriptsize(2{,}61)} &  & {\scriptsize(6{,}22)} & {\scriptsize(36{,}0)} & {\scriptsize(2{,}61)} & {\scriptsize($\approx$71{,}9)} & {\scriptsize(4{,}56)} &  & {\scriptsize(2{,}25)} &  & {\scriptsize(0{,}54)} & {\scriptsize(17{,}6)} & {\scriptsize(0{,}13)} & {\scriptsize($\approx$35{,}2)} \\
-80 & 0{,}125 & 3{,}29 & 1{,}35 & 0{,}91 & 1{,}35 & 3{,}29 & 3{,}82 & 0{,}91 & 6{,}29 & 3{,}29 & 11{,}6 & 0{,}91 & 21{,}9 & 1{,}03 & 3{,}81 & 0{,}37 & 6{,}27 & \textbf{0{,}80} & 11{,}7 & \textbf{0{,}15} & 22{,}1 \\
-\multicolumn{2}{r}{\scriptsize\emph{paper}} & {\scriptsize(1{,}81)} &  & {\scriptsize(1{,}08)} &  & {\scriptsize(1{,}81)} &  & {\scriptsize(1{,}08)} &  & {\scriptsize(1{,}81)} & {\scriptsize(109)} & {\scriptsize(1{,}08)} & {\scriptsize($\approx$218)} & {\scriptsize(1{,}18)} &  & {\scriptsize(0{,}96)} &  & {\scriptsize(0{,}25)} & {\scriptsize(53{,}8)} & {\scriptsize(0{,}05)} & {\scriptsize($\approx$108)} \\
-100 & 0{,}1 & 2{,}29 & 1{,}79 & 1{,}37 & 1{,}79 & 2{,}29 & 6{,}72 & 1{,}37 & 11{,}6 & 2{,}29 & 23{,}4 & 1{,}37 & 44{,}7 & 0{,}94 & 6{,}58 & 0{,}75 & 11{,}4 & \textbf{0{,}71} & 22{,}9 & \textbf{0{,}34} & 43{,}8 \\
-\multicolumn{2}{r}{\scriptsize\emph{paper}} & {\scriptsize(3{,}09)} &  & {\scriptsize(1{,}08)} &  & {\scriptsize(3{,}09)} &  & {\scriptsize(1{,}08)} &  & {\scriptsize(3{,}09)} & {\scriptsize(261)} & {\scriptsize(1{,}08)} & {\scriptsize($\approx$521)} & {\scriptsize(2{,}21)} &  & {\scriptsize(1{,}03)} &  & {\scriptsize(0{,}54)} & {\scriptsize(128)} & {\scriptsize(0{,}34)} & {\scriptsize($\approx$256)} \\
-120 & 0{,}17 & 4{,}66 & 2{,}20 & 4{,}61 & 2{,}21 & 4{,}66 & 10{,}5 & 4{,}61 & 18{,}8 & 4{,}66 & 47{,}5 & 4{,}61 & 92{,}1 & 4{,}65 & 10{,}3 & 4{,}61 & 18{,}5 & \textbf{3{,}33} & 45{,}3 & \textbf{3{,}10} & 88{,}5 \\
-\multicolumn{2}{r}{\scriptsize\emph{paper}} & {\scriptsize(5{,}52)} &  & {\scriptsize(4{,}35)} &  & {\scriptsize(5{,}52)} &  & {\scriptsize(4{,}35)} &  & {\scriptsize(5{,}52)} & {\scriptsize(530)} & {\scriptsize(4{,}35)} & {\scriptsize($\approx$1.060)} & {\scriptsize(5{,}52)} &  & {\scriptsize(4{,}35)} &  & {\scriptsize(1{,}79)} & {\scriptsize(260)} & {\scriptsize(1{,}32)} & {\scriptsize($\approx$521)} \\
-140 & 0{,}14 & 4{,}34 & 2{,}66 & 3{,}66 & 2{,}67 & 4{,}34 & 15{,}7 & 3{,}66 & 28{,}8 & 4{,}34 & 83{,}9 & 3{,}66 & 165 & 4{,}34 & 15{,}5 & 3{,}66 & 28{,}3 & \textbf{4{,}14} & 81{,}8 & \textbf{3{,}52} & 162 \\
-\multicolumn{2}{r}{\scriptsize\emph{paper}} & {\scriptsize(4{,}56)} &  & {\scriptsize(3{,}53)} &  & {\scriptsize(4{,}56)} &  & {\scriptsize(3{,}53)} &  & {\scriptsize(4{,}56)} & {\scriptsize(967)} & {\scriptsize(3{,}53)} & {\scriptsize($\approx$1.935)} & {\scriptsize(3{,}99)} &  & {\scriptsize(3{,}44)} &  & {\scriptsize(1{,}15)} & {\scriptsize(474)} & {\scriptsize(1{,}03)} & {\scriptsize($\approx$948)} \\
-160 & 0{,}125 & \textbf{4{,}88} & 3{,}23 & \textbf{4{,}00} & 3{,}23 & \textbf{4{,}88} & 22{,}8 & \textbf{4{,}00} & 42{,}4 & \textbf{4{,}88} & 138 & \textbf{4{,}00} & 274 & \textbf{4{,}88} & 22{,}4 & \textbf{4{,}00} & 41{,}7 & \textbf{4{,}88} & 135 & \textbf{4{,}00} & 267 \\
-\multicolumn{2}{r}{\scriptsize\emph{paper}} & {\scriptsize(4{,}44)} &  & {\scriptsize(3{,}85)} &  & {\scriptsize(4{,}44)} &  & {\scriptsize(3{,}85)} &  & {\scriptsize(4{,}44)} & {\scriptsize(1.628)} & {\scriptsize(3{,}85)} & {\scriptsize($\approx$3.256)} & {\scriptsize(4{,}36)} &  & {\scriptsize(3{,}84)} &  & {\scriptsize(1{,}26)} & {\scriptsize(798)} & {\scriptsize(1{,}25)} & {\scriptsize($\approx$1.597)} \\
-180 & 0{,}11 & \textbf{4{,}12} & 3{,}68 & \textbf{3{,}34} & 3{,}68 & \textbf{4{,}12} & 29{,}7 & \textbf{3{,}34} & 56{,}0 & \textbf{4{,}12} & 205 & \textbf{3{,}34} & 407 & \textbf{4{,}12} & 29{,}1 & \textbf{3{,}34} & 54{,}9 & \textbf{4{,}12} & 201 & \textbf{3{,}34} & 398 \\
-\multicolumn{2}{r}{\scriptsize\emph{paper}} & {\scriptsize(4{,}08)} &  & {\scriptsize(3{,}28)} &  & {\scriptsize(4{,}08)} &  & {\scriptsize(3{,}28)} &  & {\scriptsize(4{,}08)} & {\scriptsize(2.582)} & {\scriptsize(3{,}28)} & {\scriptsize($\approx$5.165)} & {\scriptsize(3{,}78)} &  & {\scriptsize(3{,}23)} &  & {\scriptsize(0{,}86)} & {\scriptsize(1.267)} & {\scriptsize(0{,}86)} & {\scriptsize($\approx$2.534)} \\
-200 & 0{,}1 & \textbf{4{,}44} & 4{,}07 & \textbf{3{,}65} & 4{,}07 & \textbf{4{,}44} & 40{,}6 & \textbf{3{,}65} & 77{,}0 & \textbf{4{,}44} & 300 & \textbf{3{,}65} & 597 & \textbf{4{,}44} & 41{,}5 & \textbf{3{,}65} & 77{,}2 & \textbf{4{,}44} & 291 & \textbf{3{,}65} & 582 \\
-\multicolumn{2}{r}{\scriptsize\emph{paper}} & {\scriptsize(3{,}59)} &  & {\scriptsize(3{,}51)} &  & {\scriptsize(3{,}59)} &  & {\scriptsize(3{,}51)} &  & {\scriptsize(3{,}59)} & {\scriptsize(3.904)} & {\scriptsize(3{,}51)} & {\scriptsize($\approx$7.809)} & {\scriptsize(3{,}59)} &  & {\scriptsize(3{,}51)} &  & {\scriptsize(1{,}52)} & {\scriptsize(1.915)} & {\scriptsize(1{,}52)} & {\scriptsize($\approx$3.830)} \\
-\midrule
-\multicolumn{2}{l}{Prom.} & 4{,}68 & 2{,}08 & 2{,}99 & 2{,}08 & 4{,}02 & 13{,}3 & 2{,}81 & 24{,}6 & 3{,}92 & 81{,}6 & 2{,}71 & 161 & 2{,}71 & 13{,}2 & 2{,}21 & 24{,}3 & \textbf{2{,}34} & 79{,}6 & \textbf{1{,}82} & 157 \\
-\multicolumn{2}{r}{\scriptsize\emph{paper}} & {\scriptsize(4{,}54)} &  & {\scriptsize(2{,}90)} &  & {\scriptsize(3{,}97)} & {\scriptsize(114)} & {\scriptsize(2{,}74)} & {\scriptsize(227)} & {\scriptsize(3{,}85)} & {\scriptsize(1.003)} & {\scriptsize(2{,}68)} & {\scriptsize(2.005)} & {\scriptsize(3{,}37)} & {\scriptsize(57{,}5)} & {\scriptsize(2{,}56)} & {\scriptsize(115)} & {\scriptsize(0{,}83)} & {\scriptsize(472)} & {\scriptsize(0{,}66)} & {\scriptsize(944)} \\
-\bottomrule
-\end{tabular}%
-}
-\end{table}
-\end{landscape}
 \begin{figure}[htbp]
 \centering
 \begin{tikzpicture}
 \begin{groupplot}[
-  group style={group size=2 by 2, horizontal sep=1.6cm, vertical sep=2.3cm},
-  width=0.49\linewidth, height=5.6cm, xmin=10, xmax=210, xtick={20,40,60,80,100,120,140,160,180,200},
+  group style={group size=2 by 2, horizontal sep=1.6cm, vertical sep=1.9cm},
+  width=0.49\linewidth, height=4.6cm, xmin=10, xmax=210, xtick={20,40,60,80,100,120,140,160,180,200},
   xlabel={$|V_c|$}, grid=major, grid style={gray!18},
   tick label style={font=\footnotesize}, label style={font=\small}, title style={font=\small},
   legend columns=5, legend style={font=\footnotesize, draw=none, column sep=6pt},
@@ -294,32 +229,73 @@ $|V_c|$ & $h$ & Desv.\,(\%) & Seg. & Desv.\,(\%) & Seg. & Desv.\,(\%) & Seg. & D
 
 \smallskip
 \pgfplotslegendfromname{leyMeta}
-\caption{Desviación media respecto del \emph{Best} del paper (arriba) y tiempo medio por instancia en segundos, escala logarítmica (abajo), según $|V_c|$, con una dirección (izquierda) y con dos (derecha). Mismas cifras que el Cuadro~\ref{tab:metaheuristicas-resumen}. Trazo continuo y marca rellena: evaluación exacta del vecindario (Algoritmo~2.1 + DP); discontinuo y marca hueca: evaluación heurística lineal (\S2.2).}
+\caption{Desviación media (\%) respecto del \emph{Best} del paper (arriba) y tiempo medio por instancia (s, escala log., abajo) según $|V_c|$, con 1 y 2 direcciones. Trazo continuo: evaluación exacta; discontinuo: heurística.}
 \label{fig:metaheuristicas}
 \end{figure}
-\clearpage
-}
 
-\subsection{Hallazgos}
+\FloatBarrier
 \begin{itemize}
-  \item \textbf{Método con menor desviación.} En 1~dir., ITS exacto (2{,}34\,\% respecto del \emph{Best}; en el paper, ITS exacto con 0{,}83\,\%). En 2~dir., ITS exacto (1{,}82\,\% respecto del \emph{Best}; en el paper, ITS exacto con 0{,}66\,\%). Como en el paper, la familia ITS queda por delante del ILS y la evaluación exacta mejora a la heurística dentro de cada familia.
-  \item \textbf{Costo de la evaluación exacta (1~dir.).} ILS: exacto 81{,}6\,s frente a heurístico 13{,}3\,s, 6{,}1 veces (paper: 8{,}8 veces, fila \emph{Time (s)} de la Tabla~9); ITS: exacto 79{,}6\,s frente a heurístico 13{,}2\,s, 6{,}0 veces (paper: 8{,}2 veces, fila \emph{Time (s)} de la Tabla~9).
-  \item \textbf{De 1~dir.\ a 2~dir.} La desviación media (\%) baja en todos los métodos: Dos fases 4{,}68 $\to$ 2{,}99, ILS heurístico 4{,}02 $\to$ 2{,}81, ILS exacto 3{,}92 $\to$ 2{,}71, ITS heurístico 2{,}71 $\to$ 2{,}21 y ITS exacto 2{,}34 $\to$ 1{,}82; el tiempo de las metaheurísticas casi se duplica, igual que en el paper.
-  \item \textbf{Bajo el \emph{Best} del paper.} En 16 de 100 instancias alguna de nuestras corridas encuentra un valor menor que la mejor solución conocida publicada (1 con $|V_c| = 20$, 2 con $|V_c| = 40$, 6 con $|V_c| = 60$, 4 con $|V_c| = 80$ y 3 con $|V_c| = 100$); ITS exacto con 2~dir.\ lo logra en 15.
-  \item \textbf{Diferencia con el paper.} Dos fases, ILS heurístico y ILS exacto reproducen las desviaciones del paper con diferencias menores a 0{,}15 puntos porcentuales en ambas direcciones. ITS exacto queda más lejos (1{,}82\,\% frente a 0{,}66\,\% en 2~dir.): con $|V_c| \geq 120$ nuestra corrida mejora la solución inicial en 18 de 50 instancias y la del paper en 50 de 50 (con $|V_c| < 120$, en 50 y 50 de 50).
+  \item \textbf{Mejor método.} 1~dir.: ITS exacto, $z$ medio 1.373{,}31 (desv.\ 2{,}34\,\%; paper 0{,}83\,\%); 2~dir.: ITS exacto, $z$ medio 1.365{,}67 (desv.\ 1{,}82\,\%; paper 0{,}66\,\%). Bajo el \emph{Best} del paper en 16 de 100 instancias.
+  \item \textbf{Costo de la evaluación exacta frente a la heurística (1~dir.).} ILS $\times$6{,}1 (paper $\times$8{,}8); ITS $\times$6{,}0 (paper $\times$8{,}2).
+  \item \textbf{De 1 a 2~dir.} El $z$ medio baja entre 0{,}54\,\% y 1{,}23\,\% según el método; en ILS e ITS el tiempo casi se duplica.
 \end{itemize}
 
 \clearpage
+\begin{landscape}
+\begin{table}[htbp]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\caption{Valor objetivo medio $z$ y tiempo medio por instancia (s) según $|V_c|$, con 1 y 2 direcciones. Entre paréntesis, la cifra del paper con el mismo método y dirección; $\approx$: tiempo estimado (2 $\times$ 1~dir.). En negrita, el menor $z$ medio de la fila en cada dirección.}
+\label{tab:metaheuristicas-resumen}
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
+\begin{tabular}{rr rrrr rrrr rrrr rrrr rrrr}
+\toprule
+ &  & \multicolumn{4}{c}{Dos fases} & \multicolumn{4}{c}{ILS heurístico} & \multicolumn{4}{c}{ILS exacto} & \multicolumn{4}{c}{ITS heurístico} & \multicolumn{4}{c}{ITS exacto} \\
+\cmidrule(lr){3-6} \cmidrule(lr){7-10} \cmidrule(lr){11-14} \cmidrule(lr){15-18} \cmidrule(lr){19-22}
+ &  & \multicolumn{2}{c}{1~dir.} & \multicolumn{2}{c}{2~dir.} & \multicolumn{2}{c}{1~dir.} & \multicolumn{2}{c}{2~dir.} & \multicolumn{2}{c}{1~dir.} & \multicolumn{2}{c}{2~dir.} & \multicolumn{2}{c}{1~dir.} & \multicolumn{2}{c}{2~dir.} & \multicolumn{2}{c}{1~dir.} & \multicolumn{2}{c}{2~dir.} \\
+\cmidrule(lr){3-4} \cmidrule(lr){5-6} \cmidrule(lr){7-8} \cmidrule(lr){9-10} \cmidrule(lr){11-12} \cmidrule(lr){13-14} \cmidrule(lr){15-16} \cmidrule(lr){17-18} \cmidrule(lr){19-20} \cmidrule(lr){21-22}
+$|V_c|$ & $h$ & $z$ & Seg. & $z$ & Seg. & $z$ & Seg. & $z$ & Seg. & $z$ & Seg. & $z$ & Seg. & $z$ & Seg. & $z$ & Seg. & $z$ & Seg. & $z$ & Seg. \\
+\midrule
+20 & 1 & 639{,}80 & 0{,}27 & 607{,}50 & 0{,}27 & 599{,}90 & 0{,}31 & 597{,}00 & 0{,}35 & 594{,}60 & 0{,}34 & 593{,}20 & 0{,}41 & \textbf{593{,}10} & 0{,}30 & 592{,}80 & 0{,}34 & 595{,}40 & 0{,}34 & \textbf{592{,}30} & 0{,}40 \\
+\multicolumn{2}{r}{\scriptsize\emph{paper}} & {\scriptsize(633{,}70)} &  & {\scriptsize(606{,}50)} &  & {\scriptsize(599{,}90)} &  & {\scriptsize(597{,}10)} &  & {\scriptsize(595{,}00)} & {\scriptsize(0{,}56)} & {\scriptsize(593{,}60)} & {\scriptsize($\approx$1{,}12)} & {\scriptsize(601{,}20)} &  & {\scriptsize(599{,}80)} &  & {\scriptsize(593{,}80)} & {\scriptsize(0{,}28)} & {\scriptsize(593{,}50)} & {\scriptsize($\approx$0{,}56)} \\
+40 & 0{,}5 & 888{,}55 & 0{,}61 & 875{,}70 & 0{,}61 & 888{,}55 & 0{,}95 & 875{,}70 & 1{,}28 & 888{,}55 & 1{,}48 & 872{,}50 & 2{,}36 & 858{,}15 & 0{,}94 & 855{,}95 & 1{,}28 & \textbf{851{,}80} & 1{,}45 & \textbf{851{,}80} & 2{,}33 \\
+\multicolumn{2}{r}{\scriptsize\emph{paper}} & {\scriptsize(891{,}90)} &  & {\scriptsize(877{,}65)} &  & {\scriptsize(891{,}90)} &  & {\scriptsize(877{,}65)} &  & {\scriptsize(889{,}15)} & {\scriptsize(7{,}64)} & {\scriptsize(877{,}55)} & {\scriptsize($\approx$15{,}3)} & {\scriptsize(875{,}20)} &  & {\scriptsize(864{,}65)} &  & {\scriptsize(850{,}90)} & {\scriptsize(3{,}77)} & {\scriptsize(849{,}65)} & {\scriptsize($\approx$7{,}54)} \\
+60 & 0{,}33 & 1.096{,}15 & 0{,}97 & 1.060{,}86 & 0{,}97 & 1.096{,}15 & 2{,}05 & 1.060{,}86 & 3{,}13 & 1.096{,}15 & 4{,}71 & 1.060{,}86 & 8{,}56 & 1.049{,}43 & 2{,}04 & 1.043{,}24 & 3{,}09 & \textbf{1.036{,}22} & 4{,}59 & \textbf{1.032{,}59} & 8{,}26 \\
+\multicolumn{2}{r}{\scriptsize\emph{paper}} & {\scriptsize(1.096{,}89)} &  & {\scriptsize(1.059{,}97)} &  & {\scriptsize(1.096{,}89)} &  & {\scriptsize(1.059{,}97)} &  & {\scriptsize(1.096{,}89)} & {\scriptsize(36{,}0)} & {\scriptsize(1.059{,}97)} & {\scriptsize($\approx$71{,}9)} & {\scriptsize(1.080{,}06)} &  & {\scriptsize(1.056{,}45)} &  & {\scriptsize(1.038{,}81)} & {\scriptsize(17{,}6)} & {\scriptsize(1.034{,}55)} & {\scriptsize($\approx$35{,}2)} \\
+80 & 0{,}125 & 1.006{,}04 & 1{,}35 & 983{,}00 & 1{,}35 & 1.006{,}04 & 3{,}82 & 983{,}00 & 6{,}29 & 1.006{,}04 & 11{,}6 & 983{,}00 & 21{,}9 & 984{,}20 & 3{,}81 & 977{,}76 & 6{,}27 & \textbf{981{,}88} & 11{,}7 & \textbf{975{,}68} & 22{,}1 \\
+\multicolumn{2}{r}{\scriptsize\emph{paper}} & {\scriptsize(991{,}73)} &  & {\scriptsize(984{,}73)} &  & {\scriptsize(991{,}73)} &  & {\scriptsize(984{,}73)} &  & {\scriptsize(991{,}73)} & {\scriptsize(109)} & {\scriptsize(984{,}73)} & {\scriptsize($\approx$218)} & {\scriptsize(985{,}62)} &  & {\scriptsize(983{,}57)} &  & {\scriptsize(976{,}60)} & {\scriptsize(53{,}8)} & {\scriptsize(974{,}65)} & {\scriptsize($\approx$108)} \\
+100 & 0{,}1 & 1.124{,}86 & 1{,}79 & 1.114{,}85 & 1{,}79 & 1.124{,}86 & 6{,}72 & 1.114{,}85 & 11{,}6 & 1.124{,}86 & 23{,}4 & 1.114{,}85 & 44{,}7 & 1.110{,}25 & 6{,}58 & 1.108{,}12 & 11{,}4 & \textbf{1.107{,}60} & 22{,}9 & \textbf{1.103{,}63} & 43{,}8 \\
+\multicolumn{2}{r}{\scriptsize\emph{paper}} & {\scriptsize(1.133{,}81)} &  & {\scriptsize(1.111{,}65)} &  & {\scriptsize(1.133{,}81)} &  & {\scriptsize(1.111{,}65)} &  & {\scriptsize(1.133{,}81)} & {\scriptsize(261)} & {\scriptsize(1.111{,}65)} & {\scriptsize($\approx$521)} & {\scriptsize(1.124{,}05)} &  & {\scriptsize(1.111{,}05)} &  & {\scriptsize(1.105{,}63)} & {\scriptsize(128)} & {\scriptsize(1.103{,}42)} & {\scriptsize($\approx$256)} \\
+120 & 0{,}17 & 1.594{,}58 & 2{,}20 & 1.593{,}66 & 2{,}21 & 1.594{,}58 & 10{,}5 & 1.593{,}66 & 18{,}8 & 1.594{,}58 & 47{,}5 & 1.593{,}66 & 92{,}1 & 1.594{,}28 & 10{,}3 & 1.593{,}66 & 18{,}5 & \textbf{1.574{,}06} & 45{,}3 & \textbf{1.570{,}59} & 88{,}5 \\
+\multicolumn{2}{r}{\scriptsize\emph{paper}} & {\scriptsize(1.607{,}68)} &  & {\scriptsize(1.589{,}67)} &  & {\scriptsize(1.607{,}68)} &  & {\scriptsize(1.589{,}67)} &  & {\scriptsize(1.607{,}68)} & {\scriptsize(530)} & {\scriptsize(1.589{,}67)} & {\scriptsize($\approx$1.060)} & {\scriptsize(1.607{,}68)} &  & {\scriptsize(1.589{,}67)} &  & {\scriptsize(1.550{,}72)} & {\scriptsize(260)} & {\scriptsize(1.543{,}52)} & {\scriptsize($\approx$521)} \\
+140 & 0{,}14 & 1.702{,}46 & 2{,}66 & 1.691{,}34 & 2{,}67 & 1.702{,}46 & 15{,}7 & 1.691{,}34 & 28{,}8 & 1.702{,}46 & 83{,}9 & 1.691{,}34 & 165 & 1.702{,}46 & 15{,}5 & 1.691{,}34 & 28{,}3 & \textbf{1.699{,}16} & 81{,}8 & \textbf{1.689{,}03} & 162 \\
+\multicolumn{2}{r}{\scriptsize\emph{paper}} & {\scriptsize(1.706{,}32)} &  & {\scriptsize(1.689{,}32)} &  & {\scriptsize(1.706{,}32)} &  & {\scriptsize(1.689{,}32)} &  & {\scriptsize(1.706{,}32)} & {\scriptsize(967)} & {\scriptsize(1.689{,}32)} & {\scriptsize($\approx$1.935)} & {\scriptsize(1.696{,}89)} &  & {\scriptsize(1.687{,}86)} &  & {\scriptsize(1.650{,}55)} & {\scriptsize(474)} & {\scriptsize(1.648{,}56)} & {\scriptsize($\approx$948)} \\
+160 & 0{,}125 & \textbf{1.851{,}49} & 3{,}23 & \textbf{1.835{,}86} & 3{,}23 & \textbf{1.851{,}49} & 22{,}8 & \textbf{1.835{,}86} & 42{,}4 & \textbf{1.851{,}49} & 138 & \textbf{1.835{,}86} & 274 & \textbf{1.851{,}49} & 22{,}4 & \textbf{1.835{,}86} & 41{,}7 & \textbf{1.851{,}49} & 135 & \textbf{1.835{,}86} & 267 \\
+\multicolumn{2}{r}{\scriptsize\emph{paper}} & {\scriptsize(1.843{,}99)} &  & {\scriptsize(1.833{,}47)} &  & {\scriptsize(1.843{,}99)} &  & {\scriptsize(1.833{,}47)} &  & {\scriptsize(1.843{,}99)} & {\scriptsize(1.628)} & {\scriptsize(1.833{,}47)} & {\scriptsize($\approx$3.256)} & {\scriptsize(1.842{,}39)} &  & {\scriptsize(1.833{,}29)} &  & {\scriptsize(1.787{,}41)} & {\scriptsize(798)} & {\scriptsize(1.787{,}35)} & {\scriptsize($\approx$1.597)} \\
+180 & 0{,}11 & \textbf{1.948{,}35} & 3{,}68 & \textbf{1.933{,}76} & 3{,}68 & \textbf{1.948{,}35} & 29{,}7 & \textbf{1.933{,}76} & 56{,}0 & \textbf{1.948{,}35} & 205 & \textbf{1.933{,}76} & 407 & \textbf{1.948{,}35} & 29{,}1 & \textbf{1.933{,}76} & 54{,}9 & \textbf{1.948{,}35} & 201 & \textbf{1.933{,}76} & 398 \\
+\multicolumn{2}{r}{\scriptsize\emph{paper}} & {\scriptsize(1.947{,}59)} &  & {\scriptsize(1.932{,}71)} &  & {\scriptsize(1.947{,}59)} &  & {\scriptsize(1.932{,}71)} &  & {\scriptsize(1.947{,}59)} & {\scriptsize(2.582)} & {\scriptsize(1.932{,}71)} & {\scriptsize($\approx$5.165)} & {\scriptsize(1.942{,}08)} &  & {\scriptsize(1.931{,}73)} &  & {\scriptsize(1.887{,}45)} & {\scriptsize(1.267)} & {\scriptsize(1.887{,}41)} & {\scriptsize($\approx$2.534)} \\
+200 & 0{,}1 & \textbf{2.087{,}15} & 4{,}07 & \textbf{2.071{,}49} & 4{,}07 & \textbf{2.087{,}15} & 40{,}6 & \textbf{2.071{,}49} & 77{,}0 & \textbf{2.087{,}15} & 300 & \textbf{2.071{,}49} & 597 & \textbf{2.087{,}15} & 41{,}5 & \textbf{2.071{,}49} & 77{,}2 & \textbf{2.087{,}15} & 291 & \textbf{2.071{,}49} & 582 \\
+\multicolumn{2}{r}{\scriptsize\emph{paper}} & {\scriptsize(2.070{,}36)} &  & {\scriptsize(2.068{,}72)} &  & {\scriptsize(2.070{,}36)} &  & {\scriptsize(2.068{,}72)} &  & {\scriptsize(2.070{,}36)} & {\scriptsize(3.904)} & {\scriptsize(2.068{,}72)} & {\scriptsize($\approx$7.809)} & {\scriptsize(2.070{,}36)} &  & {\scriptsize(2.068{,}72)} &  & {\scriptsize(2.029{,}11)} & {\scriptsize(1.915)} & {\scriptsize(2.029{,}11)} & {\scriptsize($\approx$3.830)} \\
+\midrule
+\multicolumn{2}{l}{Prom.} & 1.393{,}94 & 2{,}08 & 1.376{,}80 & 2{,}08 & 1.389{,}95 & 13{,}3 & 1.375{,}75 & 24{,}6 & 1.389{,}42 & 81{,}6 & 1.375{,}05 & 161 & 1.377{,}89 & 13{,}2 & 1.370{,}40 & 24{,}3 & \textbf{1.373{,}31} & 79{,}6 & \textbf{1.365{,}67} & 157 \\
+\multicolumn{2}{r}{\scriptsize\emph{paper}} & {\scriptsize(1.392{,}40)} &  & {\scriptsize(1.375{,}44)} &  & {\scriptsize(1.389{,}02)} & {\scriptsize(114)} & {\scriptsize(1.374{,}50)} & {\scriptsize(227)} & {\scriptsize(1.388{,}25)} & {\scriptsize(1.003)} & {\scriptsize(1.374{,}14)} & {\scriptsize(2.005)} & {\scriptsize(1.382{,}55)} & {\scriptsize(57{,}5)} & {\scriptsize(1.372{,}68)} & {\scriptsize(115)} & {\scriptsize(1.347{,}10)} & {\scriptsize(472)} & {\scriptsize(1.345{,}17)} & {\scriptsize(944)} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+\end{landscape}
+
+\clearpage
 \appendix
-\section{Tiempos: tabla comparativa por instancia}
+\section{Tiempos: detalle por instancia}
 \label{anx:tiempos}
-Valor objetivo y tiempo de cada método en cada instancia, para cada $h$.
 
 \begin{table}[htbp]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
-\caption{Valor objetivo $z$ y tiempo de cómputo por instancia para $h = h_a = h_b = 0{,}1$. Límite de tiempo de Gurobi: 1.800\,s por modelo. $z$: costo total (ruteo + manipulación); Seg.: tiempo en segundos (Gurobi: \emph{Runtime}, sin construir el modelo). $z^{*}$: mejor solución entera al alcanzar el límite, sin óptimo probado; entre paréntesis, el gap con la cota inferior. --: sin solución entera. Dos fases: ruta TSP con el depósito reubicado y, sobre ella, la manipulación óptima de la Política 3 con el Algoritmo~2.1\,+\,DP; ILS: mejor $z$ de 10 corridas y tiempo medio por corrida. Filas \emph{Prom.}: en los modelos Gurobi, instancias resueltas a optimalidad ($k/n$) y tiempo medio de las ejecuciones terminadas (las que alcanzan el límite cuentan con su tiempo); en las heurísticas, desviación media (\%) respecto de $z^{*}_{P3}$ y tiempo medio. $^{\S}$~n.e.: Modelo General no ejecutado con $|V_c| \geq 15$ por su alto costo computacional (formulación indexada por posiciones de carga); en los totales, solo sus instancias ejecutadas.}
+\caption{Valor objetivo $z$ y tiempo (s) por instancia con $h = 0{,}1$. ILS: mejor de 10 corridas y tiempo medio por corrida. Prom.: Gurobi, óptimos $k/n$ y tiempo medio; heurísticas, desviación media (\%) respecto de $z^{*}_{P3}$ y tiempo medio. $^{*}$~sin óptimo probado al llegar al límite (gap entre paréntesis).}
 \label{tab:tiempos-comparativa-h0-1}
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{rr rr rr rr rr rr rr}
@@ -422,7 +398,7 @@ $|V_c|$ & Id & $z$ & Seg. & $z$ & Seg. & $z$ & Seg. & $z$ & Seg. & $z$ & Seg. & 
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
-\caption{Valor objetivo $z$ y tiempo de cómputo por instancia para $h = h_a = h_b = 0{,}5$. Límite de tiempo de Gurobi: 1.800\,s por modelo. $z$: costo total (ruteo + manipulación); Seg.: tiempo en segundos (Gurobi: \emph{Runtime}, sin construir el modelo). $z^{*}$: mejor solución entera al alcanzar el límite, sin óptimo probado; entre paréntesis, el gap con la cota inferior. --: sin solución entera. Dos fases: ruta TSP con el depósito reubicado y, sobre ella, la manipulación óptima de la Política 3 con el Algoritmo~2.1\,+\,DP; ILS: mejor $z$ de 10 corridas y tiempo medio por corrida. Filas \emph{Prom.}: en los modelos Gurobi, instancias resueltas a optimalidad ($k/n$) y tiempo medio de las ejecuciones terminadas (las que alcanzan el límite cuentan con su tiempo); en las heurísticas, desviación media (\%) respecto de $z^{*}_{P3}$ y tiempo medio. $^{\ddagger}$~Gurobi P3 no probó (o aún no prueba) el óptimo de parte de esas instancias: se comparan con la mejor solución conocida de la Política 3, que puede ser la del propio método, y el valor puede cambiar. $^{\S}$~n.e.: Modelo General no ejecutado con $|V_c| \geq 15$ por su alto costo computacional (formulación indexada por posiciones de carga); en los totales, solo sus instancias ejecutadas.}
+\caption{Valor objetivo $z$ y tiempo (s) por instancia con $h = 0{,}5$. ILS: mejor de 10 corridas y tiempo medio por corrida. Prom.: Gurobi, óptimos $k/n$ y tiempo medio; heurísticas, desviación media (\%) respecto de $z^{*}_{P3}$ y tiempo medio. $^{*}$~sin óptimo probado al llegar al límite (gap entre paréntesis).}
 \label{tab:tiempos-comparativa-h0-5}
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{rr rr rr rr rr rr rr}
@@ -525,7 +501,7 @@ $|V_c|$ & Id & $z$ & Seg. & $z$ & Seg. & $z$ & Seg. & $z$ & Seg. & $z$ & Seg. & 
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
-\caption{Valor objetivo $z$ y tiempo de cómputo por instancia para $h = h_a = h_b = 1$. Límite de tiempo de Gurobi: 1.800\,s por modelo. $z$: costo total (ruteo + manipulación); Seg.: tiempo en segundos (Gurobi: \emph{Runtime}, sin construir el modelo). $z^{*}$: mejor solución entera al alcanzar el límite, sin óptimo probado; entre paréntesis, el gap con la cota inferior. --: sin solución entera. Dos fases: ruta TSP con el depósito reubicado y, sobre ella, la manipulación óptima de la Política 3 con el Algoritmo~2.1\,+\,DP; ILS: mejor $z$ de 10 corridas y tiempo medio por corrida. Filas \emph{Prom.}: en los modelos Gurobi, instancias resueltas a optimalidad ($k/n$) y tiempo medio de las ejecuciones terminadas (las que alcanzan el límite cuentan con su tiempo); en las heurísticas, desviación media (\%) respecto de $z^{*}_{P3}$ y tiempo medio. $^{\ddagger}$~Gurobi P3 no probó (o aún no prueba) el óptimo de parte de esas instancias: se comparan con la mejor solución conocida de la Política 3, que puede ser la del propio método, y el valor puede cambiar. $^{\S}$~n.e.: Modelo General no ejecutado con $|V_c| \geq 15$ por su alto costo computacional (formulación indexada por posiciones de carga); en los totales, solo sus instancias ejecutadas.}
+\caption{Valor objetivo $z$ y tiempo (s) por instancia con $h = 1$. ILS: mejor de 10 corridas y tiempo medio por corrida. Prom.: Gurobi, óptimos $k/n$ y tiempo medio; heurísticas, desviación media (\%) respecto de $z^{*}_{P3}$ y tiempo medio. $^{*}$~sin óptimo probado al llegar al límite (gap entre paréntesis).}
 \label{tab:tiempos-comparativa-h1}
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{rr rr rr rr rr rr rr}
@@ -631,7 +607,7 @@ $|V_c|$ & Id & $z$ & Seg. & $z$ & Seg. & $z$ & Seg. & $z$ & Seg. & $z$ & Seg. & 
 \centering
 \scriptsize
 \setlength{\tabcolsep}{3.2pt}
-\caption{Resultados por instancia de dos fases, ILS e ITS ($N_{iter} = 200$), en el formato de las Tablas~8--9 de Erdo\u{g}an et al.~(2012) (primera parte: $|V_c| = 20$ a $100$). Valor objetivo $z$; 1~dir.: corrida desde el tour TSP; 2~dir.: corrida desde el tour TSP invertido, por sí sola, como en el paper (el resultado con dos direcciones del Cuadro~\ref{tab:metaheuristicas-resumen} es el mínimo de ambas columnas). Best: mejor solución conocida publicada en el paper. En negrita, el menor $z$ de la fila; $^{*}$menor que el Best del paper. Nuestra dirección~1 reproduce la orientación de la columna 1~dir.\ del paper en 24 de las 100 instancias; en las demás, la orientación por convención puede corresponder a la opuesta, lo que no afecta el mínimo de ambas columnas.}
+\caption{Detalle por instancia ($|V_c| = 20$ a $100$), formato de las Tablas~8--9 de Erdo\u{g}an et al.~(2012): $z$ de cada método; 1~dir.: desde el tour TSP; 2~dir.: desde el tour invertido. En negrita, el menor $z$ de la fila; $^{*}$~menor que el Best del paper.}
 \label{tab:metaheuristicas-detalle-1}
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{rrr rr rr rr rr rr}
@@ -703,7 +679,7 @@ $|V_c|$ & Id & Best & 1~dir. & 2~dir. & 1~dir. & 2~dir. & 1~dir. & 2~dir. & 1~di
 \centering
 \scriptsize
 \setlength{\tabcolsep}{3.2pt}
-\caption{Resultados por instancia de dos fases, ILS e ITS en el formato de las Tablas~8--9 de Erdo\u{g}an et al.~(2012) (segunda parte: $|V_c| = 120$ a $200$); notación del Cuadro~\ref{tab:metaheuristicas-detalle-1}. Tiempo (s): promedio de las 100 instancias por columna, en segundos de pared; ILS e ITS sin el tour TSP, dos fases con el tour TSP y la reubicación del depósito. Paper (s): fila \emph{Time (s)} de su Tabla~9 (Intel Core~2 Quad de 2{,}83\,GHz, código C; el paper no publica el tiempo de la solución inicial).}
+\caption{Detalle por instancia ($|V_c| = 120$ a $200$), formato de las Tablas~8--9 de Erdo\u{g}an et al.~(2012): $z$ de cada método; 1~dir.: desde el tour TSP; 2~dir.: desde el tour invertido. En negrita, el menor $z$ de la fila. Tiempo (s): media de las 100 instancias; Paper (s): fila \emph{Time (s)} de su Tabla~9.}
 \label{tab:metaheuristicas-detalle-2}
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{rrr rr rr rr rr rr}

@@ -2,8 +2,7 @@
  * Modelos de las tablas de la sección «Metaheurísticas» y su exportación a LaTeX y CSV.
  *  · summaryModel: modelo de la tabla «Resumen por |Vc|» (lo usan la tarjeta MetaSummaryTable, el
  *    LaTeX y el CSV, para que las tres muestren exactamente las mismas cifras).
- *  · toLatexSummary: una fila por |Vc| + «Prom.» con la desviación media (%) respecto del Best del
- *    paper y los segundos medios de los cinco métodos en «1 dir.» y «2 dir.» lado a lado, y debajo,
+ *  · toLatexSummary: una fila por |Vc| + «Prom.» con el valor objetivo medio Z y los segundos medios de los cinco métodos en «1 dir.» y «2 dir.» lado a lado, y debajo,
  *    entre paréntesis, la cifra del paper (estilo Erdoğan et al. 2012, Tablas 2–3 y 8–9), lista
  *    para pegar en la tesis (booktabs).
  *  · toCsvSummary: el mismo resumen en CSV (una o ambas direcciones).
@@ -89,11 +88,13 @@ export interface SummaryCell {
    */
   paperDev: number | null;
   paperDevAll: boolean;
+  /** Z medio del paper (mismo método y dirección), sobre las mismas instancias que `paperDev`. */
+  paperZ: number | null;
   /** Segundos del paper (ver MethodSummary.paperTimeSec); null si no se publican. */
   paperTime: number | null;
   /** Tiempo del paper estimado: 2dir por |Vc| = 2 × el de 1dir de la Tabla 2. */
   paperTimeEstimated: boolean;
-  /** Menor desviación de la fila (solo si todos los métodos promedian la misma cantidad de instancias). */
+  /** Menor Z medio de la fila (solo si todos los métodos promedian la misma cantidad de instancias). */
   best: boolean;
 }
 
@@ -131,14 +132,19 @@ function paperDevOver(list: InstanceRow[], m: MetaMethod, dir: MetaDirection): n
   return mean(devs);
 }
 
-/** Métodos con la menor desviación (a 2 decimales), si las columnas son comparables. */
+/** Z medio del paper sobre todas las instancias de `list` que están en el paper. */
+function paperZOver(list: InstanceRow[], m: MetaMethod, dir: MetaDirection): number | null {
+  return mean(list.flatMap((r) => (r.paper ? [paperZOf(r.paper[m], dir)] : [])));
+}
+
+/** Métodos con el menor Z medio (a 2 decimales), si las columnas son comparables. */
 function markBest(cells: Record<MetaMethod, SummaryCell>) {
   const done = META_METHODS.map((m) => cells[m].s.done);
-  const devs = META_METHODS.map((m) => cells[m].s.devPct);
-  if (!done.every((d) => d > 0 && d === done[0]) || devs.some((d) => d === null)) return;
-  const key = (d: number) => Math.round(d * 100);
-  const min = Math.min(...devs.map((d) => key(d as number)));
-  for (const m of META_METHODS) cells[m].best = key(cells[m].s.devPct as number) === min;
+  const zs = META_METHODS.map((m) => cells[m].s.avgZ);
+  if (!done.every((d) => d > 0 && d === done[0]) || zs.some((z) => z === null)) return;
+  const key = (z: number) => Math.round(z * 100);
+  const min = Math.min(...zs.map((z) => key(z as number)));
+  for (const m of META_METHODS) cells[m].best = key(cells[m].s.avgZ as number) === min;
 }
 
 function makeRow(
@@ -161,6 +167,7 @@ function makeRow(
       errors: list.reduce((a, r) => a + r.cells[m].errors, 0),
       paperDev,
       paperDevAll: fallback && paperDev !== null,
+      paperZ: fallback ? paperZOver(list, m, dir) : s.paperAvgZ,
       paperTime: s.paperTimeSec,
       // Por |Vc| el paper solo publica 1dir (Tabla 2); la fila Prom. usa la fila «Time (s)» de la Tabla 9 (ambas columnas).
       paperTimeEstimated: n !== null && dir === '2dir' && s.paperTimeSec !== null,
@@ -220,7 +227,7 @@ function texNum(s: string): string {
     .replace(/ /g, '~');
 }
 
-const texDev = (p: number | null) => texNum(fmtNum(p, 2));
+const texZ = (z: number | null) => texNum(fmtNum(z, 2));
 const texSec = (s: number | null) => texNum(fmtSec(s));
 const texH = (h: number | null) => (h === null ? '--' : texNum(hLabel(h)));
 const row = (cells: string[]) => cells.join(' & ') + ' \\\\';
@@ -237,7 +244,7 @@ interface TexFlags {
   partial: boolean;
   errors: number;
   estimated: boolean;
-  /** Alguna desviación del paper se promedió sobre todo el tamaño (aún sin resultados nuestros). */
+  /** Algún Z medio del paper se promedió sobre todo el tamaño (aún sin resultados nuestros). */
   paperAll: boolean;
 }
 
@@ -246,37 +253,37 @@ const SUMMARY_DIRS: readonly MetaDirection[] = ['1dir', '2dir'];
 const DIR_HEAD: Record<MetaDirection, string> = { '1dir': '1~dir.', '2dir': '2~dir.' };
 
 /**
- * Desv. y Seg. de un método en una dirección: la nuestra (negrita si es la mejor de la fila en esa
+ * Z y Seg. de un método en una dirección: la nuestra (negrita si es la mejor de la fila en esa
  * dirección) y, aparte, la del paper entre paréntesis (va en la línea de abajo; '' si no se publica).
  */
 function texCells(c: SummaryCell, flags: TexFlags, prom = false): { ours: [string, string]; paper: [string, string] } {
   const paperSmall = (s: string) => `{\\scriptsize(${s})}`;
-  let dev: string;
+  let z: string;
   let sec: string;
   if (c.s.done === 0) {
-    dev = PENDING;
+    z = PENDING;
     sec = PENDING;
   } else {
-    dev = texDev(c.s.devPct);
-    if (c.best) dev = `\\textbf{${dev}}`;
+    z = texZ(c.s.avgZ);
+    if (c.best) z = `\\textbf{${z}}`;
     // En Prom. la parcialidad la explica el caption («solo las k de N instancias»).
     if (!prom && c.s.done < c.instances) {
-      dev += DAGGER;
+      z += DAGGER;
       flags.partial = true;
     }
     sec = texSec(c.s.timeSec);
   }
-  let paperDev = '';
+  let paperZ = '';
   let paperSec = '';
-  if (c.paperDev !== null) {
+  if (c.paperZ !== null) {
     if (c.paperDevAll) flags.paperAll = true;
-    paperDev = paperSmall(texDev(c.paperDev));
+    paperZ = paperSmall(texZ(c.paperZ));
   }
   if (c.paperTime !== null) {
     if (c.paperTimeEstimated) flags.estimated = true;
     paperSec = paperSmall((c.paperTimeEstimated ? '$\\approx$' : '') + texSec(c.paperTime));
   }
-  return { ours: [dev, sec], paper: [paperDev, paperSec] };
+  return { ours: [z, sec], paper: [paperZ, paperSec] };
 }
 
 /**
@@ -295,7 +302,7 @@ function summaryLines(head: string[], pair: Record<MetaDirection, SummaryRow>, f
 
 /**
  * Resumen por |Vc| con las dos direcciones lado a lado, como las Tablas 3 y 8–9 del paper: |Vc| | h |
- * por método «1 dir.» y «2 dir.», cada una con «Desv. (%)» y «Seg.»; bajo cada fila, la cifra del
+ * por método «1 dir.» y «2 dir.», cada una con «Z» y «Seg.»; bajo cada fila, la cifra del
  * paper entre paréntesis; al final, «Prom.» sobre las instancias que todos los métodos terminaron en
  * esa dirección. `file` (opcional) aporta el hardware, el runtime y Niter para el caption.
  */
@@ -336,19 +343,19 @@ export function toLatexSummary(rows: InstanceRow[], paper: PaperFile | null, fil
     '. El paper midió en un Intel Core~2 Quad de 2{,}83\\,GHz con código C, por lo que los tiempos no son comparables 1:1 entre máquinas.';
 
   const caption =
-    'Desviación media (\\%) respecto de la mejor solución conocida y tiempo medio por instancia (s), por número de clientes $|V_c|$,' +
+    'Valor objetivo medio $z$ y tiempo medio por instancia (s), por número de clientes $|V_c|$,' +
     ` de cinco métodos en las instancias de ${ERDOGAN} (10 por tamaño), con una y con dos direcciones como en sus Tablas~3 y 8--9:` +
     ' 1~dir.: corrida desde el tour TSP; 2~dir.: la mejor de las corridas desde el tour TSP y desde el tour invertido' +
     ` (por dirección, ILS con $N_{iter} = ${nIter}$ e ITS con $\\lfloor\\sqrt{N_{iter}}\\rfloor = ${nIterIts}$ iteraciones externas).` +
-    ` Desv.\\ $= (z - \\mathit{Best})/\\mathit{Best} \\cdot 100$, con $\\mathit{Best}$ la mejor solución conocida publicada en las Tablas~8--9 de ${ERDOGAN}.` +
+    ' $z$: costo total (ruteo + manipulación).' +
     ' Seg.: incluye el tour TSP y, en 2~dir., las corridas de ambas direcciones.' +
     machine +
     ' Dos fases: tour TSP con el depósito reubicado y manipulación óptima (Algoritmo~2.1 + DP), la \\emph{initial solution} del paper;' +
     ' ILS (Algoritmo~4.2) e ITS (Algoritmo~4.3) heurísticos evalúan el vecindario con la estimación lineal (\\S2.2) y los exactos con el Algoritmo~2.1 + DP.' +
-    ` Bajo cada fila, entre paréntesis, la cifra del paper con el mismo método y dirección: desviación sobre las mismas instancias` +
+    ` Bajo cada fila, entre paréntesis, la cifra del paper con el mismo método y dirección: $z$ medio sobre las mismas instancias` +
     (flags.paperAll ? ' (sobre todas las del tamaño mientras no haya resultados nuestros)' : '') +
     paperTimeText +
-    ' En negrita, la menor desviación de la fila en cada dirección.' +
+    ' En negrita, el menor $z$ medio de la fila en cada dirección.' +
     (flags.partial ? ` ${DAGGER}~Promedio parcial: el benchmark aún no termina todas las instancias de ese tamaño.` : '') +
     (flags.errors === 1 ? ' Se excluye 1 ejecución con error.' : flags.errors > 1 ? ` Se excluyen ${flags.errors} ejecuciones con error.` : '') +
     (partialProm
@@ -369,7 +376,7 @@ export function toLatexSummary(rows: InstanceRow[], paper: PaperFile | null, fil
         cmidrules(META_METHODS.length, 3, width),
         row(['', '', ...META_METHODS.flatMap(() => SUMMARY_DIRS.map((d) => `\\multicolumn{2}{c}{${DIR_HEAD[d]}}`))]),
         cmidrules(META_METHODS.length * SUMMARY_DIRS.length, 3),
-        row(['$|V_c|$', '$h$', ...META_METHODS.flatMap(() => SUMMARY_DIRS.flatMap(() => ['Desv.\\,(\\%)', 'Seg.']))]),
+        row(['$|V_c|$', '$h$', ...META_METHODS.flatMap(() => SUMMARY_DIRS.flatMap(() => ['$z$', 'Seg.']))]),
         '\\midrule',
         ...(body.length ? body : [`\\multicolumn{${nCols}}{c}{Sin datos} \\\\`]),
         '\\midrule',

@@ -81,7 +81,7 @@ function readout(t: Target | null, facts: InstanceFacts, tour: number[], current
       </>
     );
   }
-  return <>Toca o pasa el cursor por una celda para leer su costo c(i, j)</>;
+  return <>Fila i → columna j · pasa el cursor por una celda</>;
 }
 
 export function DistanceHeatmap() {
@@ -153,7 +153,6 @@ export function DistanceHeatmap() {
             <sub className="font-serif italic">ij</sub> · {size}×{size}{' '}
             <span className="font-normal text-zinc-400">· {facts.symmetric ? 'simétrica' : 'asimétrica'}</span>
           </h3>
-          <p className="mt-1 text-[12.5px] text-zinc-400">Fila = origen i, columna = destino j. Los arcos del tour llevan su número de orden.</p>
         </div>
         <Switch checked={tourOnly} onChange={setTourOnly} label="Solo arcos del tour" />
       </header>

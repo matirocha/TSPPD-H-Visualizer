@@ -6,12 +6,11 @@
  * corriendo: la sección se actualiza sola mientras falten registros.
  *
  * Barra de control (h compartido) · tabla comparativa N × Id con z y segundos (12) · gráfico (7)
- * + hallazgos (5) · detalle con z^H y desviación para un N (12) · cómo se midió (12).
+ * + hallazgos (5) · cómo se midió (12).
  */
 import { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { RotateCw, Timer } from 'lucide-react';
-import type { BenchmarkFile } from '../types/benchmark';
 import { fmt } from '../lib/format';
 import { cn } from '../lib/cn';
 import { springSoft, staggerChild, staggerParent } from '../lib/motion';
@@ -20,7 +19,6 @@ import { useBenchmark } from './benchmark/useBenchmark';
 import {
   buildInstances,
   gridOf,
-  isGurobiMethod,
   progressOf,
   sameH,
   summarizeByN,
@@ -32,21 +30,10 @@ import {
 import { ComparisonTable } from './benchmark/ComparisonTable';
 import { TimeChart } from './benchmark/TimeChart';
 import { BenchFindings } from './benchmark/BenchFindings';
-import { DetailTable } from './benchmark/DetailTable';
 import { BenchMethodNote } from './benchmark/BenchMethodNote';
 import { CommandLine, LiveDot, fmtClock, fmtDateTime, hText } from './benchmark/shared';
-import { shortCpu } from './benchmark/format';
 
 const RUN = 'python notebooks/tsppd_h_benchmark.py';
-
-function threadsOf(file: BenchmarkFile | null): number | null {
-  if (file?.meta?.threads) return file.meta.threads;
-  for (const r of file?.records ?? []) {
-    const t = r.config?.threads;
-    if (isGurobiMethod(r.method) && typeof t === 'number') return t;
-  }
-  return null;
-}
 
 export function Benchmark() {
   const { file, loading, error, reload, live, lastLoadedAt } = useBenchmark();
@@ -72,16 +59,15 @@ export function Benchmark() {
     <div>
       <SectionHeader
         index="05"
-        eyebrow="Tiempos de cómputo · Battarra et al. (2010) · Erdoğan et al. (2012)"
+        eyebrow="Tiempos de cómputo · Battarra et al. (2010)"
         title="¿Cuánto tarda cada método?"
         description={
           <>
-            Tiempo de los cuatro modelos exactos en <span className="text-zinc-200">Gurobi</span> frente a la heurística de{' '}
-            <span className="text-zinc-200">dos fases</span> (ruta TSP + Algoritmo 2.1) y al <span className="text-zinc-200">ILS</span>, sobre las instancias de
-            Battarra et al. con 5 a 25 clientes. Las tablas siguen el formato de los papers: instancias resueltas, segundos y desviación.
+            Los cuatro modelos exactos en <span className="text-zinc-200">Gurobi</span> frente a las heurísticas{' '}
+            <span className="text-zinc-200">dos fases</span> e <span className="text-zinc-200">ILS</span>, con 5 a 25 clientes.
           </>
         }
-        aside={hasData ? <ConfigAside file={file} progress={progress} live={live} timeLimit={timeLimit} timeLimits={timeLimits} /> : undefined}
+        aside={hasData ? <ConfigAside gurobi={file.meta?.gurobi} timeLimit={timeLimit} timeLimits={timeLimits} /> : undefined}
       />
 
       {!file && loading ? (
@@ -118,9 +104,6 @@ export function Benchmark() {
               <BenchFindings instances={instances} groups={groups} overall={overall} h={h} progress={progress} />
             </motion.div>
             <motion.div variants={staggerChild} className="min-w-0 lg:col-span-12">
-              <DetailTable instances={instances} customers={grid.customers} h={h} timeLimit={timeLimit} timeLimits={timeLimits} />
-            </motion.div>
-            <motion.div variants={staggerChild} className="min-w-0 lg:col-span-12">
               <BenchMethodNote file={file} timeLimit={timeLimit} timeLimits={timeLimits} />
             </motion.div>
           </motion.div>
@@ -132,57 +115,25 @@ export function Benchmark() {
 
 /* ───────────────────────── Encabezado y control ───────────────────────── */
 
-function ConfigAside({
-  file,
-  progress,
-  live,
-  timeLimit,
-  timeLimits,
-}: {
-  file: BenchmarkFile;
-  progress: Progress;
-  live: boolean;
-  timeLimit: number | null;
-  timeLimits: number[];
-}) {
-  const meta = file.meta;
-  const threads = threadsOf(file);
+/** Solo lo esencial del montaje: versión de Gurobi y límite de tiempo (el resto, en «Cómo se midió»). */
+function ConfigAside({ gurobi, timeLimit, timeLimits }: { gurobi?: string | null; timeLimit: number | null; timeLimits: number[] }) {
   const mixed = timeLimits.length > 1;
   return (
-    <div className="flex flex-col gap-2.5 md:items-end">
-      <div className="flex flex-wrap items-center gap-1.5 md:justify-end">
-        {meta?.gurobi && (
-          <Chip tone="muted" size="sm">
-            Gurobi {meta.gurobi}
-          </Chip>
-        )}
-        {threads !== null && (
-          <Chip tone="muted" size="sm">
-            {threads} {threads === 1 ? 'hilo' : 'hilos'}
-          </Chip>
-        )}
-        {timeLimit !== null && (
-          <Chip
-            tone="muted"
-            size="sm"
-            title={mixed ? `Los registros mezclan límites de tiempo: ${timeLimits.map((t) => `${fmt(t, 0)} s`).join(' · ')}` : undefined}
-          >
-            {mixed ? `límites ${timeLimits.map((t) => fmt(t, 0)).join(' / ')} s` : `límite ${fmt(timeLimit, 0)} s`}
-          </Chip>
-        )}
-        {meta?.cpu && (
-          <Chip tone="muted" size="sm" title={meta.cpu}>
-            {shortCpu(meta.cpu)}
-          </Chip>
-        )}
-      </div>
-      <p className="flex items-center gap-2 text-[13px] text-zinc-400">
-        {live && <LiveDot />}
-        <span>
-          <span className="num text-zinc-200">{progress.done}</span>/<span className="num">{progress.expected}</span> ejecuciones
-        </span>
-        {live ? <span className="text-ok">en vivo</span> : progress.complete ? <span className="text-zinc-500">completo</span> : null}
-      </p>
+    <div className="flex flex-wrap items-center gap-1.5 md:justify-end">
+      {gurobi && (
+        <Chip tone="muted" size="sm">
+          Gurobi {gurobi}
+        </Chip>
+      )}
+      {timeLimit !== null && (
+        <Chip
+          tone="muted"
+          size="sm"
+          title={mixed ? `Los registros mezclan límites de tiempo: ${timeLimits.map((t) => `${fmt(t, 0)} s`).join(' · ')}` : undefined}
+        >
+          {mixed ? `límites ${timeLimits.map((t) => fmt(t, 0)).join(' / ')} s` : `límite ${fmt(timeLimit, 0)} s`}
+        </Chip>
+      )}
     </div>
   );
 }
@@ -321,8 +272,7 @@ function EmptyState({ error, loading, reload }: { error: string | null; loading:
             {error
               ? `No se pudieron leer: ${error}.`
               : 'No se encontró Outputs/Benchmark/benchmark_tiempos.json ni el paquete estático solutions/benchmark.json.'}{' '}
-            Lánzalo desde la raíz del repositorio; tarda varias horas, pero la página muestra cada ejecución apenas termina (con la API local se
-            actualiza sola cada minuto):
+            Lánzalo desde la raíz del repositorio (tarda horas; la página muestra cada ejecución apenas termina):
           </p>
           <div className="mt-4 max-w-xl">
             <CommandLine>{RUN}</CommandLine>

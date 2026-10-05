@@ -21,7 +21,11 @@ export function InstanceData() {
         index="08"
         eyebrow="Datos de la instancia"
         title={`${n} clientes · instancia ${id}`}
-        description="Instancias euclidianas de Gendreau, Laporte y Vigo (1999) —archivos e_vigo— adaptadas al TSPPD-H como en el paper: p′ᵢ = max(1, pᵢ mod 20), βᵢ = ⌊p′ᵢ·(i mod 5)/5⌋, αᵢ = p′ᵢ − βᵢ, con matriz simétrica de costos c_ij."
+        description={
+          <span title="p′ᵢ = max(1, pᵢ mod 20), βᵢ = ⌊p′ᵢ·(i mod 5)/5⌋, αᵢ = p′ᵢ − βᵢ">
+            Instancias e_vigo de Gendreau, Laporte y Vigo (1999), adaptadas al TSPPD-H.
+          </span>
+        }
         aside={
           <div className="flex flex-wrap items-center gap-2 md:justify-end">
             <span className="text-[12px] text-zinc-400">Tour de la variante</span>

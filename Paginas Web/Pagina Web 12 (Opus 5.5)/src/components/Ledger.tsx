@@ -24,7 +24,7 @@ export function Ledger() {
         index="02"
         eyebrow="Bitácora del tour"
         title="El tour, tramo por tramo"
-        description="Carga a bordo, manipulaciones y costo acumulado en cada arco de la solución óptima. Selecciona un tramo para llevar el simulador a esa parada."
+        description="Carga, manipulaciones y costo de cada tramo. Pulsa uno para llevar el simulador ahí."
         aside={
           <div className="flex flex-wrap items-center gap-2 md:justify-end">
             <Chip tone={model.tone} size="sm">

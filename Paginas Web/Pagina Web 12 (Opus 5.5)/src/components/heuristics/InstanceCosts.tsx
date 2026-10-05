@@ -7,7 +7,7 @@
 import { useRef, type ReactNode } from 'react';
 import { motion, useInView } from 'motion/react';
 import { MODELS } from '../../lib/models';
-import { fmt, fmtKm } from '../../lib/format';
+import { fmt, fmtDelta, fmtKm } from '../../lib/format';
 import { spring } from '../../lib/motion';
 import { cn } from '../../lib/cn';
 import { Chip, SpotlightCard } from '../ui';
@@ -18,7 +18,9 @@ interface CostRow {
   key: string;
   tone: MethodTone;
   name: string;
-  note: string;
+  /** Subtítulo visible (solo heurísticas); en los modelos Gurobi va como tooltip. */
+  note?: string;
+  hint?: string;
   distance: number;
   handling: number;
   z: number;
@@ -40,7 +42,7 @@ function buildRows(inst: HeurInstance): { gurobi: CostRow[]; heur: CostRow[] } {
       key: m.id,
       tone: m.tone,
       name: m.tone === 'general' ? 'Modelo General' : m.label,
-      note: MODEL_NOTE[m.id],
+      hint: MODEL_NOTE[m.id],
       distance: g.totalDistance,
       handling: g.handlingCost,
       z: g.objectiveValue,
@@ -97,7 +99,7 @@ export function InstanceCosts({ inst }: { inst: HeurInstance | null }) {
     <SpotlightCard ref={ref} className="flex h-full flex-col p-5 sm:p-6">
       <p className="eyebrow">Esta instancia</p>
       <h3 className="mt-1.5 text-lg font-semibold tracking-tight text-zinc-50">
-        Costo por método · instancia <span className="num">{inst.instanceId}</span>, <span className="num">{inst.numCustomers}</span> clientes
+        Costo por método · inst. <span className="num">{inst.instanceId}</span>, <span className="num">{inst.numCustomers}</span> clientes
       </h3>
       <p className="mt-1 text-[12.5px] text-zinc-500">
         {capacity !== undefined && (
@@ -107,10 +109,10 @@ export function InstanceCosts({ inst }: { inst: HeurInstance | null }) {
         )}
         {h !== undefined && (
           <>
-            h = <span className="num text-zinc-300">{fmt(h, 2)}</span> por unidad movida ·{' '}
+            h = <span className="num text-zinc-300">{fmt(h, 2)}</span> ·{' '}
           </>
         )}
-        Z = distancia + manipulación
+        Z = distancia + manip.
       </p>
 
       <div className="scrollbar-thin mt-4 overflow-x-auto">
@@ -170,8 +172,10 @@ function Row({ row, maxH, best, inView, delay }: { row: CostRow; maxH: number; b
         <span className="flex items-center gap-2">
           <MethodMark tone={row.tone} size={12} />
           <span className="min-w-0">
-            <span className="block font-medium text-zinc-100">{row.name}</span>
-            <span className="block text-[11.5px] text-zinc-500">{row.note}</span>
+            <span className="block font-medium text-zinc-100" title={row.hint}>
+              {row.name}
+            </span>
+            {row.note && <span className="block text-[11.5px] text-zinc-500">{row.note}</span>}
           </span>
         </span>
       </th>
@@ -206,7 +210,7 @@ function Em({ children }: { children: ReactNode }) {
   return <span className="num text-zinc-100">{children}</span>;
 }
 
-/** Dos lecturas directas: Algoritmo 2.1 frente a Gurobi P3 e ILS frente al óptimo de P3. */
+/** Una línea: Algoritmo 2.1 frente a Gurobi P3 (manipulación) e ILS frente al óptimo de P3 (Z). */
 function Readings({ inst }: { inst: HeurInstance }) {
   const p3 = evalFor(inst, 'TSPPD-H_3');
   const p3z = gurobiFor(inst, 'TSPPD-H_3')?.objectiveValue;
@@ -215,55 +219,43 @@ function Readings({ inst }: { inst: HeurInstance }) {
 
   if (p3) {
     items.push(
-      sameCost(p3.handlingDP, p3.gurobiHandling) ? (
-        <>
-          En la ruta de Gurobi P3, el <span className="text-zinc-100">Algoritmo 2.1</span> obtiene la misma manipulación que Gurobi (
-          <Em>{fmt(p3.gurobiHandling)}</Em>).
-        </>
-      ) : (
-        <>
-          En la ruta de Gurobi P3, el <span className="text-zinc-100">Algoritmo 2.1</span> obtiene <Em>{fmt(p3.handlingDP)}</Em> de manipulación
-          frente a <Em>{fmt(p3.gurobiHandling)}</Em> de Gurobi.
-        </>
-      ),
+      <span key="dp">
+        Alg. 2.1:{' '}
+        {sameCost(p3.handlingDP, p3.gurobiHandling) ? (
+          <span className="text-ok">igual a Gurobi P3</span>
+        ) : (
+          <>
+            <Em>{fmt(p3.handlingDP)}</Em> vs <Em>{fmt(p3.gurobiHandling)}</Em> de Gurobi P3
+          </>
+        )}
+      </span>,
     );
   }
   if (ils && p3z !== undefined) {
     const d = ils.objectiveValue - p3z;
     items.push(
-      sameCost(ils.objectiveValue, p3z) ? (
-        <>
-          El <span className="text-zinc-100">ILS</span> llega al mismo costo total que Gurobi P3 (<Em>{fmt(p3z)}</Em>), que es el óptimo de la
-          Política 3.
-        </>
-      ) : (
-        <>
-          El <span className="text-zinc-100">ILS</span> queda a <Em>{fmt(Math.abs(d))}</Em> {d > 0 ? 'sobre' : 'bajo'} el costo total de Gurobi
-          P3 (<Em>{fmt(p3z)}</Em>).
-        </>
-      ),
-    );
-  }
-  const gen = gurobiFor(inst, 'TSPPD-H');
-  const p3g = gurobiFor(inst, 'TSPPD-H_3');
-  if (gen && p3g && gen.handlingCost < p3g.handlingCost && !sameCost(gen.handlingCost, p3g.handlingCost)) {
-    items.push(
-      <>
-        El Modelo General manipula menos (<Em>{fmt(gen.handlingCost)}</Em>) porque puede ordenar la carga sin seguir ninguna política; los dos
-        algoritmos, como la Política 3, solo eligen entre P1 y P2.
-      </>,
+      <span key="ils">
+        ILS:{' '}
+        {sameCost(ils.objectiveValue, p3z) ? (
+          <span className="text-ok">igual al óptimo de P3</span>
+        ) : (
+          <>
+            <Em>{fmtDelta(d)}</Em> vs el óptimo de P3
+          </>
+        )}
+      </span>,
     );
   }
   if (!items.length) return null;
 
   return (
-    <ul className="mt-5 space-y-2 border-t border-zinc-800/70 pt-4">
+    <p className="mt-4 border-t border-zinc-800/70 pt-3 text-[12.5px] text-zinc-400">
       {items.map((node, i) => (
-        <li key={i} className="flex gap-2.5 text-[13px] leading-relaxed text-pretty text-zinc-400">
-          <span aria-hidden className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-zinc-500" />
-          <span className="max-w-[70ch]">{node}</span>
-        </li>
+        <span key={i}>
+          {i > 0 && <span className="text-zinc-600"> · </span>}
+          {node}
+        </span>
       ))}
-    </ul>
+    </p>
   );
 }

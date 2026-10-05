@@ -206,21 +206,30 @@ function trendText(se: Series, view: View): string | null {
 
 /* ───────────────────────── Componente ───────────────────────── */
 
+/** Direcciones del gráfico (y de los hallazgos, que comparten la elección). */
+const DIRECTIONS: { value: MetaDirection; label: string; title: string }[] = [
+  { value: '1dir', label: '1dir', title: 'Una dirección: corrida desde el tour TSP' },
+  { value: '2dir', label: '2dir', title: 'Dos direcciones: la mejor de las corridas desde el tour TSP y desde el tour invertido' },
+];
+
 export function MetaCharts({
   rows,
   paper,
   dir,
+  onDir,
   defaultView = 'time',
 }: {
   rows: InstanceRow[];
   paper: PaperFile | null;
   dir: MetaDirection;
+  /** Cambia la dirección del gráfico y de los hallazgos. */
+  onDir: (d: MetaDirection) => void;
   /** Vista inicial: «Tiempo» (por defecto) o «Desviación». */
   defaultView?: MetaChartView;
 }) {
   const uid = useId();
   const [view, setView] = useState<View>(defaultView);
-  const [showPaper, setShowPaper] = useState(true);
+  const [showPaper, setShowPaper] = useState(false);
   const [wrapRef, width] = useElementWidth<HTMLDivElement>();
   const inView = useInView(wrapRef, { once: true, margin: '-60px' });
   const [hover, setHover] = useState<number | null>(null);
@@ -336,11 +345,21 @@ export function MetaCharts({
         title={view === 'time' ? 'Tiempo promedio por |Vc|' : 'Desviación promedio respecto del Best del paper'}
         note={
           view === 'time'
-            ? 'Segundos de pared por instancia, incluido el tour TSP; escala logarítmica (cada línea, 10 veces más). El paper (código C, Core 2 Quad 2,83 GHz) publica por |Vc| solo los exactos con 1dir: compárense las razones, no los segundos.'
-            : '(Z − Best) / Best · 100, con Best = mejor solución conocida del paper (Tablas 8–9). El paper, con el mismo método y dirección sobre las mismas instancias, va en línea punteada tenue.'
+            ? 'Segundos por instancia, escala logarítmica.'
+            : '(Z − Best) / Best · 100, con Best = mejor solución conocida del paper.'
         }
         actions={
           <>
+            <Segmented<MetaDirection>
+              ariaLabel="Dirección del tour del gráfico y los hallazgos"
+              size="xs"
+              value={dir}
+              onChange={(d) => {
+                onDir(d);
+                setHover(null);
+              }}
+              options={DIRECTIONS.map((d) => ({ value: d.value, label: d.label, ariaLabel: d.title, title: d.title }))}
+            />
             <Segmented
               ariaLabel="Métrica del gráfico"
               size="xs"
@@ -619,7 +638,11 @@ export function MetaCharts({
             <span className="text-[11px] font-medium tracking-wide text-zinc-500 uppercase">Paper</span>
             {view === 'time' ? (
               PAPER_TIME_METHODS.map((m) => (
-                <span key={m} className="inline-flex items-center gap-1.5 text-[12px] text-zinc-400">
+                <span
+                  key={m}
+                  className="inline-flex items-center gap-1.5 text-[12px] text-zinc-400"
+                  title="Otra máquina (C, Core 2 Quad 2,83 GHz): compara razones, no segundos. Los heurísticos no tienen tiempo publicado por |Vc|."
+                >
                   <SeriesKey method={m} paper />
                   {META_INFO[m].label} <span className="text-zinc-500">({paperTimeNote})</span>
                 </span>
@@ -631,10 +654,9 @@ export function MetaCharts({
                     <SeriesKey key={m} method={m} faint />
                   ))}
                 </span>
-                mismo método y color, punteado tenue · mismas instancias (Tablas 8–9)
+                punteado tenue, mismo color
               </span>
             )}
-            {view === 'time' && <span className="text-[12px] text-zinc-500">Los heurísticos no tienen tiempo publicado por |Vc|.</span>}
           </div>
         )}
         {(anyPartial || (paperShown && oursCount === 0)) && (
@@ -644,10 +666,10 @@ export function MetaCharts({
                 <svg aria-hidden width={12} height={12} viewBox="0 0 12 12" className="shrink-0 overflow-visible">
                   <circle cx={6} cy={6} r={4} fill={COLOR.label} opacity={0.5} />
                 </svg>
-                punto atenuado: a ese |Vc| le faltan instancias (promedio provisional)
+                atenuado: |Vc| incompleto
               </span>
             )}
-            {paperShown && oursCount === 0 && <span className="text-[12px] text-zinc-500">Aún no hay resultados nuestros con {dir}: solo se muestra el paper.</span>}
+            {paperShown && oursCount === 0 && <span className="text-[12px] text-zinc-500">Aún sin resultados con {dir}.</span>}
           </div>
         )}
       </div>

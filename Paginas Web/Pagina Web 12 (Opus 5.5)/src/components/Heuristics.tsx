@@ -5,7 +5,7 @@
  * exactos de Gurobi (General, P1, P2, P3). Los datos vienen de Outputs/Erdogan2012/.
  *
  * Todo en tablas simples: resumen (12) · esta instancia (7) + el Algoritmo 2.1 sobre cada
- * ruta (5) · todas las instancias (12) · qué se compara (12).
+ * ruta (5) · todas las instancias (12) · métodos y comandos (plegable).
  */
 import { useMemo, useState, type ReactNode } from 'react';
 import { motion } from 'motion/react';
@@ -37,13 +37,7 @@ export function Heuristics() {
         index="04"
         eyebrow="Heurísticas · Erdoğan et al. (2012)"
         title="¿Cuánto cuestan las heurísticas frente a Gurobi?"
-        description={
-          <>
-            Mismas instancias, dos algoritmos del paper: el <span className="text-zinc-200">Algoritmo 2.1</span>, que calcula la mejor carga para
-            una ruta dada, y el <span className="text-zinc-200">ILS</span> (Algoritmo 4.2), que además busca la ruta. Sus costos se comparan con
-            los de los cuatro modelos exactos resueltos en Gurobi.
-          </>
-        }
+        description="Dos heurísticas del paper frente a los modelos exactos de Gurobi, en las mismas instancias."
         aside={
           <div className="flex flex-wrap items-center gap-2 md:justify-end">
             <Chip tone="dp" size="sm">
@@ -149,11 +143,7 @@ function VerdictStrip({ instances }: { instances: HeurInstance[] }) {
             </>
           }
           unit="instancias"
-          note={
-            s.dpChecks === 0
-              ? 'Sin resultados del Algoritmo 2.1.'
-              : 'Con la ruta de Gurobi P3, el Algoritmo 2.1 obtiene la misma manipulación que el modelo exacto.'
-          }
+          note={s.dpChecks === 0 ? 'Sin resultados.' : 'Misma manipulación sobre la ruta de P3.'}
         />
         <Stat
           icon={<MethodMark tone="ils" size={12} />}
@@ -165,18 +155,14 @@ function VerdictStrip({ instances }: { instances: HeurInstance[] }) {
             </>
           }
           unit="instancias"
-          note={
-            s.ilsCount === 0
-              ? 'Sin resultados del ILS.'
-              : 'El ILS llega al mismo costo total (distancia + manipulación) que el modelo exacto de la Política 3.'
-          }
+          note={s.ilsCount === 0 ? 'Sin resultados.' : 'Mismo costo total que el óptimo de P3.'}
         />
         <Stat
           icon={<Timer className="h-3.5 w-3.5 text-zinc-300" aria-hidden />}
           term="Tiempo del ILS"
           value={s.meanRunSec === null ? '—' : fmt(s.meanRunSec, s.meanRunSec < 1 ? 2 : 1)}
           unit="s por corrida"
-          note={nIters.length ? `En Python, con ${nIters.join(' / ')} iteraciones por dirección.` : 'En Python.'}
+          note={nIters.length ? `Python · ${nIters.join(' / ')} iter. por dirección` : 'Python'}
         />
       </dl>
     </SpotlightCard>
@@ -194,7 +180,7 @@ function Stat({ icon, term, value, unit, note }: { icon: ReactNode; term: string
         <span className="num text-[28px] leading-none font-semibold tracking-tight text-zinc-50">{value}</span>
         {unit && <span className="text-[12px] text-zinc-500">{unit}</span>}
       </dd>
-      <dd className="mt-2.5 text-[12.5px] leading-relaxed text-pretty text-zinc-400">{note}</dd>
+      <dd className="mt-2 text-[12px] text-zinc-500">{note}</dd>
     </div>
   );
 }
@@ -258,8 +244,8 @@ function MissingInstance({ n, id }: { n: number; id: number }) {
       <Terminal className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" aria-hidden />
       <div className="min-w-0 flex-1 text-[13px] leading-relaxed text-zinc-400">
         <p>
-          No hay resultados de las heurísticas para la instancia cargada (<span className="num text-zinc-200">{n}</span> clientes · ID{' '}
-          <span className="num text-zinc-200">{id}</span>). El resumen y la tabla de todas las instancias siguen disponibles; para esta instancia ejecuta:
+          Sin resultados para la instancia cargada (<span className="num text-zinc-200">{n}</span> clientes · ID{' '}
+          <span className="num text-zinc-200">{id}</span>). Genéralos con:
         </p>
         <div className="mt-2 space-y-1.5">
           <CommandLine>{`python notebooks/tsppd_h_alg21_dp.py --customers ${n} --id ${id}`}</CommandLine>

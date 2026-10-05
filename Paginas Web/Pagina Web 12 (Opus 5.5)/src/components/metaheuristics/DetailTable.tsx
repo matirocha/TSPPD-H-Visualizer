@@ -15,7 +15,7 @@ import type { MetaMethod, PaperFile } from '../../types/metaheuristics';
 import { cn } from '../../lib/cn';
 import { fmt, fmtAuto, fmtDelta } from '../../lib/format';
 import { scrollBehavior, springSoft } from '../../lib/motion';
-import { Segmented, SpotlightCard } from '../ui';
+import { Disclosure, Segmented, SpotlightCard } from '../ui';
 import { COLOR, ChartTooltip, LegendItem, TipHeader, TipRow, clamp, niceStep, useElementWidth } from '../analysis/chart';
 import { fmtNum, fmtPctValue, fmtSec } from '../benchmark/format';
 import { CardHead, CopyLatexButton, Pending, STICKY_CELL, STICKY_ROW_HOVER } from '../benchmark/shared';
@@ -749,10 +749,8 @@ function ConvergenceSection({
               'Sin instancias en este tamaño'
             )}
           </h4>
-          <p className="mt-1 text-[12.5px] leading-relaxed text-pretty text-zinc-500">
-            Mejor costo conocido de la corrida tras cada iteración, desde la solución inicial de dos fases{' '}
-            <MetaMark method="twophase" size={10} /> (iteración 0). ILS hace {itersOf('ils')} iteraciones; ITS, {itersOf('its')} externas con
-            un Tabu Search de {itersOf('its')} en cada una: cada panel tiene su propio eje de iteraciones y ambos comparten el eje de Z.
+          <p className="mt-1 text-[12.5px] text-zinc-500">
+            Mejor Z tras cada iteración, desde la solución inicial <MetaMark method="twophase" size={10} />.
           </p>
         </div>
         {row && (
@@ -812,12 +810,12 @@ function ConvergenceSection({
             </LegendItem>
             <span className="inline-flex items-center gap-1.5 text-[12px] text-zinc-400">
               <MetaMark method="ils-exact" size={11} paper />
-              Z final del paper (borde derecho; hueco: heurístico)
+              Z final del paper
             </span>
           </div>
           {model.untraced && (
             <p className="mt-2 text-[12px] text-zinc-500">
-              Alguna corrida no trae la traza por iteración: se dibuja con su solución inicial, su Z final y la iteración en que la encontró.
+              Sin traza por iteración en alguna corrida: se dibuja inicial → final.
             </p>
           )}
 
@@ -934,7 +932,7 @@ export function MetaDetailTable({ rows, paper, sizes }: { rows: InstanceRow[]; p
         }
         note={
           <>
-            Formato de la {tableName} de Erdoğan et al. (2012): Z final de cada método desde el tour TSP (1 dir.) y desde el tour invertido (2 dir.).
+            Z final por método, como la {tableName} del paper.
             {view !== 'paper' && done < total && (
               <>
                 {' '}
@@ -1121,79 +1119,66 @@ export function MetaDetailTable({ rows, paper, sizes }: { rows: InstanceRow[]; p
         </div>
       )}
 
-      <p className="mt-4 max-w-[110ch] text-[12px] leading-relaxed text-pretty text-zinc-500">
-        <span className="text-zinc-400">1 dir.</span>: corrida desde el tour TSP; <span className="text-zinc-400">2 dir.</span>: corrida desde el tour
-        invertido, por sí sola, como en las Tablas 8–9. El resultado «2dir» del resto de la sección (Tablas 2–3) es el mínimo de ambas columnas.{' '}
-        <span className="text-zinc-400">Best</span>: mejor solución conocida del paper. Z con dos decimales;{' '}
+      <p className="mt-4 text-[12px] text-zinc-500">
         {view === 'delta' ? (
           <>
-            <span className="text-zinc-400">Δ</span> = nuestro − paper en la misma columna: <span className="text-ok">negativo</span>, nuestro Z es
-            menor (mejor); <span className="text-handling">positivo</span>, mayor. Nuestro tour TSP (2-opt + Or-opt iterado, no Lin–Kernighan) no
-            siempre coincide con el del paper, así que la diferencia puede venir ya de la solución inicial (columnas de dos fases)
-            {unaligned > 0 ? (
-              <>
-                {' '}
-                o de la orientación: en las filas sin «dir. 1 = paper», nuestra dirección 1 puede corresponder a la «2 dir.» del paper, y entonces
-                los Δ de un método salen grandes y de signo opuesto en sus dos columnas sin que haya diferencia de calidad
-              </>
-            ) : null}
-            .
+            Δ = nuestro − paper: <span className="text-ok">negativo</span> mejor, <span className="text-handling">positivo</span> peor.
           </>
         ) : (
-          <>en negrita, el menor de la fila entre las diez columnas.</>
+          <>En negrita, el menor de la fila.</>
         )}
         {view === 'ours' && anyBeats && (
           <>
             {' '}
-            <BeatsDot />Z menor que el Best del paper.
-          </>
-        )}
-        {anyPaperDir && (
-          <>
-            {' '}
-            <span className="text-zinc-400">dir. 1 = paper</span>: nuestra dirección 1 reproduce la solución inicial «1 dir.» del paper (mismo tour en
-            la misma orientación).
-          </>
-        )}
-        {unaligned > 0 && (
-          <>
-            {' '}
-            <span className="text-zinc-400">Orientación</span>:{' '}
-            {anyPaperDir ? (
-              <>
-                en las otras <span className="num">{unaligned}</span> filas con resultados
-              </>
-            ) : (
-              <>
-                con este |Vc| nuestro tour no reproduce ninguna solución inicial del paper, así que en las <span className="num">{unaligned}</span>{' '}
-                filas con resultados
-              </>
-            )}{' '}
-            la dirección 1 es la orientación por convención: sus columnas «1 dir.» y «2 dir.» pueden corresponder a las opuestas del paper, lo que
-            afecta la comparación columna a columna, no el mínimo de ambas (2dir).
-          </>
-        )}
-        {view !== 'paper' && failed > 0 && (
-          <>
-            {' '}
-            <span className="text-handling">error</span>: la ejecución falló (mensaje en registros.jsonl).
-          </>
-        )}{' '}
-        {view === 'paper' ? (
-          <>
-            Pie: fila «Time (s)» de la Tabla 9, promedio de las 100 instancias (|V<sub>c</sub>| = 20…200) por columna, en un Intel Core 2 Quad 2,83 GHz con
-            código C{hasT2 ? '; la Tabla 2 publica además el tiempo por |Vc| de ILS e ITS exactos en 1 dir.' : ''}. El paper no informa el tiempo de
-            la solución inicial.
-          </>
-        ) : (
-          <>
-            Pie: segundos de pared promedio por columna; ILS e ITS, solución inicial + metaheurística de esa dirección, sin el tour TSP (común a todos
-            los métodos{tspMean !== null ? `: ${fmtSec(tspMean)} s en promedio con este |Vc|` : ''}); <span className="text-zinc-400">†</span> dos
-            fases: tour TSP + reubicación del depósito. No son comparables 1:1 con los del paper (otra máquina); sí sus razones.
+            <BeatsDot />bajo el Best del paper.
           </>
         )}{' '}
         Elige un Id para ver su convergencia.
       </p>
+      <Disclosure summary="Notas de la tabla" className="mt-3">
+        <ul className="list-disc space-y-1 pl-4">
+          <li>
+            <span className="text-zinc-400">1 dir.</span>: corrida desde el tour TSP; <span className="text-zinc-400">2 dir.</span>: desde el tour
+            invertido, por sí sola (como en el paper). El «2dir» del resto de la sección es el mínimo de ambas.
+          </li>
+          <li>
+            <span className="text-zinc-400">Best</span>: mejor solución conocida del paper. Z con dos decimales.
+          </li>
+          {(anyPaperDir || unaligned > 0) && (
+            <li>
+              {anyPaperDir && (
+                <>
+                  <span className="text-zinc-400">dir. 1 = paper</span>: misma solución inicial «1 dir.» que el paper.{' '}
+                </>
+              )}
+              {unaligned > 0 && (
+                <>
+                  En {anyPaperDir ? 'las otras' : 'las'} <span className="num">{unaligned}</span> filas con resultados la orientación es por convención: «1 dir.» y «2 dir.» pueden estar
+                  invertidas respecto del paper (no afecta al mínimo, 2dir).
+                </>
+              )}
+            </li>
+          )}
+          {view === 'delta' && <li>Nuestro tour TSP (2-opt + Or-opt) no siempre es el del paper (Lin–Kernighan): Δ puede venir ya de la solución inicial.</li>}
+          {view !== 'paper' && failed > 0 && (
+            <li>
+              <span className="text-handling">error</span>: la ejecución falló (ver registros.jsonl).
+            </li>
+          )}
+          <li>
+            {view === 'paper' ? (
+              <>
+                Pie: fila «Time (s)» de la Tabla 9 (promedio de 100 instancias, Core 2 Quad 2,83 GHz){hasT2 ? '; Tabla 2: tiempo por |Vc| de ILS e ITS exactos en 1 dir.' : ''}.
+              </>
+            ) : (
+              <>
+                Pie: segundos promedio por columna, sin el tour TSP{tspMean !== null ? ` (${fmtSec(tspMean)} s con este |Vc|)` : ''};{' '}
+                <span className="text-zinc-400">†</span> dos fases: tour TSP + reubicación del depósito.
+              </>
+            )}
+          </li>
+        </ul>
+      </Disclosure>
 
       <ConvergenceSection
         row={selRow}

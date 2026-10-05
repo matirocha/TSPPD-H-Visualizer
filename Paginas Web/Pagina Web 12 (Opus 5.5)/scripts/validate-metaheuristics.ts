@@ -818,7 +818,7 @@ console.log('\n4) Exportación: resumen, detalle por instancia, LaTeX y CSV');
       for (const m of A.META_METHODS) approx(model.overall.cells[m].s.timeSec, overall[m].timeSec, `${label} ${dir} Prom. ${m}: segundos`);
       check(model.commonInstances <= model.totalInstances, `${label} ${dir}: instancias comunes ≤ total`);
     }
-    // Resumen en LaTeX: ambas direcciones lado a lado (por método, «1 dir.» y «2 dir.» con Desv. y Seg.).
+    // Resumen en LaTeX: ambas direcciones lado a lado (por método, «1 dir.» y «2 dir.» con Z y Seg.).
     texOk(E.toLatexSummary(rows, pap, file), 2 + 4 * A.META_METHODS.length, `${label}: LaTeX del resumen`);
     latexTables++;
     // Detalle por instancia: pie de cada columna y LaTeX en las tres vistas.

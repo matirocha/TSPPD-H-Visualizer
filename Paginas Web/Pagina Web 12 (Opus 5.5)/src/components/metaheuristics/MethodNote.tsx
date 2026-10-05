@@ -1,9 +1,9 @@
 /**
- * Cómo se midió (sección «Metaheurísticas»): instancias y h de las Tablas 8–9 (con la evidencia de
- * las soluciones iniciales que coinciden con las del paper), tour TSP, regla de la búsqueda local del
- * ILS, parámetros (de meta.params o, si falta, de los propios registros), sensibilidad del ITS exacto
- * a Nrand con |Vc| grande (its_nrand.json, si existe), equipo frente al del paper, extracción y
- * validación de las cifras del paper, scripts y comandos.
+ * Cómo se midió (sección «Metaheurísticas»), plegado por defecto: instancias y h de las Tablas 8–9
+ * (con cuántas soluciones iniciales coinciden con las del paper), tour TSP, regla de la búsqueda local
+ * del ILS, parámetros (de meta.params o, si falta, de los propios registros), sensibilidad del ITS
+ * exacto a Nrand con |Vc| grande (its_nrand.json, si existe), equipo, validación de las cifras del
+ * paper, scripts, comandos y referencias.
  * Funciona sin consolidado (valores por defecto de benchmark.mjs) y con datos parciales.
  */
 import { useMemo, type ReactNode } from 'react';
@@ -11,12 +11,12 @@ import { ArrowUpRight, Cpu, Database, FileCheck2, FlaskConical, Route, Scale, Se
 import type { ItsNrandFile, ItsNrandRun, MetaFile, MetaMeta, MetaTwoPhaseRecord, PaperFile } from '../../types/metaheuristics';
 import { cn } from '../../lib/cn';
 import { fmt, fmtAuto } from '../../lib/format';
-import { SpotlightCard } from '../ui';
+import { Disclosure, SpotlightCard } from '../ui';
 import { ERDOGAN_REF } from '../heuristics/methods';
 import { CardHead, CommandLine, fmtDateTime } from '../benchmark/shared';
 import { fmtNum, shortCpu } from '../benchmark/format';
 import { gridOf } from './aggregate';
-import { PAPER_H, Z_TOL, paperTimeMismatch } from './export';
+import { PAPER_H, Z_TOL } from './export';
 
 /** Comando del benchmark (desde la raíz del repositorio; se reanuda desde registros.jsonl). */
 export const META_RUN = 'node notebooks/erdogan2012/benchmark.mjs';
@@ -30,7 +30,7 @@ const SCRIPTS: { file: string; role: string }[] = [
   { file: 'its_nrand.mjs', role: 'ITS exacto con varios Nrand y |Vc| grande (its_nrand.json)' },
   { file: 'paper_tables.py', role: 'extrae y valida las cifras de las Tablas 2–3 y 6–9' },
 ];
-/** Id del bloque de sensibilidad a Nrand (lo enlaza el hallazgo del ITS exacto con |Vc| grande). */
+/** Id del bloque de sensibilidad a Nrand (destino de desplazamiento). */
 export const ITS_NRAND_ANCHOR = 'metaheuristicas-its-nrand';
 
 type Params = MetaMeta['params'];
@@ -130,26 +130,6 @@ const H_TITLE: Record<HKind, string> = {
   other: 'Distinto de 20/|Vc|',
 };
 
-/**
- * Evidencia de los decimales de las cifras publicadas (instances.mjs, PAPER_H): con h = 0,125 todas
- * las cifras son múltiplos de 0,125; con h = 0,1, de 0,1; con 0,14, centésimas pares.
- */
-const H_DECIMALS: Readonly<Record<number, string>> = {
-  80: 'múltiplos de 0,125',
-  100: 'múltiplos de 0,1',
-  140: 'centésimas pares',
-  160: 'múltiplos de 0,125',
-  200: 'múltiplos de 0,1',
-};
-
-/** Regla que deja un h sin evidencia propia (ninguna solución inicial coincide y sin decimales distintivos). */
-const H_RULE: Record<HKind, string> = {
-  exact: 'el 20/|Vc| exacto',
-  rounded: '20/|Vc| redondeado a 2 decimales',
-  half: 'la mitad de 20/|Vc|',
-  other: 'la misma calibración',
-};
-
 /** «20», «20 y 40», «20, 40 y 60». */
 const listEs = (xs: (string | number)[]) =>
   xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join(', ')} y ${xs[xs.length - 1]}`;
@@ -176,28 +156,6 @@ function initMatchesOf(file: MetaFile | null, paper: PaperFile | null): Map<numb
     out.set(r.n, c);
   }
   return out;
-}
-
-/**
- * Evidencia del h por tamaño, en texto: con qué |Vc| alguna solución inicial reproduce la del paper
- * y, en los tamaños sin ninguna coincidencia, en qué se apoya el h (decimales de las cifras
- * publicadas o la regla de los demás tamaños). null si aún no hay soluciones de dos fases.
- */
-function hEvidenceOf(rows: HRow[], matches: Map<number, { hit: number; of: number }>): { matched: number[]; unmatched: string | null; unmatchedSizes: number[] } | null {
-  const withData = rows.filter((r) => (matches.get(r.n)?.of ?? 0) > 0);
-  if (!withData.length) return null;
-  const matched = withData.filter((r) => (matches.get(r.n)?.hit ?? 0) > 0).map((r) => r.n);
-  const none = withData.filter((r) => matches.get(r.n)?.hit === 0);
-  if (!none.length) return { matched, unmatched: null, unmatchedSizes: [] };
-  const byDecimals = none.filter((r) => H_DECIMALS[r.n]).map((r) => `${H_DECIMALS[r.n]} en ${r.n}`);
-  const byRule = new Map<HKind, number[]>();
-  for (const r of none) if (!H_DECIMALS[r.n]) byRule.set(r.kind, [...(byRule.get(r.kind) ?? []), r.n]);
-  const decimals = byDecimals.length ? `en los decimales de las cifras publicadas (${listEs(byDecimals)})` : null;
-  const rule = (kind: HKind) => `en la regla de los demás tamaños de su tipo (${H_RULE[kind]})`;
-  // «…(decimales) y, en 120, en la regla …»; sin decimales y con una sola regla, basta la regla (los tamaños ya están en la frase).
-  const rules = [...byRule].map(([kind, ns]) => (decimals || byRule.size > 1 ? `en ${listEs(ns)}, ${rule(kind)}` : rule(kind)));
-  const unmatched = decimals ? [decimals, ...rules].join(' y, ') : rules.join('; ');
-  return { matched, unmatched, unmatchedSizes: none.map((r) => r.n) };
 }
 
 /* ───────────────────────── Sensibilidad del ITS exacto a Nrand ───────────────────────── */
@@ -341,7 +299,7 @@ const fmtZ2 = (z: number | null) => fmtNum(z, 2);
  * solución inicial, el Z final con cada Nrand (resaltada la columna del §4.3, la del benchmark) y el
  * ITS exacto «1 dir.» del paper; en verde, los Z iguales o menores que el del paper.
  */
-function NrandBlock({ model, d, nIterIts }: { model: NrandModel; d: number; nIterIts: number }) {
+function NrandBlock({ model, d }: { model: NrandModel; d: number }) {
   const { rows, nRands, sizes, paperNRand, atPaper, softer } = model;
   const multiN = sizes.length > 1;
   // Columna del §4.3 en la cabecera solo si es la misma para todos los tamaños del experimento.
@@ -355,18 +313,6 @@ function NrandBlock({ model, d, nIterIts }: { model: NrandModel; d: number; nIte
     softer.improved === softer.of &&
     softer.withPaper > 0 &&
     softer.atMostPaper === softer.withPaper;
-  /** «las 9 corridas», «la única corrida», «7 de 9 corridas» (con números en tabulares). */
-  const all = (k: number, of: number, one = '', many = '') => {
-    const noun = (of === 1 ? one : many) ? ` ${of === 1 ? one : many}` : '';
-    if (k === of) return of === 1 ? <>la única{noun}</> : <>las <Num>{of}</Num>{noun}</>;
-    return (
-      <>
-        <Num>{k}</Num> de <Num>{of}</Num>
-        {noun}
-      </>
-    );
-  };
-
   return (
     <Block
       id={ITS_NRAND_ANCHOR}
@@ -377,36 +323,24 @@ function NrandBlock({ model, d, nIterIts }: { model: NrandModel; d: number; nIte
       <div className="grid grid-cols-1 gap-x-8 gap-y-3 xl:grid-cols-[minmax(0,1fr)_auto]">
         <div className="min-w-0 max-w-[75ch]">
           <p>
-            Re-ejecución del ITS exacto con <Vc /> = {listEs(sizes)} (Id {idsText}; dirección 1, misma solución inicial y semilla que el
-            benchmark, <Num>{nIterIts}</Num> iteraciones externas × <Num>{nIterIts}</Num> del TS interno) cambiando solo <NRand />, los
-            movimientos aleatorios de cada perturbación.
+            ITS exacto (dirección 1, misma semilla) con <Vc /> = {listEs(sizes)}, Id {idsText}, variando solo <NRand />.
           </p>
           {(atPaper.of > 0 || softer.of > 0) && (
-            <p className="mt-2.5">
+            <p className="mt-2">
               {atPaper.of > 0 && (
                 <>
-                  Con <NRand /> = {fmtAuto(d, 2)}·<Vc /> = <Num>{listEs([...new Set(paperNRand.values())])}</Num> (§4.3, el del benchmark){' '}
-                  {atPaper.improved === 0 ? (
-                    <>
-                      no mejora ninguna de las <Num>{atPaper.of}</Num> soluciones iniciales
-                    </>
-                  ) : (
-                    <>
-                      mejora <Num>{atPaper.improved}</Num> de <Num>{atPaper.of}</Num> soluciones iniciales
-                    </>
-                  )}
+                  Con el <NRand /> del §4.3 (<Num>{listEs([...new Set(paperNRand.values())])}</Num>) mejora{' '}
+                  <Num>{atPaper.improved}</Num>/<Num>{atPaper.of}</Num> soluciones iniciales
                 </>
               )}
               {atPaper.of > 0 && softer.of > 0 ? '; con ' : softer.of > 0 ? 'Con ' : ''}
               {softer.of > 0 && softer.maxNRand !== null && (
                 <>
-                  <NRand /> ≤ <Num>{softer.maxNRand}</Num>
-                  {softer.maxPct !== null && <> (≤ {fmtAuto(softer.maxPct, 1)} % de <Vc />)</>} mejora en{' '}
-                  {all(softer.improved, softer.of, 'corrida', 'corridas')}
+                  <NRand /> ≤ <Num>{softer.maxNRand}</Num>, <Num>{softer.improved}</Num>/<Num>{softer.of}</Num>
                   {softer.withPaper > 0 && (
                     <>
                       {' '}
-                      y queda igual o bajo el ITS exacto del paper en {all(softer.atMostPaper, softer.withPaper)}
+                      (≤ paper en <Num>{softer.atMostPaper}</Num>/<Num>{softer.withPaper}</Num>)
                     </>
                   )}
                 </>
@@ -414,12 +348,7 @@ function NrandBlock({ model, d, nIterIts }: { model: NrandModel; d: number; nIte
               .
             </p>
           )}
-          {pattern && (
-            <p className="mt-2.5 text-zinc-300">
-              Sugiere que la perturbación efectiva del paper fue más suave que la descrita en el §4.3, un detalle que el paper no documenta. El
-              benchmark mantiene <NRand /> = {fmtAuto(d, 2)}·<Vc />.
-            </p>
-          )}
+          {pattern && <p className="mt-2 text-zinc-300">Sugiere que el paper usó una perturbación más suave que la del §4.3.</p>}
         </div>
 
         <div className="min-w-0">
@@ -514,8 +443,7 @@ function NrandBlock({ model, d, nIterIts }: { model: NrandModel; d: number; nIte
             </table>
           </div>
           <p className="mt-2 text-[12px] text-zinc-500">
-            <span className="text-ok">Verde</span>: igual o menor que el ITS exacto «1 dir.» del paper (que parte de su propia solución inicial).
-            Resaltada: <NRand /> = {fmtAuto(d, 2)}·<Vc />, la del §4.3 y del benchmark.
+            <span className="text-ok">Verde</span>: ≤ ITS exacto del paper. Resaltada: <NRand /> = {fmtAuto(d, 2)}·<Vc /> (§4.3).
           </p>
         </div>
       </div>
@@ -540,10 +468,7 @@ export function MetaMethodNote({
   const { params, source: paramsSource } = useMemo(() => paramsOf(file), [file]);
   const { rows: hRows, source: hSource } = useMemo(() => hRowsOf(file), [file]);
   const initMatches = useMemo(() => initMatchesOf(file, paper), [file, paper]);
-  const hEvidence = useMemo(() => hEvidenceOf(hRows, initMatches), [hRows, initMatches]);
   const nrand = useMemo(() => nrandModelOf(itsNrand, params.d), [itsNrand, params.d]);
-  // ITS exacto 1dir: la fila «Avg.» de la Tabla 2 y la fila «Time (s)» de la Tabla 9 no coinciden.
-  const itsGap = paperTimeMismatch(paper, 'its-exact');
 
   const stats = useMemo(() => {
     const recs = file?.records ?? [];
@@ -558,8 +483,7 @@ export function MetaMethodNote({
   const nMin = sizes[0];
   const nMax = sizes[sizes.length - 1];
   const nIterIts = params.nIterIts || itsItersOf(params.nIter);
-  const halfSizes = hRows.filter((r) => r.kind === 'half').map((r) => r.n);
-  const otherSizes = hRows.filter((r) => r.kind === 'other').map((r) => r.n);
+  const hasMatches = initMatches.size > 0;
   const validation = paper?.validation ?? PAPER_VALIDATION;
   const paperMachine = paper?.machine ? commaDecimals(paper.machine) : PAPER_MACHINE;
   const paperParams = paper?.params ?? null;
@@ -571,386 +495,280 @@ export function MetaMethodNote({
   const halfRows = hRows.filter((r) => r.kind === 'half');
 
   const note = !file
-    ? 'Aún no hay consolidado en Outputs/BenchmarkErdogan2012/: se muestran los valores por defecto de benchmark.mjs.'
-    : `Consolidado generado el ${fmtDateTime(file.generatedAt)}${meta ? '' : ' (reconstruido desde registros.jsonl: sin datos del equipo; parámetros leídos de los registros)'}.`;
+    ? 'Aún sin consolidado: valores por defecto de benchmark.mjs.'
+    : `Consolidado del ${fmtDateTime(file.generatedAt)}${meta ? '' : ' (reconstruido desde registros.jsonl)'}.`;
 
   return (
     <SpotlightCard className="p-5 sm:p-6">
-      <CardHead eyebrow="Cómo se midió" title="Instancias, parámetros y decisiones de la réplica" note={note} />
+      <CardHead eyebrow="Cómo se midió" title="Instancias, parámetros y equipo" note={note} />
 
-      <div className="mt-5 grid grid-cols-1 gap-3 lg:grid-cols-3">
-        {/* 1 · Instancias */}
-        <Block title="Instancias" icon={<Database aria-hidden className={cn(iconCls, 'text-zinc-500')} />}>
-          <p>
-            Las 10 instancias euclidianas de 200 clientes de Gendreau, Laporte y Vigo (1999) —carpeta{' '}
-            <span className="font-mono text-[12px] text-zinc-300">e_vigo/</span>— recortadas a sus primeros <Vc /> clientes:{' '}
-            <Num>{sizes.length}</Num> tamaños (<Num>{nMin}</Num> a <Num>{nMax}</Num>) × <Num>{ids.length}</Num> instancias (Id {ids[0]}–
-            {ids[ids.length - 1]}). La demanda se escala con la Ec. (15) del paper:
-          </p>
-          <p className="mt-2 flex flex-wrap gap-x-3 gap-y-0.5 rounded-lg border border-zinc-800 bg-zinc-950/60 px-2.5 py-1.5 font-mono text-[11.5px] leading-relaxed text-zinc-300">
-            <span>p′ᵢ = max{'{'}1, pᵢ mod 20{'}'}</span>
-            <span>βᵢ = ⌊p′ᵢ·(i mod 5)/5⌋</span>
-            <span>αᵢ = p′ᵢ − βᵢ</span>
-            <span>Q = max{'{'}Σαᵢ, Σβᵢ{'}'}</span>
-          </p>
-          <p className="mt-2.5">
-            <span className="font-mono text-[12px] text-zinc-300">verify.mjs</span> comprueba que así se reproducen exactamente (matriz, α, β y Q)
-            los <Num>49</Num> archivos <span className="font-mono text-[12px] text-zinc-300">Instancias/2_N_Id.tsp</span> que ya existían (
-            <Vc /> ≤ 100).
-          </p>
-        </Block>
+      <Disclosure summary="Ver metodología, comandos y referencias" className="mt-4">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+          {/* 1 · Instancias */}
+          <Block title="Instancias" icon={<Database aria-hidden className={cn(iconCls, 'text-zinc-500')} />}>
+            <p>
+              Gendreau, Laporte y Vigo (1999), <span className="font-mono text-[12px] text-zinc-300">e_vigo/</span>, recortadas a sus primeros{' '}
+              <Vc /> clientes: <Num>{sizes.length}</Num> tamaños (<Num>{nMin}</Num>–<Num>{nMax}</Num>) × <Num>{ids.length}</Num> instancias.
+              Demanda según la Ec. (15):
+            </p>
+            <p className="mt-2 flex flex-wrap gap-x-3 gap-y-0.5 rounded-lg border border-zinc-800 bg-zinc-950/60 px-2.5 py-1.5 font-mono text-[11.5px] leading-relaxed text-zinc-300">
+              <span>p′ᵢ = max{'{'}1, pᵢ mod 20{'}'}</span>
+              <span>βᵢ = ⌊p′ᵢ·(i mod 5)/5⌋</span>
+              <span>αᵢ = p′ᵢ − βᵢ</span>
+              <span>Q = max{'{'}Σαᵢ, Σβᵢ{'}'}</span>
+            </p>
+          </Block>
 
-        {/* 2 · h */}
-        <Block title="Costo de manipulación h" icon={<Scale aria-hidden className={cn(iconCls, 'text-zinc-500')} />} className="lg:col-span-2">
-          <p className="max-w-[80ch]">
-            El texto del §5 fija h<sub>a</sub> = h<sub>b</sub> = h con h·<Vc /> = 20, para que ruteo y manipulación pesen parecido. Pero sus
-            números solo se reproducen con 20/<Vc /> redondeado a 2 decimales cuando no es exacto
-            {roundedRows.length > 0 && <> ({roundedRows.map((r) => fmtAuto(r.h, 3)).join(' · ')})</>}
-            {halfRows.length > 0 && (
-              <>
-                {' '}
-                y, en <Vc /> = {listEs(halfRows.map((r) => r.n))}, con la mitad ({listEs(halfRows.map((r) => fmtAuto(r.h, 3)))})
-              </>
-            )}
-            . Se usan esos h:
-          </p>
-          <div className="scrollbar-thin -mx-1 mt-3 overflow-x-auto px-1">
-            <table className="w-full border-collapse text-[12px] whitespace-nowrap">
-              <caption className="sr-only">h usado por tamaño frente al 20/|Vc| que dice el texto del paper</caption>
-              <thead>
-                <tr className="border-b border-zinc-800">
-                  <th scope="row" className="py-1.5 pr-3 text-left font-normal text-zinc-500">
-                    <Vc />
-                  </th>
-                  {hRows.map((r) => (
-                    <th key={r.n} scope="col" className="num px-1.5 py-1.5 text-right font-medium text-zinc-300">
-                      {r.n}
+          {/* 2 · h */}
+          <Block title="Costo de manipulación h" icon={<Scale aria-hidden className={cn(iconCls, 'text-zinc-500')} />} className="lg:col-span-2">
+            <p className="max-w-[80ch]">
+              El §5 dice h = 20/<Vc />, pero las cifras del paper solo se reproducen con ese valor redondeado a 2 decimales
+              {roundedRows.length > 0 && <> ({roundedRows.map((r) => fmtAuto(r.h, 3)).join(' · ')})</>}
+              {halfRows.length > 0 && (
+                <>
+                  {' '}
+                  y con la mitad en <Vc /> = {listEs(halfRows.map((r) => r.n))}
+                </>
+              )}
+              .
+            </p>
+            <div className="scrollbar-thin -mx-1 mt-3 overflow-x-auto px-1">
+              <table className="w-full border-collapse text-[12px] whitespace-nowrap">
+                <caption className="sr-only">h usado por tamaño frente al 20/|Vc| que dice el texto del paper</caption>
+                <thead>
+                  <tr className="border-b border-zinc-800">
+                    <th scope="row" className="py-1.5 pr-3 text-left font-normal text-zinc-500">
+                      <Vc />
                     </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-dashed border-zinc-800/80">
-                  <th scope="row" className="py-1.5 pr-3 text-left font-normal text-zinc-200">
-                    h usado
-                  </th>
-                  {hRows.map((r) => (
-                    <td key={r.n} className="num px-1.5 py-1.5 text-right" title={H_TITLE[r.kind]}>
-                      <span
-                        className={cn(
-                          'rounded-md px-1 py-0.5',
-                          r.kind === 'half' || r.kind === 'other' ? 'bg-zinc-800 font-medium text-zinc-50 ring-1 ring-zinc-600/60' : 'text-zinc-200',
-                        )}
-                      >
-                        {fmtAuto(r.h, 3)}
-                      </span>
-                    </td>
-                  ))}
-                </tr>
-                <tr className={cn(hEvidence && 'border-b border-dashed border-zinc-800/80')}>
-                  <th scope="row" className="py-1.5 pr-3 text-left font-normal text-zinc-500">
-                    20/<Vc /> (texto)
-                  </th>
-                  {hRows.map((r) => (
-                    <td key={r.n} className="num px-1.5 py-1.5 text-right text-zinc-500">
-                      {fmtAuto(r.text, 3)}
-                    </td>
-                  ))}
-                </tr>
-                {hEvidence && (
-                  <tr>
-                    <th
-                      scope="row"
-                      title="Instancias en que alguna de nuestras soluciones iniciales (dos fases, cualquier dirección) es igual a una «Initial solution» del paper, de las terminadas"
-                      className="py-1.5 pr-3 text-left font-normal text-zinc-500"
-                    >
-                      Iniciales = paper
-                    </th>
-                    {hRows.map((r) => {
-                      const c = initMatches.get(r.n);
-                      return (
-                        <td
-                          key={r.n}
-                          className="num px-1.5 py-1.5 text-right"
-                          title={c ? `|Vc| = ${r.n}: ${c.hit} de ${c.of} instancias con una solución inicial igual a la del paper` : `|Vc| = ${r.n}: aún sin soluciones de dos fases`}
-                        >
-                          {c ? (
-                            <>
-                              <span className={c.hit > 0 ? 'text-zinc-200' : 'text-zinc-500'}>{c.hit}</span>
-                              <span className="text-zinc-500">/{c.of}</span>
-                            </>
-                          ) : (
-                            <span className="text-zinc-500">—</span>
-                          )}
-                        </td>
-                      );
-                    })}
+                    {hRows.map((r) => (
+                      <th key={r.n} scope="col" className="num px-1.5 py-1.5 text-right font-medium text-zinc-300">
+                        {r.n}
+                      </th>
+                    ))}
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          <p className="mt-2.5 max-w-[80ch]">
-            {hEvidence ? (
-              <>
-                {hEvidence.matched.length > 0 && (
-                  <>
-                    Con <Vc /> = {listEs(hEvidence.matched)} el h elegido reproduce exactamente al menos una solución inicial del paper (columna
-                    «Initial solution») y ningún otro candidato lo hace.{' '}
-                  </>
-                )}
-                {hEvidence.unmatched && (
-                  <>
-                    Con <Vc /> = {listEs(hEvidence.unmatchedSizes)} ninguna de nuestras soluciones iniciales coincide con las del paper (nuestro
-                    tour no es el de Concorde), así que el h se apoya {hEvidence.unmatched}.
-                  </>
-                )}
-              </>
-            ) : (
-              <>
-                Se determinó comparando nuestras soluciones iniciales con la columna «Initial solution» del paper y con los decimales de sus
-                cifras; la comprobación aparece aquí cuando haya soluciones de dos fases.
-              </>
-            )}
-          </p>
-          <p className="mt-2 text-[12px] text-zinc-500">
-            {halfSizes.length > 0 && (
-              <>
-                Resaltado: la mitad de 20/<Vc /> (<Vc /> = {listEs(halfSizes)}).{' '}
-              </>
-            )}
-            {otherSizes.length > 0 && (
-              <>
-                Distinto de ambas lecturas: <Vc /> = {listEs(otherSizes)}.{' '}
-              </>
-            )}
-            Fuente: {H_SOURCE[hSource]}.
-          </p>
-        </Block>
-
-        {/* 4 · Tour TSP */}
-        <Block title="Tour TSP" icon={<Route aria-hidden className={cn(iconCls, 'text-dp')} />}>
-          <dl className="text-[12.5px]">
-            <Row term="Paper">Lin–Kernighan (Concorde)</Row>
-            <Row term="Aquí">
-              <span className="break-words">{params.tsp.method}</span>
-            </Row>
-            <Row term="Búsqueda">
-              <Num>{fmt(params.tsp.restarts, 0)}</Num> reinicios × <Num>{fmt(params.tsp.kicks, 0)}</Num> double-bridge
-            </Row>
-          </dl>
-          <p className="mt-2.5">
-            No siempre llega al mismo tour que Concorde, así que la solución inicial —y todo lo que parte de ella— puede diferir de la del paper. El
-            tour se calcula una vez por instancia y lo comparten los cinco métodos. Si alguna de nuestras soluciones iniciales coincide con una del
-            paper, la dirección 1 se orienta como su «1 dir.» (orientación «paper»).
-          </p>
-          {stats.twoPhaseDone > 0 && (
-            <p className="mt-2 text-[12.5px] text-zinc-500">
-              Orientación «paper» en <Num>{stats.paperOriented}</Num> de <Num>{stats.twoPhaseDone}</Num> instancias terminadas.
-            </p>
-          )}
-        </Block>
-
-        {/* 3 · Búsqueda local del ILS */}
-        <Block title="Búsqueda local del ILS" icon={<Search aria-hidden className={cn(iconCls, 'text-ils')} />}>
-          <p>
-            El pseudo-código del Algoritmo 4.2 no define «improvement». Aquí la búsqueda local acepta un movimiento solo si mejora{' '}
-            <span className="font-mono text-[12px] text-zinc-200">costCurrent</span>, la mejor solución conocida.
-            {descent && <span className="text-zinc-200"> Este consolidado, en cambio, se generó con descenso completo.</span>}
-          </p>
-          <p className="mt-2.5">
-            Es la lectura que reproduce el paper: su ILS exacto no mejora la solución inicial en ninguna instancia con <Vc /> ≥ 60, y su tiempo
-            equivale a unos 1–2 barridos del vecindario por iteración.
-          </p>
-          <p className="mt-2.5">
-            Con descenso completo (aceptar toda mejora del tour actual hasta un óptimo local) el ILS es mucho más fuerte —supera el Best del paper
-            con <Vc /> ≤ 60— pero unas <span className="text-zinc-200">25–50 veces más lento</span>.
-            {stats.descentRuns > 0 && (
-              <>
-                {' '}
-                Esa variante tiene <Num>{stats.descentRuns}</Num> ejecuciones registradas (ilsd-*), fuera de las tablas.
-              </>
-            )}
-          </p>
-        </Block>
-
-        {/* 5 · Parámetros */}
-        <Block title="Parámetros (§4–5)" icon={<SlidersHorizontal aria-hidden className={cn(iconCls, 'text-zinc-500')} />}>
-          <dl className="text-[12.5px]">
-            <Row term={<>N<sub>iter</sub></>}>
-              <Num>{fmt(params.nIter, 0)}</Num> por dirección
-            </Row>
-            <Row term={<>N<sub>rand</sub></>}>
-              <Num>{fmtAuto(params.d, 2)}</Num>·<Vc /> ={' '}
-              <Num>
-                {nRandOf(nMin, params.d)}–{nRandOf(nMax, params.d)}
-              </Num>
-            </Row>
-            <Row
-              term={
-                <span className="inline-flex items-center gap-1.5">
-                  <Dot className="bg-its" />
-                  N*<sub>iter</sub> ITS
-                </span>
-              }
-            >
-              ⌊√{params.nIter}⌋ = <Num>{nIterIts}</Num>
-            </Row>
-            <Row term="Lista tabú">
-              <Num>{fmtAuto(params.tabuRatio, 2)}</Num>·<Vc /> ={' '}
-              <Num>
-                {tabuLengthOf(nMin, params.tabuRatio)}–{tabuLengthOf(nMax, params.tabuRatio)}
-              </Num>
-            </Row>
-            <Row term="Semilla">
-              <Num>{params.seed}</Num>
-            </Row>
-          </dl>
-          <p className="mt-2.5">
-            ITS: <Num>{nIterIts}</Num> iteraciones externas (perturbación + TS), cada TS interno con <Num>{nIterIts}</Num> iteraciones.{' '}
-            {sameParams ? 'Iguales a los del paper.' :<span className="text-zinc-200">Distintos de los del paper (200 · 0,1 · 0,5).</span>}
-          </p>
-          <p className="mt-2.5">
-            <span className="text-zinc-200">Evaluación heurística:</span> el mejor movimiento según la estimación lineal (§2.2) se re-evalúa con la
-            DP exacta antes de aplicarlo. Esa heurística se desvía en promedio un <Num>8,5–9,8 %</Num> del óptimo (el paper reporta{' '}
-            <Num>8,66 %</Num>).
-          </p>
-          {paramsSource !== 'meta' && (
+                </thead>
+                <tbody>
+                  <tr className="border-b border-dashed border-zinc-800/80">
+                    <th scope="row" className="py-1.5 pr-3 text-left font-normal text-zinc-200">
+                      h usado
+                    </th>
+                    {hRows.map((r) => (
+                      <td key={r.n} className="num px-1.5 py-1.5 text-right" title={H_TITLE[r.kind]}>
+                        <span
+                          className={cn(
+                            'rounded-md px-1 py-0.5',
+                            r.kind === 'half' || r.kind === 'other' ? 'bg-zinc-800 font-medium text-zinc-50 ring-1 ring-zinc-600/60' : 'text-zinc-200',
+                          )}
+                        >
+                          {fmtAuto(r.h, 3)}
+                        </span>
+                      </td>
+                    ))}
+                  </tr>
+                  <tr className={cn(hasMatches && 'border-b border-dashed border-zinc-800/80')}>
+                    <th scope="row" className="py-1.5 pr-3 text-left font-normal text-zinc-500">
+                      20/<Vc /> (texto)
+                    </th>
+                    {hRows.map((r) => (
+                      <td key={r.n} className="num px-1.5 py-1.5 text-right text-zinc-500">
+                        {fmtAuto(r.text, 3)}
+                      </td>
+                    ))}
+                  </tr>
+                  {hasMatches && (
+                    <tr>
+                      <th
+                        scope="row"
+                        title="Instancias en que alguna de nuestras soluciones iniciales (dos fases, cualquier dirección) es igual a una «Initial solution» del paper, de las terminadas"
+                        className="py-1.5 pr-3 text-left font-normal text-zinc-500"
+                      >
+                        Iniciales = paper
+                      </th>
+                      {hRows.map((r) => {
+                        const c = initMatches.get(r.n);
+                        return (
+                          <td
+                            key={r.n}
+                            className="num px-1.5 py-1.5 text-right"
+                            title={c ? `|Vc| = ${r.n}: ${c.hit} de ${c.of} instancias con una solución inicial igual a la del paper` : `|Vc| = ${r.n}: aún sin soluciones de dos fases`}
+                          >
+                            {c ? (
+                              <>
+                                <span className={c.hit > 0 ? 'text-zinc-200' : 'text-zinc-500'}>{c.hit}</span>
+                                <span className="text-zinc-500">/{c.of}</span>
+                              </>
+                            ) : (
+                              <span className="text-zinc-500">—</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
             <p className="mt-2 text-[12px] text-zinc-500">
-              {paramsSource === 'records' ? 'Leídos de la configuración de los registros.' : 'Valores por defecto de benchmark.mjs.'}
+              {hasMatches && 'Iniciales = paper: instancias cuya solución inicial reproduce la del paper. '}Fuente: {H_SOURCE[hSource]}.
             </p>
-          )}
-        </Block>
+          </Block>
 
-        {/* 5b · ITS con |Vc| grande: sensibilidad a Nrand (its_nrand.json) */}
-        {nrand && <NrandBlock model={nrand} d={params.d} nIterIts={nIterIts} />}
+          {/* 3 · Tour TSP */}
+          <Block title="Tour TSP" icon={<Route aria-hidden className={cn(iconCls, 'text-dp')} />}>
+            <dl className="text-[12.5px]">
+              <Row term="Paper">Lin–Kernighan (Concorde)</Row>
+              <Row term="Aquí">
+                <span className="break-words">{params.tsp.method}</span>
+              </Row>
+              <Row term="Búsqueda">
+                <Num>{fmt(params.tsp.restarts, 0)}</Num> reinicios × <Num>{fmt(params.tsp.kicks, 0)}</Num> double-bridge
+              </Row>
+            </dl>
+            <p className="mt-2.5">
+              Uno por instancia, compartido por los cinco métodos; no siempre coincide con el de Concorde.
+              {stats.twoPhaseDone > 0 && (
+                <>
+                  {' '}
+                  Misma orientación que el paper en <Num>{stats.paperOriented}</Num>/<Num>{stats.twoPhaseDone}</Num>.
+                </>
+              )}
+            </p>
+          </Block>
 
-        {/* 6 · Equipo y tiempos */}
-        <Block title="Equipo y tiempos" icon={<Cpu aria-hidden className={cn(iconCls, 'text-zinc-500')} />} className="lg:col-span-2">
-          <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-            <div className="min-w-0">
-              <p className="text-[11px] font-medium tracking-wide text-zinc-500 uppercase">Este benchmark</p>
-              <dl className="mt-1 text-[12.5px]">
-                <Row term="Procesador">
+          {/* 4 · Búsqueda local del ILS */}
+          <Block title="Búsqueda local del ILS" icon={<Search aria-hidden className={cn(iconCls, 'text-ils')} />}>
+            <p>
+              Acepta un movimiento solo si mejora <span className="font-mono text-[12px] text-zinc-200">costCurrent</span>: la lectura que reproduce
+              el paper.
+              {descent && <span className="text-zinc-200"> Este consolidado usó descenso completo.</span>}
+            </p>
+            <p className="mt-2">
+              El descenso completo es más fuerte pero <span className="text-zinc-200">25–50× más lento</span>
+              {stats.descentRuns > 0 && (
+                <>
+                  {' '}
+                  (<Num>{stats.descentRuns}</Num> ejecuciones ilsd-*, fuera de las tablas)
+                </>
+              )}
+              .
+            </p>
+          </Block>
+
+          {/* 5 · Parámetros */}
+          <Block title="Parámetros (§4–5)" icon={<SlidersHorizontal aria-hidden className={cn(iconCls, 'text-zinc-500')} />}>
+            <dl className="text-[12.5px]">
+              <Row term={<>N<sub>iter</sub></>}>
+                <Num>{fmt(params.nIter, 0)}</Num> por dirección
+              </Row>
+              <Row term={<>N<sub>rand</sub></>}>
+                <Num>{fmtAuto(params.d, 2)}</Num>·<Vc /> ={' '}
+                <Num>
+                  {nRandOf(nMin, params.d)}–{nRandOf(nMax, params.d)}
+                </Num>
+              </Row>
+              <Row
+                term={
+                  <span className="inline-flex items-center gap-1.5">
+                    <Dot className="bg-its" />
+                    N*<sub>iter</sub> ITS
+                  </span>
+                }
+              >
+                ⌊√{params.nIter}⌋ = <Num>{nIterIts}</Num>
+              </Row>
+              <Row term="Lista tabú">
+                <Num>{fmtAuto(params.tabuRatio, 2)}</Num>·<Vc /> ={' '}
+                <Num>
+                  {tabuLengthOf(nMin, params.tabuRatio)}–{tabuLengthOf(nMax, params.tabuRatio)}
+                </Num>
+              </Row>
+              <Row term="Semilla">
+                <Num>{params.seed}</Num>
+              </Row>
+            </dl>
+            <p className="mt-2.5">
+              {sameParams ? 'Iguales a los del paper.' : <span className="text-zinc-200">Distintos de los del paper (200 · 0,1 · 0,5).</span>} La
+              variante heurística re-evalúa con la DP el mejor movimiento lineal (§2.2).
+              {paramsSource !== 'meta' && (
+                <span className="text-zinc-500">
+                  {' '}
+                  {paramsSource === 'records' ? 'Leídos de los registros.' : 'Valores por defecto.'}
+                </span>
+              )}
+            </p>
+          </Block>
+
+          {/* 5b · ITS con |Vc| grande: sensibilidad a Nrand (its_nrand.json) */}
+          {nrand && <NrandBlock model={nrand} d={params.d} />}
+
+          {/* 6 · Equipo */}
+          <Block title="Equipo" icon={<Cpu aria-hidden className={cn(iconCls, 'text-zinc-500')} />} className="lg:col-span-2">
+            <dl className="grid grid-cols-1 gap-x-6 text-[12.5px] sm:grid-cols-2">
+              <div className="min-w-0">
+                <Row term="Este benchmark">
                   {meta?.cpu ? (
                     <span title={meta.cpu}>
                       {shortCpu(meta.cpu)}
-                      {meta.logicalCpus ? <span className="text-zinc-500"> · {meta.logicalCpus} hilos lógicos</span> : null}
+                      {meta.logicalCpus ? <span className="text-zinc-500"> · {meta.logicalCpus} hilos</span> : null}
                     </span>
                   ) : (
                     '—'
                   )}
                 </Row>
-                <Row term="Entorno">{meta?.runtime ?? 'Node.js'}</Row>
-                <Row term="En paralelo">
-                  {meta?.workers ? (
-                    <>
-                      <Num>{meta.workers}</Num> ejecuciones, un hilo cada una
-                    </>
-                  ) : (
-                    '—'
-                  )}
+                <Row term="Entorno">
+                  {meta?.runtime ?? 'Node.js'}
+                  {meta?.workers ? <span className="text-zinc-500"> · {meta.workers} en paralelo</span> : null}
                 </Row>
-              </dl>
-            </div>
-            <div className="min-w-0">
-              <p className="text-[11px] font-medium tracking-wide text-zinc-500 uppercase">Erdoğan et al. · corridas de 2011</p>
-              <dl className="mt-1 text-[12.5px]">
-                <Row term="Equipo">
+              </div>
+              <div className="min-w-0">
+                <Row term="Paper">
                   <span className="break-words">{paperMachine}</span>
                 </Row>
-                <Row
-                  term={
-                    <>
-                      Por <Vc />
-                    </>
-                  }
-                >
-                  ILS e ITS exactos, 1 dir. (Tabla 2)
-                </Row>
-                <Row term="Promedio">cada columna (fila «Time (s)», Tabla 9)</Row>
-              </dl>
-            </div>
-          </div>
-          <p className="mt-3 max-w-[90ch]">
-            Nuestros tiempos son segundos de pared: <span className="text-zinc-200">1dir</span> = tour TSP + solución inicial + metaheurística de
-            la dirección 1; <span className="text-zinc-200">2dir</span> = tour TSP + ambas direcciones;{' '}
-            <span className="text-zinc-200">dos fases</span> = tour TSP + reubicación del depósito. Con varias ejecuciones a la vez son comparables
-            entre sí, aunque algo mayores que en una máquina dedicada. El tiempo del paper por <Vc /> en 2dir se estima como el doble del de 1dir
-            (la Tabla 2 solo publica 1dir); el promedio general usa las dos columnas de la fila «Time (s)» de la Tabla 9, y solo con las
-            100 instancias del paper terminadas (no se compara con el promedio de un subconjunto).
-            {itsGap && (
-              <>
-                {' '}
-                En ITS exacto 1dir el paper no es consistente: la fila «Avg.» de la Tabla 2 da <Num>{fmtNum(itsGap.table2, 2)} s</Num> y la Tabla 9,{' '}
-                <Num>{fmtNum(itsGap.table9, 2)} s</Num>, para las mismas instancias; por eso el promedio general de esa columna no es la media de sus
-                filas por <Vc />.
-              </>
-            )}
-          </p>
-          <p className="mt-2.5 max-w-[90ch] text-zinc-300">
-            Los tiempos no son comparables 1:1 entre máquinas (otro procesador, otro lenguaje); sí lo son las razones: exacto frente a heurístico,
-            ILS frente a ITS.
-          </p>
-        </Block>
+                <Row term="Sus tiempos">Tabla 2 (por |Vc|) y Tabla 9</Row>
+              </div>
+            </dl>
+            <p className="mt-2.5">Segundos de pared con el tour TSP; el tiempo del paper en 2dir por |Vc| se estima como el doble del de 1dir.</p>
+          </Block>
 
-        {/* 7 · Cifras del paper */}
-        <Block title="Cifras del paper" icon={<FileCheck2 aria-hidden className={cn(iconCls, 'text-zinc-500')} />}>
-          <p>
-            Extraídas del PDF con PyMuPDF (<span className="font-mono text-[12px] text-zinc-300">paper_tables.py</span>, sin OCR) y validadas
-            antes de usarlas:
-          </p>
-          <dl className="mt-1.5 text-[12.5px]">
-            <Row term="Best e iniciales">
-              {validation.tables67Match ? '= Tablas 6–7' : <span className="text-amber-300">no coinciden con las Tablas 6–7</span>}
-            </Row>
-            <Row term="Desviaciones">
-              <Num>{validation.deviationChecks}</Num> recalculadas = Tablas 2–3
-            </Row>
-            <Row term="Máx. |Δ|">
-              <Num>{fmtAuto(validation.maxAbsDiffPct, 4)}</Num> pp
-            </Row>
-          </dl>
-          <p className="mt-2.5">
-            En las Tablas 8–9, «2 dir.» es solo la corrida desde el tour invertido; X-2dir = min(1 dir., 2 dir.), que es como se reproducen las
-            Tablas 2–3. Desviación = (Z − Best)/Best · 100, con Best la mejor solución conocida del paper.
-          </p>
-        </Block>
-      </div>
-
-      <div className="mt-5 grid grid-cols-1 gap-5 border-t border-zinc-800/70 pt-4 lg:grid-cols-2">
-        <div className="min-w-0">
-          <p className="text-[12px] text-zinc-500">
-            Para continuar o repetir el benchmark (se reanuda desde Outputs/BenchmarkErdogan2012/registros.jsonl y omite lo ya registrado con la
-            misma configuración):
-          </p>
-          <div className="mt-2 space-y-1.5">
-            <CommandLine>{META_RUN}</CommandLine>
-            <CommandLine>{CONSOLIDATE}</CommandLine>
-          </div>
-          <p className="mt-2 text-[12px] text-zinc-500">
-            La segunda línea solo regenera benchmark_metaheuristicas.json; <span className="font-mono text-zinc-400">npm run bundle</span> lo copia
-            al paquete estático de la página.
-          </p>
+          {/* 7 · Cifras del paper */}
+          <Block title="Cifras del paper" icon={<FileCheck2 aria-hidden className={cn(iconCls, 'text-zinc-500')} />}>
+            <dl className="text-[12.5px]">
+              <Row term="Best e iniciales">
+                {validation.tables67Match ? '= Tablas 6–7' : <span className="text-amber-300">no coinciden con las Tablas 6–7</span>}
+              </Row>
+              <Row term="Desviaciones">
+                <Num>{validation.deviationChecks}</Num> = Tablas 2–3
+              </Row>
+              <Row term="Máx. |Δ|">
+                <Num>{fmtAuto(validation.maxAbsDiffPct, 4)}</Num> pp
+              </Row>
+            </dl>
+            <p className="mt-2 text-[12px] text-zinc-500">Extraídas del PDF con paper_tables.py.</p>
+          </Block>
         </div>
-        <div className="min-w-0 space-y-4">
-          <ul className="space-y-1 text-[12.5px] leading-relaxed">
-            {SCRIPTS.map((s) => (
-              <li key={s.file} className="flex flex-wrap items-baseline gap-x-2">
-                <span className="font-mono text-[11.5px] text-zinc-300">
-                  <span className="text-zinc-500">{SCRIPT_DIR}</span>
+
+        <div className="mt-4 grid grid-cols-1 gap-5 border-t border-zinc-800/70 pt-4 lg:grid-cols-2">
+          <div className="min-w-0">
+            <p className="text-[12px] text-zinc-500">Continuar o repetir (se reanuda desde registros.jsonl) y regenerar el consolidado:</p>
+            <div className="mt-2 space-y-1.5">
+              <CommandLine>{META_RUN}</CommandLine>
+              <CommandLine>{CONSOLIDATE}</CommandLine>
+            </div>
+            <p className="mt-2 flex flex-wrap gap-x-2 gap-y-0.5 font-mono text-[11.5px] text-zinc-400">
+              <span className="text-zinc-500">{SCRIPT_DIR}</span>
+              {SCRIPTS.map((s) => (
+                <span key={s.file} title={s.role}>
                   {s.file}
                 </span>
-                <span className="text-zinc-500">{s.role}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="space-y-3 text-[13px] leading-relaxed text-pretty text-zinc-300">
+              ))}
+            </p>
+          </div>
+          <div className="min-w-0 space-y-3 text-[13px] leading-relaxed text-pretty text-zinc-300">
             <div>
               <p>
                 {ERDOGAN_REF.authors}. <cite className="text-zinc-100 italic">{ERDOGAN_REF.title}</cite>.{' '}
                 <span className="text-zinc-400">
-                  {ERDOGAN_REF.journal}, <span className="italic">{ERDOGAN_REF.volume}</span>, {ERDOGAN_REF.pages}. Tablas 2–3 y 6–9.
+                  {ERDOGAN_REF.journal}, <span className="italic">{ERDOGAN_REF.volume}</span>, {ERDOGAN_REF.pages}.
                 </span>
               </p>
               <a
@@ -976,7 +794,7 @@ export function MetaMethodNote({
             </p>
           </div>
         </div>
-      </div>
+      </Disclosure>
     </SpotlightCard>
   );
 }

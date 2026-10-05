@@ -85,7 +85,7 @@ export function NodesTable() {
           <h3 className="mt-2 text-base font-semibold tracking-tight text-zinc-50">
             Depósito + {solution.numCustomers || data.rows.length - 1} clientes
           </h3>
-          <p className="mt-1 text-[12.5px] text-zinc-400">Clic en una fila para saltar a esa parada.</p>
+          <p className="mt-1 text-[12.5px] text-zinc-400">Clic en una fila para ir a la parada.</p>
         </div>
         <Segmented<SortKey>
           size="xs"
@@ -124,7 +124,7 @@ export function NodesTable() {
               <th scope="col" className="border-b border-zinc-800 px-2 py-2 font-medium">
                 Política
               </th>
-              <th scope="col" className="border-b border-zinc-800 py-2 pl-2 text-right font-medium" title="Manipulaciones LIFO en la parada">
+              <th scope="col" className="border-b border-zinc-800 py-2 pl-2 text-right font-medium" title="Unidades evacuadas y recargadas en la parada (costo h c/u)">
                 Manip.
               </th>
             </tr>
@@ -233,10 +233,6 @@ export function NodesTable() {
         </table>
       </div>
 
-      <p className="mt-auto pt-4 text-[11.5px] leading-relaxed text-zinc-400">
-        Manip. = unidades evacuadas y recargadas en la parada (costo h c/u).
-        {isP3 && ' Política = decisión s_i del modelo híbrido.'}
-      </p>
     </SpotlightCard>
   );
 }

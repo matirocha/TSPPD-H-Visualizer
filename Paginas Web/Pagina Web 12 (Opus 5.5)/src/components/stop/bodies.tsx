@@ -53,16 +53,16 @@ export function InitialBody({ solution, choreo }: { solution: SolutionData; chor
     <motion.div variants={staggerParent} initial="hidden" animate="show" className="space-y-4">
       <motion.div variants={staggerChild}>
         <p className="eyebrow">Carga inicial</p>
-        <p className="mt-1.5 max-w-[65ch] text-[13px] leading-relaxed text-pretty text-zinc-400">
-          El camión sale con <span className="num font-semibold text-alpha">Σα = {sumA}</span> unidades de entrega (
-          <span className="num text-zinc-200">
-            {sumA}/{Q}
-          </span>
-          ).{' '}
-          {general
-            ? 'El modelo general decide la posición de cada unidad; aquí se ve la asignación que eligió el solver.'
-            : 'Se cargan en orden inverso de entrega: la mercancía del primer cliente queda junto a la compuerta.'}{' '}
-          En la ruta se recogerán <span className="num font-semibold text-beta">Σβ = {sumB}</span>.
+        <p
+          className="num mt-1.5 text-[13px] text-zinc-400"
+          title={
+            general
+              ? 'Posiciones elegidas por el solver'
+              : 'Carga en orden inverso de entrega: el primer cliente queda junto a la compuerta'
+          }
+        >
+          Sale con <span className="font-semibold text-alpha">Σα = {sumA}</span> ({sumA}/{Q}) · recogerá{' '}
+          <span className="font-semibold text-beta">Σβ = {sumB}</span>
         </p>
       </motion.div>
 
@@ -244,10 +244,9 @@ export function PolicyCallout({ stop, variant = 'full' }: { stop: StopPlan; vari
             transition={springSoft}
             className="overflow-hidden"
           >
-            <p className="max-w-[65ch] pt-1 text-[12.5px] leading-snug text-pretty text-zinc-300">{info.rule}</p>
-            {variant === 'full' && (
-              <p className="max-w-[65ch] pt-0.5 pb-0.5 text-[12px] leading-snug text-pretty text-zinc-500">{info.consequence}</p>
-            )}
+            <p className="max-w-[65ch] pt-1 text-[12.5px] leading-snug text-pretty text-zinc-300" title={variant === 'full' ? info.consequence : undefined}>
+              {info.rule}
+            </p>
           </motion.div>
         )}
       </AnimatePresence>

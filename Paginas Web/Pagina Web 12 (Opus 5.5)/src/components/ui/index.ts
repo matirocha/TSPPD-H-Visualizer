@@ -8,3 +8,4 @@ export { Dialog } from './Dialog';
 export { Switch } from './Switch';
 export { Kbd } from './Kbd';
 export { SectionHeader } from './SectionHeader';
+export { Disclosure } from './Disclosure';

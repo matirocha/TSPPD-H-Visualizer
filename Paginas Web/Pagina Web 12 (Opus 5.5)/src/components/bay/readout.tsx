@@ -70,7 +70,7 @@ export function placeText(place: UnitPlace, u: Unit, bay: BayView, stop: StopPla
       return `Slot #${place.index + 1} · ${b ? `${b} ${plural(b, 'unidad', 'unidades')} entre ella y la compuerta` : 'acceso directo a la compuerta'}`;
     }
     case 'dock':
-      return 'En el andén temporal: evacuada, espera su reingreso';
+      return 'En el andén: espera su reingreso';
     case 'handed':
       return u.type === 'A' && stop && !stop.isDepot ? `Entregada en ${stop.label}` : 'Descargada en el depósito';
     case 'awaiting':
@@ -148,23 +148,21 @@ export function Narrative({ mode, phase, stop, step, subStep, solution, choreo, 
   } else if (mode === 'transit' && stop) {
     eyebrow = 'En tránsito';
     title = `${nodeName(solution, stop.from)} → ${stop.label}`;
-    const onboard = `a bordo ${counts.A} α y ${counts.B} β (${counts.A + counts.B}/${Q})`;
+    const onboard = `a bordo ${counts.A} α · ${counts.B} β (${counts.A + counts.B}/${Q})`;
     const next = stop.isDepot
-      ? `al llegar se descargan las ${counts.B} β recolectadas.`
-      : `al llegar: entregar ${step?.deliverA ?? 0} α y recoger ${step?.pickupB ?? 0} β` +
-        (step && step.handlingCount > 0 ? `, con ${step.handlingCount} manipulaciones LIFO.` : ', sin manipulaciones.');
-    detail = `${step ? `${fmtKm(step.distance)} · ` : ''}${onboard}; ${next}`;
+      ? `al llegar: descarga ${counts.B} β`
+      : `al llegar: −${step?.deliverA ?? 0} α · +${step?.pickupB ?? 0} β` +
+        (step && step.handlingCount > 0 ? ` · ${step.handlingCount} manip.` : ' · sin manip.');
+    detail = `${step ? `${fmtKm(step.distance)} · ` : ''}${onboard} · ${next}`;
   } else if (mode === 'initial') {
     eyebrow = 'Depósito';
     title = 'Carga inicial';
-    detail =
-      `El camión sale con ${counts.A} α (${counts.A}/${Q} slots). La compuerta trasera (slot 1) es el único acceso: ` +
-      'lo último en entrar es lo primero en salir. Toca o pasa el cursor sobre un pallet para ver su destino.';
+    detail = `Sale con ${counts.A} α (${counts.A}/${Q}) · solo se accede por la compuerta (LIFO).`;
   } else {
     tone = 'success';
     eyebrow = 'Depósito';
     title = phase?.title ?? 'Tour completado';
-    detail = phase?.detail ?? 'El camión volvió al depósito con todas las demandas satisfechas.';
+    detail = phase?.detail ?? 'Todas las demandas satisfechas.';
   }
 
   return (

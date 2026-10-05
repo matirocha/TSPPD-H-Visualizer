@@ -184,7 +184,7 @@ export function ZoomDock({ zoom, follow, onZoomIn, onZoomOut, onReset, onToggleF
       data-map-ui
       className="absolute bottom-3 right-3 z-10 flex items-center gap-0.5 rounded-xl border border-zinc-800 bg-zinc-950/85 p-0.5 shadow-lg shadow-black/40 backdrop-blur-md"
     >
-      <Tooltip side="top" align="end" content="La cámara se centra en el camión mientras avanza (acerca a 200 % si el mapa está completo).">
+      <Tooltip side="top" align="end" content="Centra la cámara en el camión">
         <Button
           variant={follow ? 'primary' : 'ghost'}
           size="sm"

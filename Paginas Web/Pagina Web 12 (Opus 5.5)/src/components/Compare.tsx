@@ -20,7 +20,7 @@ export function Compare() {
         index="03"
         eyebrow="Comparativa de políticas"
         title="¿Cuánto cuesta cada política?"
-        description="Mismo conjunto de clientes, cuatro formas de organizar la carga. La diferencia entre modelos es exactamente el costo de manipulación y los desvíos que cada política obliga a tomar."
+        description="Mismos clientes, cuatro formas de ordenar la carga."
         aside={
           meta ? (
             <p className="text-[13px] text-zinc-400 md:text-right">

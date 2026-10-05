@@ -983,10 +983,10 @@ function StopZone({ mode, stop, stepIndex, solution, choreo, bay, counts, tokenS
         {empty && (!ghosts || ghostA + ghostB === 0) && (
           <span className="text-[11.5px] leading-none text-zinc-500">
             {mode === 'initial'
-              ? 'Punto de partida y de retorno del tour'
+              ? 'Origen y retorno del tour'
               : mode === 'transit'
-                ? 'Sin movimientos de carga previstos'
-                : 'Sin entregas ni recogidas en esta fase'}
+                ? 'Sin movimientos previstos'
+                : 'Sin movimientos en esta fase'}
           </span>
         )}
       </div>

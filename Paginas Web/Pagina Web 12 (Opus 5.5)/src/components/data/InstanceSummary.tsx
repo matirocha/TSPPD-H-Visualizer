@@ -64,12 +64,12 @@ export function InstanceSummary() {
         <section className="min-w-0 lg:col-span-5" aria-label="Parámetros de la instancia">
           <p className="eyebrow">Parámetros</p>
           <dl className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-zinc-800 bg-zinc-800 sm:grid-cols-3">
-            <Param label="Capacidad" sym="Q" value={Q} sub="unidades por camión" />
+            <Param label="Capacidad" sym="Q" value={Q} />
             <Param
               label="Costo por operación"
               sym="h"
               value={fmtAuto(solution.h, 3)}
-              sub={showHaHb ? `h_a = ${fmtAuto(solution.h_a!, 3)} · h_b = ${fmtAuto(solution.h_b!, 3)}` : 'por unidad manipulada'}
+              sub={showHaHb ? `h_a = ${fmtAuto(solution.h_a!, 3)} · h_b = ${fmtAuto(solution.h_b!, 3)}` : undefined}
             />
             <Param label="Tramos" value={solution.steps.length} sub={`${solution.numCustomers} clientes + retorno`} />
             <Param
@@ -80,7 +80,6 @@ export function InstanceSummary() {
                 </span>
               }
               value={facts.sumAlpha}
-              sub="salen del depósito"
             />
             <Param
               label="Recogidas"
@@ -90,7 +89,6 @@ export function InstanceSummary() {
                 </span>
               }
               value={facts.sumBeta}
-              sub="vuelven al depósito"
             />
             <Param
               label="Carga pico"

@@ -76,7 +76,7 @@ export function Panorama() {
       <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
         <div className="min-w-0">
           <p className="eyebrow">Panorama</p>
-          <h3 className="mt-1.5 text-lg font-semibold tracking-tight text-balance text-zinc-50">Brecha frente al mejor modelo, por instancia</h3>
+          <h3 className="mt-1.5 text-lg font-semibold tracking-tight text-balance text-zinc-50">Brecha frente al mejor, por instancia</h3>
         </div>
         {counts.length > 1 && (
           <Segmented<number>
@@ -89,14 +89,29 @@ export function Panorama() {
         )}
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-y border-zinc-800/70 py-2.5" aria-label="Leyenda">
-        {MODELS.map((m) => (
-          <span key={m.id} className="inline-flex items-center gap-1.5 text-[12px] text-zinc-400">
-            <ModelMark tone={m.tone} />
-            {m.label}
-          </span>
+      {/* Leyenda con resumen por modelo: mejor en k/n instancias (los empates cuentan) · brecha media */}
+      <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1.5 border-y border-zinc-800/70 py-2.5" aria-label="Leyenda y resumen por modelo">
+        {summaries.map((s) => (
+          <motion.li
+            key={s.model.id}
+            initial={false}
+            animate={{ opacity: s.total ? 1 : 0.5 }}
+            transition={springSoft}
+            className="flex min-w-0 items-center gap-1.5 text-[12px] text-zinc-400"
+            title="Mejor en k/n instancias (los empates cuentan para cada modelo) · brecha media"
+          >
+            <ModelMark tone={s.model.tone} size={11} />
+            <span className="truncate text-zinc-300">{s.model.tone === 'general' ? s.model.label : s.model.short}</span>
+            <span className="ml-auto shrink-0">
+              mejor{' '}
+              <span className="num text-zinc-100">
+                {s.bestCount}/{s.total}
+              </span>
+            </span>
+            <span className="num shrink-0 text-zinc-500">· {s.meanGap === null ? '—' : `+${fmtPct(s.meanGap, 1)}`}</span>
+          </motion.li>
         ))}
-      </div>
+      </ul>
 
       <div ref={wrapRef} className="relative mt-3 w-full" style={{ height: rows.length ? height : undefined }} onPointerLeave={() => setHoverIdx(null)}>
           {rows.length === 0 && <p className="py-6 text-sm text-zinc-500">No hay instancias con {n} clientes en el catálogo.</p>}
@@ -141,7 +156,7 @@ export function Panorama() {
                   </g>
                 ))}
                 <text x={ML} y={TOP + rows.length * ROW_H + 30} fill={COLOR.label} fontSize={10.5}>
-                  Brecha vs. el mejor Z* de la instancia →
+                  Brecha vs. el mejor →
                 </text>
               </g>
 
@@ -225,33 +240,6 @@ export function Panorama() {
           </ChartTooltip>
       </div>
 
-      {/* Resumen por modelo */}
-      <ul className="mt-5 grid grid-cols-2 gap-2">
-        {summaries.map((s) => (
-          <motion.li
-            key={s.model.id}
-            initial={false}
-            animate={{ opacity: s.total ? 1 : 0.5 }}
-            transition={springSoft}
-            className="rounded-xl border border-zinc-800/80 bg-zinc-950/30 px-3 py-2.5"
-          >
-            <p className="flex items-center gap-1.5 text-[12px] text-zinc-300">
-              <ModelMark tone={s.model.tone} size={11} />
-              <span className="truncate font-medium">{s.model.label}</span>
-            </p>
-            <p className="mt-1 text-[12px] text-zinc-400">
-              Mejor en{' '}
-              <span className="num text-zinc-100">
-                {s.bestCount}/{s.total}
-              </span>
-            </p>
-            <p className="text-[12px] text-zinc-400">
-              brecha media <span className="num text-zinc-100">{s.meanGap === null ? '—' : fmtPct(s.meanGap, 1)}</span>
-            </p>
-          </motion.li>
-        ))}
-      </ul>
-      <p className="mt-2.5 text-[11.5px] text-zinc-500">Los empates cuentan como «mejor» para cada modelo empatado.</p>
 
       <table className="sr-only">
         <caption>{`Z* por modelo en las instancias de ${n} clientes`}</caption>
