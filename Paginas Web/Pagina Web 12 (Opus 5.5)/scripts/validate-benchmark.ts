@@ -305,9 +305,15 @@ const find = (h: number, n: number, id: number) => inst.find((i) => A.sameH(i.h,
     check(!second?.includes('\\caption') && !second?.includes('\\label') && !!second?.includes('\\tablename~\\ref{tab:tiempos-comparativa-h0-1} (continuación)'), 'comparativa completa: la segunda es continuación');
     check(!first.includes('{Total}') && !!second?.includes('\\multicolumn{2}{l}{Total}'), 'comparativa completa: Total solo al final');
     check([first, second ?? ''].every((t) => t.includes('$|V_c|$ & Id & ')), 'comparativa completa: encabezado en cada tabla');
+    check(tex.split('\\documentclass{article}').length === 2 && tex.split('\\TablaTSPPDfin\n').length === 2 && tex.endsWith('\\end{table}\n\n\\TablaTSPPDfin\n'), 'comparativa completa: un documento propio para las dos tablas');
   }
   // Se pega en cualquier preámbulo: reservas sin booktabs/graphicx y reducción al ancho de línea.
   for (const [tex, tag] of [[sum, 'resumen'], [det, 'detalle'], [cmp, 'comparativa']] as const) {
+    // También en un proyecto vacío de Overleaf: arma su documento solo si aún no hay \documentclass y lo cierra al final.
+    check(tex.startsWith('% Tabla generada por la Página Web 12') && tex.endsWith('\n\\TablaTSPPDfin\n'), `${tag}: encabezado y cierre del documento propio`);
+    const pre = tex.slice(0, tex.indexOf('\\begin{table}'));
+    check(pre.includes('\\ifx\\documentclass\\@twoclasseserror') && pre.indexOf('\\documentclass{article}') > pre.indexOf('\\else') && pre.includes('\\begin{document}\n\\fi'), `${tag}: \\documentclass solo si aún no hay documento`);
+    eq(tex.split('\\documentclass{article}').length, 2, `${tag}: un solo encabezado`);
     check(tex.includes('\\providecommand{\\toprule}{\\hline}') && tex.includes('\\def\\cmidrule(#1)#2{\\cline{#2}}') && tex.includes('\\providecommand{\\resizebox}[3]{#3}'), `${tag}: reservas sin booktabs/graphicx`);
     check(tex.includes('\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%'), `${tag}: se reduce al ancho de línea`);
   }

@@ -16,7 +16,7 @@
 import type { MetaDirection, MetaFile, MetaMethod, MetaMeta, PaperFile } from '../../types/metaheuristics';
 import { fmtAuto, fmtDelta } from '../../lib/format.ts';
 import { fmtNum, fmtSec } from '../benchmark/format.ts';
-import { texTable, texText } from '../../lib/latex.ts';
+import { texSnippet, texTable, texText } from '../../lib/latex.ts';
 import {
   META_METHODS,
   devPct,
@@ -331,24 +331,25 @@ export function toLatexSummary(rows: InstanceRow[], paper: PaperFile | null, dir
       ? ` Prom.: solo las ${model.commonInstances} de ${model.totalInstances} instancias que todos los métodos ya terminaron, para comparar las columnas sobre el mismo conjunto.`
       : '');
 
-  return texTable({
-    section: 'Metaheurísticas',
-    setup: ['\\small'],
-    caption,
-    label: `tab:metaheuristicas-resumen-${dir}`,
-    spec: `rr${' rr'.repeat(META_METHODS.length)}`,
-    rows: [
-      '\\toprule',
-      row(['', '', ...META_METHODS.map((m) => `\\multicolumn{2}{c}{${META_INFO[m].label}}`)]),
-      cmidrules(META_METHODS.length, 3),
-      row(['$|V_c|$', '$h$', ...META_METHODS.flatMap(() => ['Desv.\\,(\\%)', 'Seg.'])]),
-      '\\midrule',
-      ...(body.length ? body : [`\\multicolumn{${nCols}}{c}{Sin datos} \\\\`]),
-      '\\midrule',
-      prom,
-      '\\bottomrule',
-    ],
-  });
+  return texSnippet('Metaheurísticas', [
+    texTable({
+      setup: ['\\small'],
+      caption,
+      label: `tab:metaheuristicas-resumen-${dir}`,
+      spec: `rr${' rr'.repeat(META_METHODS.length)}`,
+      rows: [
+        '\\toprule',
+        row(['', '', ...META_METHODS.map((m) => `\\multicolumn{2}{c}{${META_INFO[m].label}}`)]),
+        cmidrules(META_METHODS.length, 3),
+        row(['$|V_c|$', '$h$', ...META_METHODS.flatMap(() => ['Desv.\\,(\\%)', 'Seg.'])]),
+        '\\midrule',
+        ...(body.length ? body : [`\\multicolumn{${nCols}}{c}{Sin datos} \\\\`]),
+        '\\midrule',
+        prom,
+        '\\bottomrule',
+      ],
+    }),
+  ]);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -547,23 +548,24 @@ export function toLatexMetaDetail(
           marks;
 
   const nCols = 2 + DETAIL_COLS.length;
-  return texTable({
-    section: 'Metaheurísticas',
-    setup: ['\\small'],
-    caption,
-    label: `tab:metaheuristicas-detalle-n${n}${view === 'ours' ? '' : `-${view}`}`,
-    spec: `rr${' rr'.repeat(META_METHODS.length)}`,
-    rows: [
-      '\\toprule',
-      row(['', '', ...META_METHODS.map((m) => `\\multicolumn{2}{c}{${META_INFO[m].label}}`)]),
-      cmidrules(META_METHODS.length, 3),
-      row(['Id', 'Best', ...DETAIL_COLS.map((c) => `${c.dir}~dir.`)]),
-      '\\midrule',
-      ...(body.length ? body : [`\\multicolumn{${nCols}}{c}{Sin instancias} \\\\`]),
-      ...(foot.length ? ['\\midrule', ...foot] : []),
-      '\\bottomrule',
-    ],
-  });
+  return texSnippet('Metaheurísticas', [
+    texTable({
+      setup: ['\\small'],
+      caption,
+      label: `tab:metaheuristicas-detalle-n${n}${view === 'ours' ? '' : `-${view}`}`,
+      spec: `rr${' rr'.repeat(META_METHODS.length)}`,
+      rows: [
+        '\\toprule',
+        row(['', '', ...META_METHODS.map((m) => `\\multicolumn{2}{c}{${META_INFO[m].label}}`)]),
+        cmidrules(META_METHODS.length, 3),
+        row(['Id', 'Best', ...DETAIL_COLS.map((c) => `${c.dir}~dir.`)]),
+        '\\midrule',
+        ...(body.length ? body : [`\\multicolumn{${nCols}}{c}{Sin instancias} \\\\`]),
+        ...(foot.length ? ['\\midrule', ...foot] : []),
+        '\\bottomrule',
+      ],
+    }),
+  ]);
 }
 
 // ---------------------------------------------------------------------------------------------

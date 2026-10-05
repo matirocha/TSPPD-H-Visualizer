@@ -23,7 +23,7 @@ import {
   type MethodStats,
 } from './aggregate.ts';
 import { fmtNum, fmtPctValue, fmtSec, fmtZ } from './format.ts';
-import { texTable } from '../../lib/latex.ts';
+import { texSnippet, texTable } from '../../lib/latex.ts';
 
 // ---------------------------------------------------------------------------------------------
 // Utilidades LaTeX (todo el texto es fijo; solo los números pasan por texNum)
@@ -179,24 +179,25 @@ export function toLatexSummary(
       ? ` Prom.: solo las ${promInst} de ${rowsInst} instancias que todos los métodos ya terminaron, para comparar las columnas sobre el mismo conjunto.`
       : '');
 
-  return texTable({
-    section: 'Tiempos',
-    setup: ['\\small', '\\setlength{\\tabcolsep}{4pt}'],
-    caption,
-    label: `tab:tiempos-resumen-h${labelOf(opts.h)}`,
-    spec: `r${' rr'.repeat(METHOD_ORDER.length)}`,
-    rows: [
-      '\\toprule',
-      row(['', ...METHOD_ORDER.map((m) => `\\multicolumn{2}{c}{${LATEX_METHOD[m]}}`)]),
-      cmidrules(METHOD_ORDER.map(() => 2)),
-      row(['$|V_c|$', ...METHOD_ORDER.flatMap((m) => (isGurobiMethod(m) ? ['Ópt.', 'Seg.'] : ['Desv.\\,(\\%)', 'Seg.']))]),
-      '\\midrule',
-      ...(body.length ? body : [`\\multicolumn{${nCols}}{c}{Sin datos} \\\\`]),
-      '\\midrule',
-      total,
-      '\\bottomrule',
-    ],
-  });
+  return texSnippet('Tiempos', [
+    texTable({
+      setup: ['\\small', '\\setlength{\\tabcolsep}{4pt}'],
+      caption,
+      label: `tab:tiempos-resumen-h${labelOf(opts.h)}`,
+      spec: `r${' rr'.repeat(METHOD_ORDER.length)}`,
+      rows: [
+        '\\toprule',
+        row(['', ...METHOD_ORDER.map((m) => `\\multicolumn{2}{c}{${LATEX_METHOD[m]}}`)]),
+        cmidrules(METHOD_ORDER.map(() => 2)),
+        row(['$|V_c|$', ...METHOD_ORDER.flatMap((m) => (isGurobiMethod(m) ? ['Ópt.', 'Seg.'] : ['Desv.\\,(\\%)', 'Seg.']))]),
+        '\\midrule',
+        ...(body.length ? body : [`\\multicolumn{${nCols}}{c}{Sin datos} \\\\`]),
+        '\\midrule',
+        total,
+        '\\bottomrule',
+      ],
+    }),
+  ]);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -293,10 +294,10 @@ export function toLatexComparison(
     '\\midrule',
   ];
 
-  return parts
-    .map((part, i) =>
+  return texSnippet(
+    'Tiempos',
+    parts.map((part, i) =>
       texTable({
-        section: 'Tiempos',
         setup: ['\\footnotesize', '\\setlength{\\tabcolsep}{3pt}'],
         caption,
         label: `tab:tiempos-comparativa-h${labelOf(opts.h)}`,
@@ -309,8 +310,8 @@ export function toLatexComparison(
           '\\bottomrule',
         ],
       }),
-    )
-    .join('\n');
+    ),
+  );
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -430,26 +431,27 @@ export function toLatexDetail(
     (partial ? ` ${DAGGER}~Datos parciales: faltan ejecuciones de ese método.` : '') +
     (skippedAny ? skippedNote(opts.n) : '');
 
-  return texTable({
-    section: 'Tiempos',
-    setup: ['\\small'],
-    caption,
-    label: `tab:tiempos-n${opts.n}-h${labelOf(opts.h)}`,
-    spec: `r${METHOD_ORDER.map((m) => ' ' + 'r'.repeat(DETAIL_HEAD[m].length)).join('')}`,
-    rows: [
-      '\\toprule',
-      row(['', ...METHOD_ORDER.map((m) => `\\multicolumn{${DETAIL_HEAD[m].length}}{c}{${LATEX_METHOD[m]}}`)]),
-      cmidrules(widths),
-      row(['Id', ...METHOD_ORDER.flatMap((m) => DETAIL_HEAD[m])]),
-      '\\midrule',
-      ...(body.length ? body : [`\\multicolumn{${nCols}}{c}{Sin instancias} \\\\`]),
-      '\\midrule',
-      row(['\\# resueltas', ...solved]),
-      row(['Seg. prom.', ...avgSec]),
-      row(['Desv. prom.', ...avgDev]),
-      '\\bottomrule',
-    ],
-  });
+  return texSnippet('Tiempos', [
+    texTable({
+      setup: ['\\small'],
+      caption,
+      label: `tab:tiempos-n${opts.n}-h${labelOf(opts.h)}`,
+      spec: `r${METHOD_ORDER.map((m) => ' ' + 'r'.repeat(DETAIL_HEAD[m].length)).join('')}`,
+      rows: [
+        '\\toprule',
+        row(['', ...METHOD_ORDER.map((m) => `\\multicolumn{${DETAIL_HEAD[m].length}}{c}{${LATEX_METHOD[m]}}`)]),
+        cmidrules(widths),
+        row(['Id', ...METHOD_ORDER.flatMap((m) => DETAIL_HEAD[m])]),
+        '\\midrule',
+        ...(body.length ? body : [`\\multicolumn{${nCols}}{c}{Sin instancias} \\\\`]),
+        '\\midrule',
+        row(['\\# resueltas', ...solved]),
+        row(['Seg. prom.', ...avgSec]),
+        row(['Desv. prom.', ...avgDev]),
+        '\\bottomrule',
+      ],
+    }),
+  ]);
 }
 
 // ---------------------------------------------------------------------------------------------
