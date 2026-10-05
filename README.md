@@ -171,6 +171,23 @@ Ambos aceptan `--customers N [N …]`, `--id K`, `--all-ids`, `--h VALOR` y `--n
 
 Los resultados se guardan en `Outputs/Erdogan2012/` (`DP_<n>_Clientes_ID<id>_H_01.json` e `ILS_<n>_Clientes_ID<id>_H_01.json`). Es una subcarpeta porque los visualizadores solo leen los archivos del nivel superior de `Outputs/`, así que sus catálogos no cambian. La **Página Web 12** los muestra en su pestaña **Heurísticas**.
 
+**Benchmark de tiempos de cómputo.** [`notebooks/tsppd_h_benchmark.py`](notebooks/tsppd_h_benchmark.py) compara el tiempo y la calidad de los cuatro modelos Gurobi (General, Políticas 1, 2 y 3; Runtime con límite de 1 800 s y 1 hilo por modelo) con la heurística de dos fases (tour TSP → reubicación del depósito → manipulación óptima con el Algoritmo 2.1 + DP, que por sí solo solo calcula la manipulación de una ruta fija) y con el ILS-2dir (10 corridas), sobre las instancias de Battarra et al. (2010) con 5, 10, 15, 20 y 25 clientes, Id 1 a 10 y h = 0,1 · 0,5 · 1: 900 ejecuciones, que tardan varias horas. El Modelo General solo se ejecuta hasta N = 10 (`--general-max-n`, 0 = sin tope): con N mayor queda registrado como no ejecutado por su alto costo computacional. Cada ejecución se agrega a `Outputs/Benchmark/registros.jsonl` (desde donde se reanuda) y al consolidado `Outputs/Benchmark/benchmark_tiempos.json`. La **Página Web 12** los muestra en su sección **Tiempos**, con tablas al estilo de Battarra et al. (2010, Tablas 2–4) y Erdoğan et al. (2012, Tabla 2) que se copian en LaTeX.
+
+```bash
+python notebooks/tsppd_h_benchmark.py                            # grilla completa (se reanuda si se interrumpe)
+python notebooks/tsppd_h_benchmark.py --customers 5 10 --h 0.1   # subconjunto
+python notebooks/tsppd_h_benchmark.py --consolidate              # solo regenera benchmark_tiempos.json
+```
+
+**Benchmark de metaheurísticas a gran escala (Erdoğan et al. 2012, Tablas 8–9).** [`notebooks/erdogan2012/`](notebooks/erdogan2012) replica el experimento de las Tablas 8–9: dos fases (solución inicial), ILS (Algoritmo 4.2) e ITS (Algoritmo 4.3), cada uno con evaluación heurística lineal (§2.2) o exacta (Algoritmo 2.1 + DP) del vecindario, en 1 y 2 direcciones, sobre las 10 instancias de 200 clientes de Gendreau et al. (1999) recortadas a |Vc| = 20, 40, …, 200 (1 000 ejecuciones, ~1 h 40 min con 6 procesos). Está en Node.js porque con |Vc| = 200 cada barrido del vecindario evalúa ~60 000 movimientos con una DP O(n²). Usa el h que reproduce las cifras publicadas (el texto dice h·|Vc| = 20, pero en 60, 80, 100, 120, 140 y 180 los números solo calzan con 0,33 · 0,125 · 0,1 · 0,17 · 0,14 · 0,11) y la búsqueda local del ILS acepta un movimiento solo si mejora la mejor solución conocida (la lectura que reproduce el paper). Las cifras del paper se extraen y validan desde el PDF con `paper_tables.py`. Resultados en `Outputs/BenchmarkErdogan2012/`; la **Página Web 12** los muestra en su sección **Metaheurísticas**.
+
+```bash
+node notebooks/erdogan2012/verify.mjs          # pruebas del motor (DP vs fuerza bruta, vs Python y vs Gurobi, heurística, movimientos)
+python notebooks/erdogan2012/paper_tables.py   # cifras de las Tablas 2, 3 y 6–9 → Outputs/BenchmarkErdogan2012/paper_erdogan2012.json
+node notebooks/erdogan2012/benchmark.mjs       # grilla completa (se reanuda si se interrumpe; --workers, --sizes, --methods, --consolidate)
+node notebooks/erdogan2012/its_nrand.mjs       # sensibilidad del ITS exacto a Nrand con |Vc| = 200
+```
+
 ---
 
 ## 💻 Visualizador Oficial: Página Web 10
@@ -224,10 +241,12 @@ Construida con **React 19.3**, **TypeScript 5.7**, **Vite 6.4**, **Tailwind CSS 
   - Bitácora: perfil de carga, construcción de Z* y tabla del tour.
   - Comparativa de las cuatro variantes.
   - Heurísticas: tablas que comparan el costo (manipulación, distancia y Z) de los cuatro modelos Gurobi con el del Algoritmo 2.1 y el del ILS (Algoritmo 4.2) de Erdoğan et al. (2012), para la instancia cargada y para las 20 instancias.
+  - Tiempos de cómputo: tablas al estilo de los papers (valor objetivo y segundos de cada Id para cada N, con promedios por N) y un gráfico del tiempo de los modelos Gurobi frente al Algoritmo 2.1 + DP y al ILS, a partir del benchmark de `notebooks/tsppd_h_benchmark.py`.
+  - Metaheurísticas: réplica de las Tablas 8–9 de Erdoğan et al. (2012) con |Vc| = 20–200 (dos fases, ILS e ITS heurístico/exacto, 1dir/2dir): resumen por |Vc| con desviación vs Best y segundos junto a las cifras del paper, gráficos de tiempo y desviación, detalle por instancia (nuestro / paper / Δ) con convergencia, hallazgos y la nota metodológica, a partir de `notebooks/erdogan2012/benchmark.mjs`.
   - Modelo matemático: Ecs. (1)–(48) en KaTeX.
   - Datos: matriz $c_{ij}$ y tabla de nodos.
 - **Navegación:** paleta de comandos (`Ctrl K`), atajos de teclado (`?`) y URL compartible con el formato `#/<modelo>/<clientes>/<instancia>` (por ejemplo `#/p3/10/7`).
-- **Datos:** lee `Outputs/` en vivo por `/api/solutions` y `Outputs/Erdogan2012/` por `/api/heuristics` (Vite o Express). Sin backend (con `vite preview` o en un hosting estático como Vercel, donde hoy solo está desplegada la Página 10), usa las 80 soluciones empaquetadas en `public/solutions/` y los resultados de las heurísticas en `public/solutions/heuristics.json`.
+- **Datos:** lee `Outputs/` en vivo por `/api/solutions`, `Outputs/Erdogan2012/` por `/api/heuristics` y `Outputs/Benchmark/` por `/api/benchmark` (Vite o Express). Sin backend (con `vite preview` o en un hosting estático como Vercel, donde hoy solo está desplegada la Página 10), usa las 80 soluciones empaquetadas en `public/solutions/`, los resultados de las heurísticas en `public/solutions/heuristics.json` y el benchmark en `public/solutions/benchmark.json`.
 - **Corrige cuatro comportamientos de la Página 10:**
   - «Siguiente» desde el depósito saltaba al segundo cliente.
   - Con el modo continuo desactivado, «Reproducir» quedaba detenido en la parada.
@@ -385,6 +404,8 @@ TSPPD-H-Visualizer/
 │   ├── tsppd_h_3_gurobi.py        # Política 3 (Ecs. 31-48)
 │   ├── tsppd_h_alg21_dp.py        # Algoritmo 2.1 + DP: manipulación óptima (Política 3) de una ruta fija
 │   ├── tsppd_h_alg42_ils.py       # ILS, Algoritmo 4.2: ruta + manipulación (Política 3)
+│   ├── tsppd_h_benchmark.py       # Benchmark de tiempos: Gurobi (4 modelos) vs Algoritmo 2.1 + DP e ILS
+│   ├── erdogan2012/               # Réplica Tablas 8–9 (Node.js): dos fases, ILS e ITS heurístico/exacto, |Vc| = 20–200
 │   ├── solve_for_html.py          # Utilidad antigua: Modelo General sobre un .tsp, JSON por consola
 │   └── main.py                    # Menú interactivo antiguo sobre los .tsp (ruta base de macOS fija)
 ├── Outputs/                       # 80 soluciones (JSON en .txt): 4 modelos × ID 1-10 × n = 5 y 10
@@ -392,7 +413,9 @@ TSPPD-H-Visualizer/
 │   ├── Solucion_TSPPD_H1_{5|10}_Clientes_ID1..10_H_01.txt   (Política 1)
 │   ├── Solucion_TSPPD_H2_{5|10}_Clientes_ID1..10_H_01.txt   (Política 2)
 │   ├── Solucion_TSPPD_H3_{5|10}_Clientes_ID1..10_H_01.txt   (Política 3)
-│   └── Erdogan2012/               # 20 DP_*.json (Algoritmo 2.1 sobre los tours Gurobi) + 20 ILS_*.json
+│   ├── Erdogan2012/               # 20 DP_*.json (Algoritmo 2.1 sobre los tours Gurobi) + 20 ILS_*.json
+│   ├── Benchmark/                 # registros.jsonl + benchmark_tiempos.json (tsppd_h_benchmark.py)
+│   └── BenchmarkErdogan2012/      # registros.jsonl + benchmark_metaheuristicas.json + cifras del paper (erdogan2012/)
 │
 ├── Paginas Web/                   # Entornos de visualización web (12 páginas, generadas con distintos modelos de IA)
 │   ├── Pagina Web 1 (Gemini Flash 3.7)/ … Pagina Web 9 (Gemini 3.7 Flash)/
@@ -417,7 +440,7 @@ TSPPD-H-Visualizer/
 │   ├── Pagina Web 12 (Opus 5.5)/           # 🆕 Iteración más reciente (ver su README)
 │   │   ├── src/                   # lib/ (motor LIFO, layout del mapa), state/, hooks/, components/
 │   │   ├── scripts/               # API de Outputs compartida y pruebas del motor y la reproducción
-│   │   ├── public/solutions/      # 80 soluciones empaquetadas + index.json + heuristics.json
+│   │   ├── public/solutions/      # 80 soluciones empaquetadas + index.json + heuristics.json + benchmark.json
 │   │   ├── server.js              # Servidor Express (puerto 3012)
 │   │   └── bundle-solutions.js    # Regenera public/solutions desde Outputs
 │   ├── Iniciar_Pagina_{1..12}.bat # Lanzadores individuales estandarizados para Windows

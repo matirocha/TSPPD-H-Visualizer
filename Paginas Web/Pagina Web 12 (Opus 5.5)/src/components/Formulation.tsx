@@ -161,7 +161,7 @@ export function Formulation() {
   return (
     <div>
       <SectionHeader
-        index="05"
+        index="07"
         eyebrow="Modelo matemático"
         title="Cuatro formulaciones, una misma red"
         description="Formulaciones de Battarra, Erdoğan, Laporte y Vigo (2010) implementadas en Gurobi. Cada política restringe cómo se ordena la carga y, con ello, qué manipulaciones cuestan."

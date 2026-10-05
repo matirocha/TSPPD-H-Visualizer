@@ -24,6 +24,13 @@ const MODEL_DOT: Record<ModelTone, string> = {
   p3: 'bg-[linear-gradient(90deg,var(--color-p1)_0%,var(--color-p1)_50%,var(--color-p2)_50%,var(--color-p2)_100%)]',
 };
 
+/** Heurísticas de Erdoğan et al. (2012) implementadas: secciones Heurísticas, Tiempos y Metaheurísticas. */
+const HEURISTICS = [
+  { label: HEUR_METHODS.dp.label, reference: HEUR_METHODS.dp.reference, dot: 'bg-dp' },
+  { label: HEUR_METHODS.ils.label, reference: HEUR_METHODS.ils.reference, dot: 'bg-ils' },
+  { label: 'ITS · Algoritmo 4.3', reference: '§4.3 · Algoritmo 4.3', dot: 'bg-its' },
+] as const;
+
 const LEGEND = [
   { swatch: 'bg-alpha', label: 'α entrega' },
   { swatch: 'bg-beta', label: 'β recogida' },
@@ -126,13 +133,13 @@ export function Footer() {
               <span className="sr-only">(se abre en una pestaña nueva)</span>
             </a>
             <ul aria-label="Heurísticas implementadas" className="mt-4 space-y-1.5 text-[13px]">
-              {(['dp', 'ils'] as const).map((k) => (
-                <li key={k} className="flex items-baseline justify-between gap-3 border-b border-dashed border-zinc-800/80 pb-1.5 last:border-0">
+              {HEURISTICS.map((h) => (
+                <li key={h.label} className="flex items-baseline justify-between gap-3 border-b border-dashed border-zinc-800/80 pb-1.5 last:border-0">
                   <span className="flex items-center gap-2 text-zinc-300">
-                    <span aria-hidden className={cn('h-1.5 w-1.5 shrink-0 translate-y-[-1px] rounded-full', k === 'dp' ? 'bg-dp' : 'bg-ils')} />
-                    {HEUR_METHODS[k].label}
+                    <span aria-hidden className={cn('h-1.5 w-1.5 shrink-0 translate-y-[-1px] rounded-full', h.dot)} />
+                    {h.label}
                   </span>
-                  <span className="num text-[11.5px] text-zinc-500">{HEUR_METHODS[k].reference}</span>
+                  <span className="num text-[11.5px] text-zinc-500">{h.reference}</span>
                 </li>
               ))}
             </ul>

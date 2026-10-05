@@ -1,0 +1,2335 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ILS, ITS y sus variantes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e7e3d8; --paper:#f8f6f0; --card:#fdfcf8; --ink:#18181a; --ink2:#4a4944; --muted:#85827a;
+  --line:#dcd7ca; --grid:#e9e5da; --hl:#fff0b8; --hl-ink:#5c4a00;
+  --exact:#2a78d6; --exact-s:#e3edfa; --heur:#eb6834; --heur-s:#fde8dd;
+  --ils:#13976a; --ils-s:#ddf2ea; --its:#4a3aa7; --its-s:#e9e6f7;
+  --a:#5b6b82; --a-ink:#ffffff; --b:#e87ba4; --b-ink:#3a0f22;
+  --good:#0a8a0a; --bad:#d03b3b; --shadow:0 1px 2px rgba(30,25,10,.06),0 10px 30px rgba(30,25,10,.08);
+  --f-d:"Fraunces",Georgia,"Times New Roman",serif; --f-b:"Inter",system-ui,"Segoe UI",sans-serif; --f-m:"JetBrains Mono",Consolas,"Courier New",monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0c0c0b; --paper:#171716; --card:#1f1f1d; --ink:#f2f1ec; --ink2:#c3c2b7; --muted:#8d8a82;
+    --line:#34332f; --grid:#2a2a27; --hl:#3d3413; --hl-ink:#f3dc8a;
+    --exact:#3987e5; --exact-s:#17283d; --heur:#d95926; --heur-s:#3a2117;
+    --ils:#1fae7c; --ils-s:#12302a; --its:#9085e9; --its-s:#25223f;
+    --a:#8796ad; --a-ink:#101318; --b:#d55181; --b-ink:#ffffff; --good:#2fbf2f; --bad:#e66767;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0c0c0b; --paper:#171716; --card:#1f1f1d; --ink:#f2f1ec; --ink2:#c3c2b7; --muted:#8d8a82;
+  --line:#34332f; --grid:#2a2a27; --hl:#3d3413; --hl-ink:#f3dc8a;
+  --exact:#3987e5; --exact-s:#17283d; --heur:#d95926; --heur-s:#3a2117;
+  --ils:#1fae7c; --ils-s:#12302a; --its:#9085e9; --its-s:#25223f;
+  --a:#8796ad; --a-ink:#101318; --b:#d55181; --b-ink:#ffffff; --good:#2fbf2f; --bad:#e66767;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35); color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--f-b);overflow:hidden;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+#viewport{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#stage{width:1280px;height:720px;flex:none;position:relative;background:var(--paper);border-radius:8px;box-shadow:var(--shadow);overflow:hidden;transform-origin:center center}
+/* chrome */
+.chrome-top{position:absolute;top:0;left:0;right:0;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 72px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);z-index:5;pointer-events:none}
+.chrome-top b{color:var(--ink2);font-weight:600}
+.chrome-bot{position:absolute;left:0;right:0;bottom:0;height:40px;display:flex;align-items:center;gap:18px;padding:0 24px 0 72px;z-index:5}
+#progress{flex:1;display:flex;gap:6px;align-items:center}
+#progress .seg{height:4px;border-radius:2px;background:var(--line);position:relative;overflow:hidden;cursor:pointer}
+#progress .seg i{position:absolute;inset:0;background:var(--ink2);transform-origin:left;transform:scaleX(0);transition:transform .4s}
+#stepDots{display:flex;gap:4px;min-width:60px;justify-content:flex-end}
+#stepDots i{width:6px;height:6px;border-radius:50%;background:var(--line)}
+#stepDots i.on{background:var(--ink2)}
+#pageNum{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:52px;text-align:right}
+.navbtns{display:flex;gap:4px}
+.navbtns button{width:28px;height:28px;border-radius:6px;border:1px solid var(--line);background:var(--card);cursor:pointer;font-size:13px;line-height:1;color:var(--ink2);display:grid;place-items:center}
+.navbtns button:hover{border-color:var(--muted);color:var(--ink)}
+/* slides */
+.slide{position:absolute;inset:0;padding:58px 72px 54px;opacity:0;visibility:hidden;transform:translateX(30px);transition:opacity .5s ease,transform .5s ease,visibility 0s linear .5s}
+.slide.past{transform:translateX(-30px)}
+.slide.active{opacity:1;visibility:visible;transform:none;transition:opacity .5s ease,transform .5s ease,visibility 0s}
+.title{font-family:var(--f-d);font-weight:600;font-size:38px;line-height:1.08;letter-spacing:-.01em;margin:0 0 6px;font-variation-settings:"opsz" 72}
+.title em{font-style:italic;font-weight:500}
+.sub{font-size:17px;color:var(--ink2);margin:0 0 20px;max-width:980px;line-height:1.45}
+.lead{font-size:19px;line-height:1.5;margin:0 0 14px;color:var(--ink)}
+p{margin:0 0 12px;line-height:1.5}
+.note{font-size:13px;color:var(--muted);line-height:1.45}
+.small{font-size:14px;line-height:1.45;color:var(--ink2)}
+.m{font-family:var(--f-d);font-style:italic;font-variation-settings:"opsz" 14;white-space:nowrap}
+.m sub,.m sup{font-size:.7em}
+.mono{font-family:var(--f-m);font-size:.9em}
+math{font-family:"Cambria Math","STIX Two Math","Latin Modern Math",serif;font-size:1.12em}
+.c-exact{color:var(--exact)} .c-heur{color:var(--heur)} .c-ils{color:var(--ils)} .c-its{color:var(--its)}
+.tag{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--card);white-space:nowrap}
+.tag::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--dot,var(--muted))}
+.t-exact{--dot:var(--exact)} .t-heur{--dot:var(--heur)} .t-ils{--dot:var(--ils)} .t-its{--dot:var(--its)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+.card h3{font-size:15px;margin:0 0 8px;font-weight:600;letter-spacing:.01em}
+.card h3 .k{font-family:var(--f-d);font-style:italic;font-weight:500;color:var(--muted);margin-right:6px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.g-46{grid-template-columns:4fr 6fr} .g-55{grid-template-columns:1fr 1fr} .g-64{grid-template-columns:6fr 4fr} .g-37{grid-template-columns:3fr 7fr} .g-73{grid-template-columns:7fr 3fr}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.bul{margin:0;padding:0;list-style:none}
+.bul li{position:relative;padding-left:22px;margin:0 0 12px;line-height:1.5;font-size:16.5px}
+.bul li::before{content:"";position:absolute;left:4px;top:.62em;width:7px;height:7px;border-radius:2px;background:var(--ink2);transform:rotate(45deg)}
+.pill{display:inline-block;padding:1px 9px;border-radius:6px;background:var(--grid);font-weight:500}
+.hlbox{background:var(--hl);color:var(--hl-ink);border-radius:8px;padding:10px 14px;font-size:15px;line-height:1.45}
+.callout{border-left:3px solid var(--ink2);padding:6px 0 6px 14px;font-size:15.5px;line-height:1.5;color:var(--ink2)}
+.callout b{color:var(--ink)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--card);cursor:pointer;font-size:13.5px;font-weight:500}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.btn:disabled{opacity:.45;cursor:default}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+/* fragments */
+[data-s]{transition:opacity .45s ease,transform .45s ease}
+[data-s]:not(.on){opacity:0;transform:translateY(10px);pointer-events:none}
+.noshift[data-s]:not(.on){transform:none}
+/* code */
+.code{font-family:var(--f-m);font-size:13.2px;line-height:1.62;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 0;counter-reset:ln}
+.code .cap{font-family:var(--f-b);font-size:12.5px;color:var(--muted);padding:0 16px 6px;letter-spacing:.04em;text-transform:uppercase}
+.code .cap b{color:var(--ink2);text-transform:none;letter-spacing:0;font-size:13.5px}
+.code .ln{display:block;padding:0 14px 0 42px;position:relative;white-space:pre;transition:background .3s,color .3s;border-left:3px solid transparent}
+.code .ln::before{counter-increment:ln;content:counter(ln);position:absolute;left:12px;color:var(--muted);font-size:10.5px;top:.2em}
+.code .ln.hl{background:var(--hl);border-left-color:var(--hl-ink)}
+.code .kw{color:var(--its);font-weight:600} .code .cm{color:var(--muted);font-style:italic} .code .fx{color:var(--exact);font-weight:600} .code .fh{color:var(--heur);font-weight:600}
+.code .mark{background:var(--grid);border-radius:4px;padding:0 4px}
+/* tables */
+table.t{border-collapse:collapse;font-size:14px;width:100%;font-variant-numeric:tabular-nums}
+table.t th{font-weight:600;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+table.t td{padding:6px 8px;border-bottom:1px solid var(--grid)}
+table.t td.n,table.t th.n{text-align:right}
+table.t tr.hl td{background:var(--hl)}
+/* tooltip */
+#tip{position:fixed;z-index:99;pointer-events:none;background:var(--ink);color:var(--paper);font-size:12.5px;line-height:1.4;padding:7px 10px;border-radius:8px;max-width:280px;opacity:0;transition:opacity .15s;box-shadow:var(--shadow)}
+#tip.on{opacity:1}
+/* overview */
+#overview{position:absolute;inset:0;background:color-mix(in srgb,var(--paper) 96%,transparent);z-index:20;padding:52px 72px;display:none;overflow:auto}
+#overview.on{display:block}
+#overview h2{font-family:var(--f-d);font-size:30px;margin:0 0 18px;font-weight:600}
+#overview .cols{columns:3;column-gap:36px}
+#overview .sec{break-inside:avoid;margin:0 0 18px}
+#overview .sec h4{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+#overview a{display:flex;gap:10px;padding:4px 0;color:var(--ink);text-decoration:none;font-size:15px;cursor:pointer}
+#overview a span{color:var(--muted);font-variant-numeric:tabular-nums;width:22px}
+#overview a:hover{color:var(--exact)}
+#overview a.cur{font-weight:600}
+/* ===== cover ===== */
+.cover{display:grid;grid-template-columns:1.25fr 1fr;gap:56px;height:100%;align-items:center}
+.eyebrow{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:18px}
+.display{font-family:var(--f-d);font-size:68px;line-height:1.0;font-weight:600;margin:0 0 22px;letter-spacing:-.02em;font-variation-settings:"opsz" 144}
+.display em{font-weight:400;font-style:italic;color:var(--ink2)}
+.cite{font-size:13.5px;color:var(--muted);line-height:1.5;max-width:560px;margin-top:18px}
+.keys{display:flex;gap:16px;flex-wrap:wrap;margin-top:26px;font-size:12.5px;color:var(--muted)}
+.keys kbd{font-family:var(--f-m);font-size:11.5px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;background:var(--card);color:var(--ink2);margin-right:4px}
+.switchboard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px 28px;box-shadow:var(--shadow)}
+.sw-row{display:grid;grid-template-columns:1fr 210px;align-items:center;gap:16px;padding:12px 0;border-bottom:1px dashed var(--line)}
+.sw-row:last-of-type{border-bottom:0}
+.sw-row .nm{font-size:14px;color:var(--ink2);line-height:1.3}
+.sw-row .nm small{display:block;color:var(--muted);font-size:12px}
+.sw{position:relative;display:grid;grid-template-columns:1fr 1fr;background:var(--grid);border-radius:999px;padding:3px}
+.sw span{position:relative;z-index:1;text-align:center;font-size:14px;font-weight:600;padding:7px 0;color:var(--muted);transition:color .35s}
+.sw .knob{position:absolute;top:3px;bottom:3px;left:3px;width:calc(50% - 3px);border-radius:999px;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.12);transition:transform .45s cubic-bezier(.6,.0,.2,1)}
+.sw-row[data-v="1"] .knob{transform:translateX(100%)}
+.sw-row[data-v="0"] .sw span:nth-child(1),.sw-row[data-v="1"] .sw span:nth-child(2){color:var(--ink)}
+.sw-out{margin-top:18px;text-align:center;font-family:var(--f-d);font-size:30px;font-weight:600;letter-spacing:-.01em;min-height:40px}
+.sw-out .dot{color:var(--muted);font-weight:400;margin:0 6px}
+.sw-count{text-align:center;font-size:12.5px;color:var(--muted);margin-top:4px}
+/* ===== mapa ===== */
+.axis-card{position:relative;padding-top:20px}
+.axis-card .num{font-family:var(--f-d);font-size:44px;font-weight:600;color:var(--line);position:absolute;right:18px;top:8px;line-height:1}
+.axis-card .opts{display:flex;gap:8px;margin:10px 0 12px}
+.axis-card p{font-size:15px;color:var(--ink2)}
+.combos{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:18px}
+.combo{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px;font-size:13.5px;font-weight:600;display:flex;gap:6px;align-items:center;justify-content:center}
+.combo i{width:8px;height:8px;border-radius:50%;display:inline-block}
+/* ===== truck ===== */
+.tk{position:relative;height:118px;width:var(--laneW,560px)}
+.tk-cab{position:absolute;left:0;top:14px;width:52px;height:40px;border:2px solid var(--ink2);border-radius:14px 4px 4px 6px;background:var(--card)}
+.tk-cab .tk-win{position:absolute;left:7px;top:6px;width:20px;height:13px;border-radius:6px 2px 2px 2px;background:var(--grid);border:1.5px solid var(--ink2)}
+.tk-hold{position:absolute;left:58px;top:6px;width:var(--holdW);height:48px;border:2px solid var(--ink2);border-right:4px solid var(--ink2);border-radius:4px;background:repeating-linear-gradient(90deg,transparent 0 29px,var(--grid) 29px 30px)}
+.tk-lbl{position:absolute;top:-17px;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tk-lbl.l{left:0} .tk-lbl.r{right:-4px}
+.tk-wheel{position:absolute;top:52px;width:14px;height:14px;border-radius:50%;background:var(--ink2);border:3px solid var(--paper)}
+.tk-ground{position:absolute;left:0;right:0;top:64px;height:1px;background:var(--line)}
+.tk-dock-lbl{position:absolute;top:100px;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tk-cust{position:absolute;top:10px;font-size:13px;font-weight:600;color:var(--ink2);transition:opacity .3s;white-space:nowrap}
+.tk-layer{position:absolute;inset:0}
+.bx{position:absolute;left:0;top:0;width:26px;height:30px;border-radius:3px;font-size:11.5px;font-weight:700;display:grid;place-items:center;transition:transform .42s cubic-bezier(.5,0,.25,1),opacity .35s;will-change:transform}
+.bx.a{background:var(--a);color:var(--a-ink)}
+.bx.b{background:var(--b);color:var(--b-ink);border-radius:9px}
+.bx.b.fr{box-shadow:inset 0 -3px 0 rgba(0,0,0,.18)}
+.tk.noanim .bx{transition:none}
+.legend-row{display:flex;gap:16px;font-size:12.5px;color:var(--ink2);align-items:center;flex-wrap:wrap}
+.legend-row .sq{display:inline-block;width:12px;height:14px;border-radius:2px;vertical-align:-2px;margin-right:5px}
+.sq.a{background:var(--a)} .sq.b{background:var(--b);border-radius:5px}
+.costbox{font-variant-numeric:tabular-nums;font-size:14px;color:var(--ink2)}
+.costbox b{font-size:22px;color:var(--ink);font-weight:700}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:12px;padding:2px 8px;border-radius:6px;background:var(--grid);color:var(--ink2);font-variant-numeric:tabular-nums}
+.chip.z{opacity:.55}
+.lane-wrap{display:grid;grid-template-columns:150px 1fr 150px;gap:16px;align-items:center;padding:6px 0}
+.lane-wrap .lname{font-size:14px;font-weight:600}
+.lane-wrap .lname small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+/* simulator */
+.simc{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:10px}
+.cust{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px;text-align:center;transition:border-color .3s,box-shadow .3s}
+.cust.now{border-color:var(--ink2);box-shadow:0 0 0 2px var(--hl)}
+.cust .L{font-family:var(--f-d);font-size:22px;font-weight:600;line-height:1}
+.cust .d{font-size:12px;color:var(--muted);margin:4px 0 6px;font-variant-numeric:tabular-nums}
+.seg2{display:inline-grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg2 button{border:0;background:transparent;padding:3px 9px;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted)}
+.seg2 button.on{background:var(--ink);color:var(--paper)}
+.cust .cc{font-size:12px;margin-top:6px;color:var(--ink2);min-height:16px;font-variant-numeric:tabular-nums}
+.simlog{font-size:12.5px;color:var(--ink2);margin:0;padding-left:18px;max-height:96px;overflow:auto;line-height:1.5}
+/* slider */
+input[type=range]{width:100%;accent-color:var(--ink2)}
+.sl-row{display:grid;grid-template-columns:150px 1fr 56px;gap:12px;align-items:center;font-size:14px;margin:6px 0}
+.sl-row output{font-variant-numeric:tabular-nums;font-weight:600;text-align:right}
+/* stat */
+.stat{display:flex;flex-direction:column;gap:2px}
+.stat .lb{font-size:12.5px;color:var(--muted)}
+.stat .vl{font-size:26px;font-weight:700;font-variant-numeric:normal;letter-spacing:-.01em}
+.stat .vl small{font-size:13px;color:var(--muted);font-weight:500}
+/* svg common */
+svg text{font-family:var(--f-b);fill:var(--ink2)}
+svg .ax{stroke:var(--line);stroke-width:1}
+svg .gd{stroke:var(--grid);stroke-width:1}
+svg .tk-t{font-size:11px;fill:var(--muted)}
+svg .lbl{font-size:12px;fill:var(--ink2)}
+svg .lblb{font-size:12.5px;fill:var(--ink);font-weight:600}
+/* flow */
+.flow{display:flex;align-items:center;gap:10px;font-size:13.5px}
+.flow .bx2{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:6px 10px;white-space:nowrap}
+.flow .ar{color:var(--muted)}
+.flow .bx2.ex{border-color:var(--exact);box-shadow:inset 3px 0 0 var(--exact)}
+.flow .bx2.he{border-color:var(--heur);box-shadow:inset 3px 0 0 var(--heur)}
+/* comparison table */
+.cmp{display:grid;grid-template-columns:180px 1fr 1fr;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card);font-size:14px}
+.cmp>div{padding:9px 14px;border-bottom:1px solid var(--grid);line-height:1.4}
+.cmp>div.h{font-weight:700;font-size:13px;letter-spacing:.04em;text-transform:uppercase;background:var(--grid)}
+.cmp>div.k{color:var(--muted);font-size:13px}
+.cmp>div.same{color:var(--muted)}
+/* heatmap */
+.hm{display:grid;grid-template-columns:150px repeat(10,1fr) 70px;gap:3px;font-size:13px;font-variant-numeric:tabular-nums}
+.hm .c{height:42px;border-radius:4px;display:grid;place-items:center;font-weight:600}
+.hm .rh{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13.5px}
+.hm .ch{text-align:center;color:var(--muted);font-size:12px;padding-bottom:2px}
+.hm .tot{display:grid;place-items:center;font-weight:700}
+/* config */
+.cfg-sw{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}
+.cfg-sw .sw{cursor:pointer}
+.cfg-sw .lab{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.cfg-name{font-family:var(--f-d);font-size:28px;font-weight:600;margin:0 0 8px}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:10px 0}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.kpi .lb{font-size:12px;color:var(--muted)} .kpi .vl{font-size:24px;font-weight:700;margin-top:2px} .kpi .vl small{font-size:12.5px;font-weight:500;color:var(--muted)}
+.summary-card{border-top:4px solid var(--c,var(--ink2))}
+.summary-card h3{font-family:var(--f-d);font-size:21px;font-weight:600;margin:0 0 10px}
+.summary-card p{font-size:14.5px;color:var(--ink2)}
+.bigq{font-family:var(--f-d);font-style:italic;font-size:20px;line-height:1.45;color:var(--ink);border-left:3px solid var(--line);padding-left:18px}
+</style>
+</head>
+<body>
+<div id="viewport"><div id="stage">
+<header class="chrome-top"><span id="secLabel"></span><span>Erdoğan, Battarra, Laporte &amp; Vigo · <b>C&amp;OR 39 (2012)</b></span></header>
+
+<!-- ============================ 1 PORTADA ============================ -->
+<section class="slide" id="portada" data-sec="Las tres decisiones" data-title="Portada">
+  <div class="cover">
+    <div>
+      <div class="eyebrow">Lectura guiada · Taller de investigación</div>
+      <h1 class="display">Ocho configuraciones,<br><em>tres decisiones</em></h1>
+      <p class="lead" style="max-width:600px">Qué cambia entre <b class="c-ils">ILS</b> e <b class="c-its">ITS</b>, entre evaluar la manipulación de forma <b class="c-heur">heurística</b> o <b class="c-exact">exacta</b>, y entre correr en <b>1-dir</b> o <b>2-dir</b>. Paso a paso y con los números del paper.</p>
+      <p class="cite">G. Erdoğan, M. Battarra, G. Laporte, D. Vigo. <i>Metaheuristics for the traveling salesman problem with pickups, deliveries and handling costs.</i> Computers &amp; Operations Research 39 (2012) 1074–1086.</p>
+      <div class="keys"><span><kbd>→</kbd><kbd>espacio</kbd>avanzar</span><span><kbd>←</kbd>retroceder</span><span><kbd>O</kbd>índice</span><span><kbd>F</kbd>pantalla completa</span><span><kbd>T</kbd>tema</span></div>
+    </div>
+    <div class="switchboard" id="coverSw">
+      <div class="sw-row" data-v="0"><div class="nm">Metaheurística<small>§4.2 – §4.3</small></div><div class="sw"><span>ILS</span><span>ITS</span><i class="knob"></i></div></div>
+      <div class="sw-row" data-v="0"><div class="nm">Evaluación de la manipulación<small>§2.1 – §2.2</small></div><div class="sw"><span>heurística</span><span>exacta</span><i class="knob"></i></div></div>
+      <div class="sw-row" data-v="0"><div class="nm">Tour inicial<small>§4 y §5</small></div><div class="sw"><span>1-dir</span><span>2-dir</span><i class="knob"></i></div></div>
+      <div class="sw-out" id="coverOut"></div>
+      <div class="sw-count">2 × 2 × 2 = 8 configuraciones (Tablas 8 y 9 del paper)</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 2 MAPA ============================ -->
+<section class="slide" id="mapa" data-sec="Las tres decisiones" data-title="Un nombre, tres coordenadas">
+  <h2 class="title">Un nombre, <em>tres coordenadas</em></h2>
+  <p class="sub">Un nombre como «ITS exacta 2-dir» junta tres elecciones independientes. Si cambias una, las otras dos siguen iguales. Por eso conviene entenderlas por separado.</p>
+  <div class="grid3">
+    <div class="card axis-card" data-s="1"><span class="num">1</span>
+      <h3>¿Qué metaheurística?</h3>
+      <div class="opts"><span class="tag t-ils">ILS</span><span class="tag t-its">ITS</span></div>
+      <p>Las dos <b>perturban</b> la solución con movimientos aleatorios. La diferencia está en lo que hacen después: ILS <b>desciende</b> hasta un óptimo local, mientras que ITS corre una <b>búsqueda tabú</b> corta que puede aceptar soluciones peores.</p>
+      <p class="note">Algoritmos 4.2 y 4.3</p>
+    </div>
+    <div class="card axis-card" data-s="2"><span class="num">2</span>
+      <h3>¿Cómo se evalúa la manipulación de cada movimiento?</h3>
+      <div class="opts"><span class="tag t-heur">heurística · O(n)</span><span class="tag t-exact">exacta · O(n²)</span></div>
+      <p>La versión <b>exacta</b> resuelve una programación dinámica para cada movimiento. La <b>heurística</b> usa una regla de umbral lineal y solo calcula con la DP el costo del movimiento que termina eligiendo.</p>
+      <p class="note">Sección 2</p>
+    </div>
+    <div class="card axis-card" data-s="3"><span class="num">3</span>
+      <h3>¿Desde qué tour se parte?</h3>
+      <div class="opts"><span class="tag">1-dir</span><span class="tag">2-dir</span></div>
+      <p><b>1-dir</b> hace una corrida desde el tour TSP. <b>2-dir</b> hace dos: una desde el tour y otra desde el tour <b>invertido</b>, que tiene el mismo ruteo pero otra manipulación. Se reporta la mejor de las dos.</p>
+      <p class="note">Sección 4, Tablas 3 y 4</p>
+    </div>
+  </div>
+  <div data-s="4">
+    <div class="combos" id="combosGrid"></div>
+    <p class="note" style="margin-top:12px">El paper tiene una tercera metaheurística, <b>TS</b> (búsqueda tabú pura). Aquí aparece como el motor interno de ITS y como referencia en los resultados.</p>
+  </div>
+</section>
+
+<!-- ============================ 3 PROBLEMA ============================ -->
+<section class="slide" id="problema" data-sec="El problema" data-title="El TSPPD-H en una lámina">
+  <h2 class="title">El TSPPD-H en una lámina</h2>
+  <div class="grid2" style="grid-template-columns:1fr 540px;gap:36px">
+    <div>
+      <p class="lead">Un vehículo sale del depósito, visita a cada cliente una sola vez y regresa. En cada cliente <span class="m">i</span> <b>entrega</b> <span class="m">α<sub>i</sub></span> cajas (tipo <i>a</i>) y <b>retira</b> <span class="m">β<sub>i</sub></span> cajas (tipo <i>b</i>).</p>
+      <ul class="bul">
+        <li data-s="1">Sale con todas las entregas a bordo, <span class="m">α<sub>0</sub> = Σ α<sub>i</sub></span>, y vuelve con todos los retiros. La capacidad es <span class="m">Q</span>.</li>
+        <li data-s="2">La carga es <b>una sola pila</b> con puerta trasera (LIFO): las cajas solo entran y salen por atrás.</li>
+        <li data-s="3">Se minimiza <span class="pill">ruteo Σ c<sub>ij</sub></span> + <span class="pill">manipulación</span>. La manipulación es el tiempo de <b>descargar y recargar</b> cajas que estorban: <span class="m">h<sub>a</sub></span> por caja tipo <i>a</i> y <span class="m">h<sub>b</sub></span> por caja tipo <i>b</i>.</li>
+      </ul>
+      <p class="note" data-s="3">Problema introducido por Battarra et al. (2010). El ejemplo de esta presentación tiene 6 clientes y <span class="m">h<sub>a</sub> = h<sub>b</sub> = 1</span>.</p>
+    </div>
+    <div class="card" style="padding:10px 12px">
+      <svg id="mapProblem" viewBox="0 0 520 370" width="514" height="366"></svg>
+      <div class="legend-row" style="padding:2px 6px 4px"><span><i class="sq a"></i>entrega (tipo a)</span><span><i class="sq b"></i>retiro (tipo b)</span><span style="color:var(--muted)">■ = 1 caja</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 4 PILA ============================ -->
+<section class="slide" id="pila" data-sec="El problema" data-title="El vehículo es una pila" data-steps="3">
+  <h2 class="title">El vehículo es <em>una pila</em></h2>
+  <p class="sub">Las cajas tipo <i>a</i> se cargan en el depósito en orden inverso al de la ruta, así que las del primer cliente quedan junto a la puerta. El problema aparece cuando empiezan a subir retiros.</p>
+  <div class="card" style="padding:26px 30px 14px">
+    <div class="row" style="justify-content:space-between;align-items:flex-start">
+      <div id="tk-pila" class="tk"></div>
+      <div class="costbox" style="text-align:right;min-width:190px">manipulación acumulada<br><b id="pilaCost">0</b></div>
+    </div>
+    <div class="legend-row" style="margin-top:4px"><span><i class="sq a"></i>entrega para el cliente indicado</span><span><i class="sq b"></i>retiro recogido en el cliente indicado</span></div>
+  </div>
+  <div style="position:relative;height:120px;margin-top:18px">
+    <div class="callout" data-s="0-0" style="position:absolute;inset:0">En el <b>depósito</b> se cargan las 13 entregas: <span class="m">α<sub>0</sub> = 2+3+3+1+1+3</span>. Todavía no hay nada que estorbe.</div>
+    <div class="callout" data-s="1-1" style="position:absolute;inset:0"><b>Cliente A</b> (α = 2, β = 1). Sus 2 cajas están junto a la puerta, así que se entregan sin mover nada. La caja que retira queda <b>atrás</b>, junto a la puerta. Costo adicional: 0.</div>
+    <div class="callout" data-s="2-2" style="position:absolute;inset:0"><b>Cliente B</b> (α = 3, β = 0). Ahora la caja que se retiró en A tapa las entregas. Hay que <b>bajarla y volver a subirla</b>: costo <span class="m">h<sub>b</sub> · 1 = 1</span>. Esta es una <b>operación adicional</b>.</div>
+    <div class="hlbox" data-s="3" style="position:absolute;inset:0">Las operaciones obligatorias (entregar y retirar) no se cuentan en el costo. Lo que se minimiza son las <b>operaciones adicionales</b>: cajas que se descargan y se vuelven a cargar solo porque estorban, o para reordenar la pila.</div>
+  </div>
+</section>
+
+<!-- ============================ 5 POLITICAS ============================ -->
+<section class="slide" id="politicas" data-sec="El problema" data-title="Tres políticas de carga" data-steps="3">
+  <h2 class="title">Tres políticas: <em>pagar ahora o pagar después</em></h2>
+  <div class="grid3" style="margin:6px 0 14px">
+    <div class="card" style="padding:12px 16px"><h3><span class="k">P1</span>Retiros atrás</h3><p class="small" style="margin:0">Hoy no cuesta nada, pero las cajas estorban cada entrega siguiente: <span class="m">h<sub>b</sub>·β′</span> en cada cliente con <span class="m">α<sub>j</sub> &gt; 0</span>.</p></div>
+    <div class="card" style="padding:12px 16px"><h3><span class="k">P2</span>Retiros adelante</h3><p class="small" style="margin:0">Hay que reordenar ahora: sacar las entregas que quedan y los retiros sueltos, <span class="m">h<sub>a</sub>·α′ + h<sub>b</sub>·β′</span>. Después la puerta queda libre.</p></div>
+    <div class="card" style="padding:12px 16px"><h3><span class="k">P3</span>Decidir en cada cliente</h3><p class="small" style="margin:0">Elegir P1 o P2 según convenga. Battarra et al. (2010) muestran que P3 da soluciones de alta calidad, mientras que P1 y P2 solas son simples pero malas.</p></div>
+  </div>
+  <div class="card" style="padding:10px 18px">
+    <div class="lane-wrap"><div class="lname">Siempre P1<small>retiros siempre atrás</small></div><div id="tk-p1" class="tk" style="transform:scale(.86);transform-origin:left center;height:108px"></div><div><div class="costbox">total <b id="p1Cost">1</b></div><div class="chips" id="p1Chips"></div></div></div>
+    <div class="lane-wrap" style="border-top:1px dashed var(--line)"><div class="lname">P2 en C<small>P1 en el resto</small></div><div id="tk-p2" class="tk" style="transform:scale(.86);transform-origin:left center;height:108px"></div><div><div class="costbox">total <b id="p2Cost">1</b></div><div class="chips" id="p2Chips"></div></div></div>
+  </div>
+  <div style="position:relative;height:56px;margin-top:12px">
+    <p class="callout" data-s="0-0" style="position:absolute;inset:0;margin:0">Los dos vehículos ya pasaron por A y B usando P1 y llevan 1 de costo cada uno. Lo que sigue es la decisión en <b>C</b>, que retira 3 cajas.</p>
+    <p class="callout" data-s="1-1" style="position:absolute;inset:0;margin:0">En C, <b>P1</b> paga 1 (mover la caja de A). <b>P2</b> paga <span class="m">5 + 1 = 6</span>: saca las 5 entregas que quedan y la caja de A, deja los 4 retiros adelante y vuelve a cargar.</p>
+    <p class="callout" data-s="2-2" style="position:absolute;inset:0;margin:0">Después, con P1 los 4 retiros estorban en D, E y F: <span class="m">4 + 4 + 5</span>. Con P2 la puerta queda casi libre: <span class="m">0 + 0 + 1</span>.</p>
+    <p class="hlbox" data-s="3" style="position:absolute;inset:0;margin:0"><b>15 frente a 8.</b> Fijado el tour, el <b>subproblema de manipulación</b> consiste en elegir P1 o P2 en cada cliente. Con <span class="m">n</span> clientes hay <span class="m">2<sup>n</sup></span> combinaciones posibles.</p>
+  </div>
+</section>
+
+<!-- ============================ 6 SIMULADOR ============================ -->
+<section class="slide" id="simulador" data-sec="El problema" data-title="Simulador: elige P1 o P2">
+  <h2 class="title">Pruébalo: <em>elige P1 o P2 en cada cliente</em></h2>
+  <p class="sub">Elige una política en cada cliente y recorre la ruta. Hay 2⁶ = 64 combinaciones. ¿Llegas al óptimo?</p>
+  <div class="simc" id="simCust"></div>
+  <div class="card" style="padding:22px 26px 12px">
+    <div class="row" style="justify-content:space-between;align-items:flex-start">
+      <div id="tk-sim" class="tk"></div>
+      <div style="min-width:220px">
+        <div class="costbox">manipulación <b id="simCost">0</b></div>
+        <div class="small" style="margin-top:6px">siempre P1 = <b>15</b> · siempre P2 = <b>19</b><br>óptimo (DP) = <b id="simOptV">?</b></div>
+      </div>
+    </div>
+  </div>
+  <div class="grid2" style="grid-template-columns:1fr 1fr;margin-top:14px;gap:22px">
+    <div class="row">
+      <button class="btn primary" id="simPlay">▶ Recorrer la ruta</button>
+      <button class="btn" id="simStep">Siguiente cliente</button>
+      <button class="btn" id="simReset">↺ Reiniciar</button>
+      <button class="btn" id="simOpt">Usar óptimo (DP)</button>
+    </div>
+    <ol class="simlog" id="simLog"></ol>
+  </div>
+</section>
+
+<!-- ============================ 7 CUELLO ============================ -->
+<section class="slide" id="cuello" data-sec="El problema" data-title="El cuello de botella">
+  <h2 class="title">El cuello de botella: <em>evaluar un movimiento</em></h2>
+  <p class="sub">Una búsqueda local revisa cientos de movimientos en cada iteración (relocate, 2-opt). Para cada uno necesita saber cuánto cambia el costo total.</p>
+  <div class="grid2" style="grid-template-columns:1fr 1fr;gap:30px">
+    <div>
+      <div class="card" data-s="1" style="margin-bottom:12px">
+        <h3>Ruteo: cuesta O(1)</h3>
+        <p class="small" style="margin:0">Se restan los arcos que salen y se suman los que entran. Son 2 o 3 arcos, sin importar <span class="m">n</span>.</p>
+      </div>
+      <div class="card" data-s="2" style="margin-bottom:12px">
+        <h3>Manipulación: hay que recalcular desde cero</h3>
+        <p class="small" style="margin:0">Mover un cliente cambia lo que va a bordo en <b>todos</b> los clientes que vienen después, y con eso cambian las decisiones P1/P2 óptimas. Con la DP exacta, cada movimiento cuesta <span class="m">O(n²)</span>.</p>
+      </div>
+      <div class="card" data-s="3">
+        <h3>Tamaño de los vecindarios (§3)</h3>
+        <p class="small" style="margin:0 0 4px">relocate: <span class="m">|V<sub>c</sub>|(|V<sub>c</sub>|−1)</span> · 2-opt: <span class="m">(|V<sub>c</sub>|+1)(|V<sub>c</sub>|−2)/2</span></p>
+        <p class="small" style="margin:0">O sea, <span class="m">O(n²)</span> movimientos × <span class="m">O(n²)</span> por evaluación = <b><span class="m">O(n⁴)</span> por iteración</b>. Con la heurística lineal baja a <span class="m">O(n³)</span>.</p>
+      </div>
+    </div>
+    <div class="card" data-s="4">
+      <h3>Calculadora: operaciones por iteración</h3>
+      <div class="sl-row"><label for="cuN">clientes |V<sub>c</sub>|</label><input type="range" id="cuN" min="20" max="200" step="20" value="100"><output id="cuNo">100</output></div>
+      <svg id="cuChart" viewBox="0 0 520 230" width="100%" height="230"></svg>
+      <p class="note" style="margin:6px 0 0">Conteo aproximado: movimientos × n² (exacta) frente a movimientos × n + n² (heurística, más el recálculo exacto del movimiento elegido). Escala logarítmica.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 8 ALG 2.1 ============================ -->
+<section class="slide" id="alg21" data-sec="Exacta vs heurística" data-title="Exacta (1/2): Algoritmo 2.1" data-steps="5">
+  <h2 class="title"><span class="c-exact">Exacta</span> (1/2): <em>basta recordar la última P2</em></h2>
+  <p class="sub">Si en el cliente <span class="m">i</span> se aplicó P2, todos los retiros quedaron adelante y la puerta está libre. Lo que viene después ya no depende de lo que pasó antes de <span class="m">i</span>.</p>
+  <div class="grid2" style="grid-template-columns:520px 1fr;gap:26px">
+    <div class="code">
+      <div class="cap">Algoritmo 2.1 · <b>P(α, β, h<sub>a</sub>, h<sub>b</sub>)</b> · traducido</div>
+      <span class="ln" data-hl="1"><span class="kw">para</span> i ← 0 <span class="kw">hasta</span> n−1</span>
+      <span class="ln" data-hl="1">  β′ ← 0;  θ ← 0       <span class="cm">// en i se aplicó P2</span></span>
+      <span class="ln" data-hl="1">  α′ ← α₀ − Σ<sub>j≤i</sub> α<sub>j</sub>  <span class="cm">// entregas aún a bordo</span></span>
+      <span class="ln" data-hl="2-4"><span class="kw">  para</span> j ← i+1 <span class="kw">hasta</span> n</span>
+      <span class="ln" data-hl="2-4">    α′ ← α′ − α<sub>j</sub>        <span class="cm">// entregar en j</span></span>
+      <span class="ln" data-hl="2-4"><span class="kw">    si</span> β′ + β<sub>j</sub> &gt; 0: p<sub>ij</sub> ← θ + h<sub>a</sub>α′ + h<sub>b</sub>β′</span>
+      <span class="ln" data-hl="2-4"><span class="kw">    si no</span>:         p<sub>ij</sub> ← θ</span>
+      <span class="ln" data-hl="2-4"><span class="kw">    si</span> α<sub>j</sub> &gt; 0:  θ ← θ + h<sub>b</sub>β′  <span class="cm">// P1 en j</span></span>
+      <span class="ln" data-hl="2-4">    β′ ← β′ + β<sub>j</sub>        <span class="cm">// retirar como en P1</span></span>
+      <div style="padding:10px 16px 0" class="small"><b class="m">p<sub>ij</sub></b> = costo de aplicar <b>P1</b> en <span class="m">i+1, …, j−1</span> y <b>P2</b> en <span class="m">j</span>, sabiendo que en <span class="m">i</span> se aplicó P2. Aquí <span class="m">θ</span> acumula el costo de P1 y <span class="m">β′</span> cuenta los retiros que van atrás.</div>
+    </div>
+    <div>
+      <div class="card" style="padding:14px 16px">
+        <h3>Traza en el ejemplo, con i = 0 (el depósito cuenta como «P2 aplicada»)</h3>
+        <table class="t" id="a21tbl">
+          <thead><tr><th>j</th><th>cliente</th><th class="n">α<sub>j</sub></th><th class="n">β<sub>j</sub></th><th class="n">α′</th><th class="n">p<sub>0j</sub></th><th class="n">θ</th><th class="n">β′</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div style="position:relative;height:110px;margin-top:14px">
+        <p class="callout" data-s="0-0" style="position:absolute;inset:0;margin:0">Avanza para recorrer el algoritmo fila por fila en el ejemplo de 6 clientes.</p>
+        <p class="callout" data-s="1-1" style="position:absolute;inset:0;margin:0">Inicio con <span class="m">i = 0</span>: no hay retiros atrás (β′ = 0), el costo acumulado es θ = 0 y van <span class="m">α′ = α₀ = 13</span> entregas a bordo.</p>
+        <p class="callout" data-s="2-2" style="position:absolute;inset:0;margin:0"><b>j = 1 (A).</b> Si la primera P2 fuera en A, costaría <span class="m">h<sub>a</sub>·11 = 11</span>: hay que sacar las 11 entregas que quedan. Si en cambio se usa P1 en A, la caja retirada queda atrás (β′ = 1).</p>
+        <p class="callout" data-s="3-3" style="position:absolute;inset:0;margin:0"><b>j = 2 (B).</b> <span class="m">p<sub>02</sub> = 0 + 8 + 1 = 9</span>. Con P1 en B, la caja de A estorba la entrega, así que θ sube a 1.</p>
+        <p class="callout" data-s="4-4" style="position:absolute;inset:0;margin:0"><b>j = 3 (C).</b> <span class="m">p<sub>03</sub> = θ + h<sub>a</sub>·5 + h<sub>b</sub>·1 = 1 + 5 + 1 = 7</span>: P1 en A y B, y P2 en C. Es lo que pagó el vehículo «P2 en C» de la lámina 5: 1 + 6.</p>
+        <p class="hlbox" data-s="5" style="position:absolute;inset:0;margin:0">Se repite para cada par <span class="m">(i, j)</span>, lo que da <span class="m">O(n²)</span> en tiempo y en memoria. Con la matriz <span class="m">p</span> completa, la decisión óptima es un camino más corto.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 9 DP ============================ -->
+<section class="slide" id="dp" data-sec="Exacta vs heurística" data-title="Exacta (2/2): la DP" data-steps="4">
+  <h2 class="title"><span class="c-exact">Exacta</span> (2/2): <em>la DP es un camino más corto</em></h2>
+  <div class="grid2" style="grid-template-columns:1fr 430px;gap:28px">
+    <div>
+      <div class="card" style="padding:10px 18px;margin-bottom:12px;display:flex;align-items:center;gap:24px">
+        <math display="block"><mrow><mi>f</mi><mo>(</mo><mi>i</mi><mo>)</mo><mo>=</mo><munder><mo movablelimits="false">min</mo><mrow><mi>j</mi><mo>∈</mo><mo>{</mo><mi>i</mi><mo>+</mo><mn>1</mn><mo>,</mo><mo>…</mo><mo>,</mo><mi>n</mi><mo>}</mo></mrow></munder><mo>{</mo><msub><mi>p</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>+</mo><mi>f</mi><mo>(</mo><mi>j</mi><mo>)</mo><mo>}</mo><mo>,</mo><mspace width="1em"/><mi>f</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>=</mo><mn>0</mn></mrow></math>
+        <span class="small"><span class="m">f(i)</span> es el costo óptimo de atender <span class="m">i+1, …, n</span> si en <span class="m">i</span> se aplicó P2 (ec. 1–2).</span>
+      </div>
+      <svg id="dpGraph" viewBox="0 0 700 300" width="100%" height="300"></svg>
+      <div style="position:relative;height:72px">
+        <p class="callout" data-s="0-0" style="position:absolute;inset:0;margin:0">Cada nodo es un «lugar donde se aplicó P2». Un arco <span class="m">i → j</span> significa «la próxima P2 es en <span class="m">j</span>» y cuesta <span class="m">p<sub>ij</sub></span>.</p>
+        <p class="callout" data-s="1-1" style="position:absolute;inset:0;margin:0">El Algoritmo 2.1 llena la matriz <span class="m">p</span> con 21 arcos posibles (derecha).</p>
+        <p class="callout" data-s="2-2" style="position:absolute;inset:0;margin:0">Hacia atrás, desde <span class="m">f(6) = 0</span>: para cada <span class="m">i</span> se prueban todos los <span class="m">j</span> y se guarda el mejor arco.</p>
+        <p class="callout" data-s="3-3" style="position:absolute;inset:0;margin:0">El camino óptimo es <b>0 → 3 → 6</b>: P1 en A y B, <b>P2 en C</b>, P1 en D y E, y cierre en F. El costo es <span class="m">f(0) = 7 + 1 = 8</span>.</p>
+        <p class="hlbox" data-s="4" style="position:absolute;inset:0;margin:0"><span class="m">n</span> estados × <span class="m">O(n)</span> opciones = <span class="m">O(n²)</span>. Junto con el Algoritmo 2.1, la evaluación exacta cuesta <b><span class="m">O(n²)</span> por movimiento</b>.</p>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="padding:12px 14px">
+        <h3>Matriz <span class="m">p<sub>ij</sub></span> (fila i, columna j)</h3>
+        <svg id="dpMat" viewBox="0 0 400 330" width="100%" height="330"></svg>
+      </div>
+      <p class="note" style="margin-top:8px">En <span class="m">n</span> ya no quedan entregas a bordo (<span class="m">α′ = 0</span>). El arco que llega a <span class="m">n</span> solo cierra el camino y, como <span class="m">α<sub>n</sub> &gt; 0</span>, cuesta lo mismo que P1 en <span class="m">n</span>.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 10 HEUR FORMULA ============================ -->
+<section class="slide" id="heurf" data-sec="Exacta vs heurística" data-title="Heurística (1/2): el caso con fórmula" data-steps="2">
+  <h2 class="title"><span class="c-heur">Heurística</span> (1/2): <em>un caso que se resuelve con fórmula</em></h2>
+  <div class="grid2" style="grid-template-columns:1fr 1fr;gap:30px">
+    <div>
+      <p class="lead" style="font-size:17.5px">Supón que todos los clientes son iguales: cada uno entrega <span class="m">ᾱ</span> y retira <span class="m">β̄</span>. Si P2 se aplica <span class="m">p</span> veces, separadas por <span class="m">k<sub>1</sub>, k<sub>2</sub>, …, k<sub>p</sub></span> clientes, el costo es una <b>cuadrática</b> en <span class="m">k</span> (problema QP, ec. 3–5).</p>
+      <div class="card" data-s="1" style="padding:12px 18px">
+        <p class="small" style="margin:0 0 4px">Relajando y anulando el gradiente (ec. 6–13), con <span class="m">r = h<sub>b</sub>β̄ / (h<sub>a</sub>ᾱ)</span>:</p>
+        <math display="block"><mrow><msubsup><mi>k</mi><mi>i</mi><mo>*</mo></msubsup><mo>=</mo><mfrac><mn>1</mn><mi>r</mi></mfrac><mrow><mo>(</mo><mfrac><mrow><mi>p</mi><mo>+</mo><mn>1</mn></mrow><mn>2</mn></mfrac><mo>−</mo><mi>i</mi><mo>)</mo></mrow><mo>+</mo><mfrac><mi>n</mi><mi>p</mi></mfrac><mo>,</mo><mspace width="0.6em"/><mi>i</mi><mo>=</mo><mn>1</mn><mo>,</mo><mo>…</mo><mo>,</mo><mi>p</mi></mrow></math>
+        <p class="small" style="margin:8px 0 4px">Se busca el mayor <span class="m">p</span> que respete las cotas fijando <span class="m">k<sub>p</sub>* = 1</span> (ec. 14):</p>
+        <math display="block"><mrow><msup><mi>p</mi><mo>*</mo></msup><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mrow><mo>(</mo><mn>1</mn><mo>−</mo><mn>2</mn><mi>r</mi><mo>+</mo><msqrt><msup><mrow><mo>(</mo><mn>2</mn><mi>r</mi><mo>−</mo><mn>1</mn><mo>)</mo></mrow><mn>2</mn></msup><mo>+</mo><mn>8</mn><mi>n</mi><mi>r</mi></msqrt><mo>)</mo></mrow></mrow></math>
+      </div>
+      <p class="callout" data-s="2" style="margin-top:14px"><span class="m">k<sub>i</sub>*</span> <b>decrece</b> con <span class="m">i</span>. Al principio van muchas entregas a bordo y P2 es cara (<span class="m">h<sub>a</sub>·α′</span>), así que conviene esperar. Más adelante quedan menos entregas y reordenar sale barato, por lo que P2 se aplica más seguido.</p>
+    </div>
+    <div class="card">
+      <h3>Explora el caso especial</h3>
+      <div class="sl-row"><label for="hfN">clientes n</label><input type="range" id="hfN" min="8" max="60" step="1" value="30"><output id="hfNo">30</output></div>
+      <div class="sl-row"><label for="hfR">h<sub>a</sub>ᾱ / h<sub>b</sub>β̄</label><input type="range" id="hfR" min="0.5" max="8" step="0.1" value="3"><output id="hfRo">3</output></div>
+      <svg id="hfSvg" viewBox="0 0 520 210" width="100%" height="210"></svg>
+      <div class="row" style="gap:22px;margin-top:4px">
+        <div class="stat"><span class="lb">p* (continuo)</span><span class="vl" id="hfP">–</span></div>
+        <div class="stat"><span class="lb">P2 aplicadas (⌊p*⌋)</span><span class="vl" id="hfPi">–</span></div>
+        <div class="stat"><span class="lb">primer tramo k₁*</span><span class="vl" id="hfK1">–</span></div>
+      </div>
+      <p class="note" style="margin:8px 0 0">Cada bloque es un tramo de clientes que termina en una P2. Mientras más caras son las entregas respecto de los retiros, menos P2 conviene aplicar y más largos son los tramos.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 11 HEUR UMBRAL ============================ -->
+<section class="slide" id="heuru" data-sec="Exacta vs heurística" data-title="Heurística (2/2): regla de umbral" data-steps="3">
+  <h2 class="title"><span class="c-heur">Heurística</span> (2/2): <em>una regla de umbral en una sola pasada</em></h2>
+  <div class="grid2" style="grid-template-columns:420px 1fr;gap:28px">
+    <div>
+      <p class="small" style="font-size:15px">En cada cliente <span class="m">i</span> se usa el caso especial como si fuera exacto, con los promedios de lo que falta por recorrer:</p>
+      <p style="text-align:center;margin:4px 0 10px"><span class="m">ᾱ = Σ<sub>j&gt;i</sub> α<sub>j</sub> / (n−i)</span>   <span class="m">β̄ = Σ<sub>j&gt;i</sub> β<sub>j</sub> / (n−i)</span></p>
+      <p class="small" style="font-size:15px">Con (14) y (13) se calcula <span class="m">k<sub>1</sub>*</span> en <span class="m">O(1)</span>. De ahí salen <b>cuatro umbrales</b> candidatos para disparar la siguiente P2:</p>
+      <ol class="small" style="padding-left:20px;margin:0 0 10px;font-size:14.5px">
+        <li>clientes visitados</li>
+        <li><b>retiros a bordo</b> ← el mejor</li>
+        <li>costo causado por los retiros</li>
+        <li>costo potencial de las entregas</li>
+      </ol>
+      <div class="card" style="padding:10px 14px" data-s="3">
+        <p class="small" style="margin:0">Con 10 000 instancias aleatorias por cada <span class="m">|V<sub>c</sub>| ∈ {25, 50, 75, 100, 250, 500}</span>, el umbral 2 se desvía del óptimo en <b>8,66 % en promedio</b> (cuartiles 5,89 / 8,23 / 10,86 %) y <b>52,70 % como máximo</b>. La desviación baja a medida que crece <span class="m">n</span> (Fig. 1–2).</p>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="padding:12px 16px">
+        <svg id="huSvg" viewBox="0 0 700 330" width="100%" height="330"></svg>
+      </div>
+      <div style="position:relative;height:70px;margin-top:10px">
+        <p class="callout" data-s="0-0" style="position:absolute;inset:0;margin:0">Una secuencia de 12 clientes con <span class="m">h<sub>a</sub> = h<sub>b</sub> = 1</span>. Las barras de arriba son las entregas y las de abajo, los retiros.</p>
+        <p class="callout" data-s="1-1" style="position:absolute;inset:0;margin:0">En el depósito: <span id="huT0"></span>. El umbral es la cantidad de retiros que habría a bordo en la primera P2: <span class="m">T = k<sub>1</sub>*·β̄</span>.</p>
+        <p class="callout" data-s="2-2" style="position:absolute;inset:0;margin:0">Se recorre una sola vez. Cuando los retiros acumulados desde la última P2 alcanzan <span class="m">T</span>, se aplica P2 y se recalcula <span class="m">T</span> con lo que falta. Una pasada, <b><span class="m">O(n)</span></b>.</p>
+        <p class="hlbox" data-s="3" style="position:absolute;inset:0;margin:0" id="huRes"></p>
+      </div>
+    </div>
+  </div>
+  <p class="note" style="position:absolute;left:72px;right:72px;bottom:46px">El paper describe la regla pero no publica su pseudocódigo. La animación usa una implementación propia del umbral 2 (retiros acumulados desde la última P2).</p>
+</section>
+
+<!-- ============================ 12 HEUR VIVO ============================ -->
+<section class="slide" id="heurv" data-sec="Exacta vs heurística" data-title="Exacta vs heurística en vivo">
+  <h2 class="title"><span class="c-exact">Exacta</span> vs <span class="c-heur">heurística</span>, <em>lado a lado</em></h2>
+  <p class="sub">El mismo tour, la misma secuencia de clientes y dos maneras de decidir dónde aplicar P2. Las demandas se generan como en el paper: <span class="m">p′ ∈ [1, 19]</span>, <span class="m">β<sub>i</sub> = ⌊p′(i mod 5)/5⌋</span> y <span class="m">α<sub>i</sub> = p′ − β<sub>i</sub></span>.</p>
+  <div class="card" style="padding:12px 16px">
+    <svg id="hvSvg" viewBox="0 0 1130 250" width="100%" height="250"></svg>
+  </div>
+  <div class="grid2" style="grid-template-columns:1fr 1fr;gap:22px;margin-top:12px">
+    <div class="row" style="align-items:flex-start;flex-direction:column;gap:10px">
+      <div class="row"><button class="btn primary" id="hvNew">↻ Nueva secuencia (n = 20)</button><button class="btn" id="hvMany">Simular 1 000 secuencias (n = 50)</button></div>
+      <div class="row" style="gap:28px">
+        <div class="stat"><span class="lb">exacta (DP)</span><span class="vl c-exact" id="hvE">–</span></div>
+        <div class="stat"><span class="lb">heurística (umbral 2)</span><span class="vl c-heur" id="hvH">–</span></div>
+        <div class="stat"><span class="lb">desviación</span><span class="vl" id="hvD">–</span></div>
+      </div>
+    </div>
+    <div class="card" style="padding:10px 14px;min-height:150px" id="hvManyBox">
+      <p class="small" style="margin:0">Pulsa «Simular 1 000 secuencias» para comparar esta implementación con lo que reporta el paper: <b>8,66 %</b> medio, cuartiles 5,89 / 8,23 / 10,86 %.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 13 EN LA BUSQUEDA ============================ -->
+<section class="slide" id="enbusq" data-sec="Exacta vs heurística" data-title="Cómo se usa dentro de la búsqueda" data-steps="4">
+  <h2 class="title">Dentro de la búsqueda: <em>la regla elige, la DP pone el precio</em></h2>
+  <div class="grid2" style="grid-template-columns:1fr 1fr;gap:16px;margin-bottom:12px">
+    <div class="flow"><span class="tag t-exact">exacta</span><span class="bx2">todos los movimientos</span><span class="ar">→</span><span class="bx2 ex">DP O(n²) a cada uno</span><span class="ar">→</span><span class="bx2">el mejor</span></div>
+    <div class="flow" data-s="1"><span class="tag t-heur">heurística</span><span class="bx2">todos</span><span class="ar">→</span><span class="bx2 he">regla O(n) a cada uno</span><span class="ar">→</span><span class="bx2">el mejor según la regla</span><span class="ar">→</span><span class="bx2 ex">DP solo a ese</span></div>
+  </div>
+  <p class="small" data-s="1" style="margin:0 0 12px">Texto del §4: <i>«once the best feasible move in the neighborhood is detected, we re-evaluate this move using the exact handling cost solver»</i>. El costo que guarda la búsqueda siempre es exacto. La heurística solo cambia <b>qué movimiento se elige</b>.</p>
+  <div class="grid2" style="grid-template-columns:330px 1fr;gap:22px">
+    <div class="card" style="padding:10px 12px">
+      <svg id="ebMap" viewBox="0 0 300 300" width="100%" height="300"></svg>
+      <div class="legend-row" style="font-size:12px"><span>— tour actual</span><span data-s="2" class="c-heur">- - elegido por la regla</span><span data-s="3" class="c-exact">— el mejor de verdad</span></div>
+    </div>
+    <div>
+      <div class="card" style="padding:10px 14px"><svg id="ebBars" viewBox="0 0 700 250" width="100%" height="250"></svg></div>
+      <div style="position:relative;height:66px;margin-top:10px">
+        <p class="callout" data-s="0-1" style="position:absolute;inset:0;margin:0" id="ebTxt0"></p>
+        <p class="callout" data-s="2-2" style="position:absolute;inset:0;margin:0" id="ebTxt2"></p>
+        <p class="callout" data-s="3-3" style="position:absolute;inset:0;margin:0" id="ebTxt3"></p>
+        <div class="hlbox row" data-s="4" style="position:absolute;inset:0;margin:0;justify-content:space-between"><span id="ebTxt4"></span><button class="btn" id="ebNew">Otro tour</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 14 COMUN ============================ -->
+<section class="slide" id="comun" data-sec="ILS vs ITS" data-title="Lo que comparten las metaheurísticas" data-steps="4">
+  <h2 class="title">Lo que comparten <span class="c-ils">ILS</span>, <span class="c-its">ITS</span> (y TS)</h2>
+  <p class="sub">Para que la comparación sea justa, el paper mantiene igual todo lo que no es la idea central de cada método (§4).</p>
+  <div class="grid2" style="grid-template-columns:1fr 500px;gap:28px">
+    <div>
+      <div class="card" data-s="1" style="margin-bottom:10px;padding:12px 16px"><h3><span class="k">1</span>Solución inicial en dos fases</h3><p class="small" style="margin:0">Primero, un tour TSP con Lin–Kernighan (Concorde, sin ajustes). Luego se <b>reubica el depósito</b> en la posición del ciclo que minimiza ruteo + manipulación óptima. Por Mosheiov (1994), al menos una posición es factible. El tiempo de este paso es despreciable.</p></div>
+      <div class="card" data-s="2" style="margin-bottom:10px;padding:12px 16px"><h3><span class="k">2</span>Vecindarios: relocate + 2-opt</h3><p class="small" style="margin:0">Fig. 3 (TS, 200 iteraciones): 2-opt solo mejora 2,85 % en 14,15 s, relocate + 2-opt mejora 3,62 % en 41,58 s, y con swap se llega a 3,65 % en 55,84 s. Se elige <b>relocate + 2-opt</b>.</p></div>
+      <div class="card" data-s="3" style="margin-bottom:10px;padding:12px 16px"><h3><span class="k">3</span>Solo movimientos factibles</h3><p class="small" style="margin:0">Respetan la capacidad <span class="m">Q</span>, sin penalizaciones ni parámetros extra.</p></div>
+      <div class="card" data-s="4" style="padding:12px 16px"><h3><span class="k">4</span>Mismo criterio de parada</h3><p class="small" style="margin:0">Un número fijo de iteraciones, <span class="m">N<sub>iter</sub> ∈ {50, 100, 200}</span>, con tiempos comparables entre métodos.</p></div>
+    </div>
+    <div class="card" style="padding:12px 14px" data-s="1">
+      <h3>Reubicar el depósito en el ejemplo</h3>
+      <svg id="cmSvg" viewBox="0 0 470 430" width="100%" height="430"></svg>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 15 MOVIMIENTOS ============================ -->
+<section class="slide" id="movs" data-sec="ILS vs ITS" data-title="Los dos movimientos y la perturbación" data-steps="3">
+  <h2 class="title">Los dos movimientos <em>y la perturbación</em></h2>
+  <div class="grid3" style="grid-template-columns:1fr 1fr 1fr;gap:18px">
+    <div class="card" style="padding:12px 14px"><h3>relocate (en el código, <span class="mono">1Opt</span>)</h3><svg id="mvA" viewBox="0 0 320 300" width="100%" height="300"></svg><p class="small" id="mvAt" style="margin:0">Saca al cliente de la posición <span class="m">i</span> y lo inserta en la posición <span class="m">p</span>. Hay <span class="m">|V<sub>c</sub>|(|V<sub>c</sub>|−1)</span> opciones.</p></div>
+    <div class="card" style="padding:12px 14px"><h3>2-opt</h3><svg id="mvB" viewBox="0 0 320 300" width="100%" height="300"></svg><p class="small" style="margin:0">Quita dos arcos y reconecta, lo que <b>invierte el tramo</b> entre las posiciones <span class="m">i</span> y <span class="m">j</span>. Las flechas de ese tramo cambian de sentido, y con ellas lo que va a bordo.</p></div>
+    <div class="card" style="padding:12px 14px"><h3>perturbación (ILS e ITS)</h3><svg id="mvC" viewBox="0 0 320 300" width="100%" height="300"></svg><p class="small" style="margin:0">Se repite <span class="m">N<sub>rand</sub></span> veces: elegir <span class="m">(i, j)</span> al azar. Si <span class="m">i = j</span>, relocate de <span class="m">i</span> a una posición <span class="m">p ≠ i</span> al azar. Si no, 2-opt<span class="m">(i, j)</span>.</p></div>
+  </div>
+  <p class="callout" data-s="3" style="margin-top:14px"><span class="m">N<sub>rand</sub> = d·|V<sub>c</sub>|</span> con <span class="m">d = 10 %</span> (Fig. 5, ILS con evaluación exacta). Con <span class="m">d = 10 %</span> se mejora 1,29 % sobre la solución inicial, y con <span class="m">d ≥ 25 %</span> casi nada: una perturbación muy grande destruye el tour.</p>
+</section>
+
+<!-- ============================ 16 ILS ============================ -->
+<section class="slide" id="ils" data-sec="ILS vs ITS" data-title="ILS paso a paso" data-steps="7">
+  <h2 class="title"><span class="c-ils">ILS</span> paso a paso <em>(Algoritmo 4.2)</em></h2>
+  <div class="grid2" style="grid-template-columns:480px 1fr;gap:26px">
+    <div class="code">
+      <div class="cap">Algoritmo 4.2 · <b>ILS(N<sub>iter</sub>, N<sub>rand</sub>, Tour)</b></div>
+      <span class="ln" data-hl="0">costCurrent ← costo(tour inicial)</span>
+      <span class="ln" data-hl="0">bestTour ← Tour</span>
+      <span class="ln" data-hl="7"><span class="kw">para</span> it ← 1 <span class="kw">hasta</span> N<sub>iter</sub></span>
+      <span class="ln" data-hl="1,4">  Tour ← bestTour</span>
+      <span class="ln" data-hl="1,4"><span class="kw">  para</span> r ← 1 <span class="kw">hasta</span> N<sub>rand</sub>   <span class="cm">// perturbar</span></span>
+      <span class="ln" data-hl="1,4">    i, j ← aleatorio(1..|V<sub>c</sub>|)</span>
+      <span class="ln" data-hl="1,4"><span class="kw">    si</span> i = j: relocate(i → p ≠ i)</span>
+      <span class="ln" data-hl="1,4"><span class="kw">    si no</span>:   2-opt(i, j)</span>
+      <span class="ln" data-hl="2,5"><span class="kw">  mientras</span> haya mejora     <span class="cm">// búsqueda local</span></span>
+      <span class="ln" data-hl="2,5">    costNew ← <span class="mark">aplicar mejor movimiento</span></span>
+      <span class="ln" data-hl="3,6"><span class="kw">  si</span> costNew &lt; costCurrent</span>
+      <span class="ln" data-hl="6">    costCurrent ← costNew</span>
+      <span class="ln" data-hl="6">    bestTour ← Tour</span>
+      <div style="padding:10px 16px 0" class="small"><span class="mark">mejor movimiento</span> = el mejor relocate o 2-opt factible. Aquí entra la evaluación <span class="c-exact">exacta</span> o <span class="c-heur">heurística</span>.</div>
+    </div>
+    <div>
+      <div class="card" style="padding:8px 10px"><svg id="ilsSvg" viewBox="0 0 640 330" width="100%" height="330"></svg></div>
+      <div style="position:relative;height:96px;margin-top:10px">
+        <p class="callout" data-s="0-0" style="position:absolute;inset:0;margin:0">Caricatura en 1D: el eje horizontal representa los tours y la altura, su costo. La bola parte en <b>bestTour</b>, que es un óptimo local.</p>
+        <p class="callout" data-s="1-1" style="position:absolute;inset:0;margin:0"><b>Iteración 1, perturbar.</b> Se aplican <span class="m">N<sub>rand</sub></span> movimientos aleatorios, sin mirar el costo.</p>
+        <p class="callout" data-s="2-2" style="position:absolute;inset:0;margin:0"><b>Búsqueda local.</b> Se aplica el mejor movimiento mientras mejore. Se detiene en el primer óptimo local que encuentra.</p>
+        <p class="callout" data-s="3-3" style="position:absolute;inset:0;margin:0"><b>Comparar.</b> Volvió al mismo valle y <span class="m">costNew</span> no es menor que <span class="m">costCurrent</span>, así que se descarta. La próxima iteración parte otra vez de bestTour.</p>
+        <p class="callout" data-s="4-4" style="position:absolute;inset:0;margin:0"><b>Iteración 2, perturbar.</b> Esta vez los saltos aleatorios cruzan la cresta.</p>
+        <p class="callout" data-s="5-5" style="position:absolute;inset:0;margin:0"><b>Búsqueda local.</b> Desciende al fondo del valle nuevo.</p>
+        <p class="callout" data-s="6-6" style="position:absolute;inset:0;margin:0"><b>Aceptar.</b> <span class="m">costNew &lt; costCurrent</span>, así que bestTour pasa a ser este tour.</p>
+        <p class="hlbox" data-s="7" style="position:absolute;inset:0;margin:0">Se repite <b><span class="m">N<sub>iter</sub></span> = 200 veces</b> con <span class="m">N<sub>rand</sub> = 0,1·|V<sub>c</sub>|</span>. Para salir de un valle, ILS <b>depende de que la perturbación lo saque</b>: la búsqueda local nunca sube.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 17 ITS ============================ -->
+<section class="slide" id="its" data-sec="ILS vs ITS" data-title="ITS paso a paso" data-steps="4">
+  <h2 class="title"><span class="c-its">ITS</span> paso a paso <em>(Algoritmo 4.3)</em></h2>
+  <div class="grid2" style="grid-template-columns:480px 1fr;gap:26px">
+    <div>
+      <div class="code">
+        <div class="cap">Algoritmo 4.3 · <b>ITS(N*<sub>iter</sub>, N<sub>rand</sub>, Tour)</b></div>
+        <span class="ln" data-hl="0">costCurrent ← costo(tour inicial)</span>
+        <span class="ln" data-hl="0">bestTour ← Tour</span>
+        <span class="ln" data-hl="4"><span class="kw">para</span> it ← 1 <span class="kw">hasta</span> N*<sub>iter</sub></span>
+        <span class="ln" data-hl="1">  Tour ← bestTour</span>
+        <span class="ln" data-hl="1"><span class="kw">  para</span> r ← 1 <span class="kw">hasta</span> N<sub>rand</sub>   <span class="cm">// igual que ILS</span></span>
+        <span class="ln" data-hl="1">    movimiento aleatorio (relocate o 2-opt)</span>
+        <span class="ln" data-hl="2">  costNew ← <span class="mark">TabuSearch(N*<sub>iter</sub>, Tour)</span></span>
+        <span class="ln" data-hl="3"><span class="kw">  si</span> costNew &lt; costCurrent</span>
+        <span class="ln" data-hl="3">    costCurrent ← costNew</span>
+        <span class="ln" data-hl="3">    bestTour ← Tour</span>
+      </div>
+      <p class="note" style="margin-top:8px">Errata del paper: el Algoritmo 4.3 publicado dice <span class="mono">costCurrent ← TabuSearch(…)</span>, pero la línea siguiente compara <span class="mono">costNew</span>. También el texto dice «the pseudo-code for ITS is provided in Algorithm 4.2» cuando se refiere a ILS.</p>
+      <div class="card" data-s="4" style="padding:10px 14px;margin-top:8px">
+        <p class="small" style="margin:0"><span class="m">N*<sub>iter</sub> = ⌊√N<sub>iter</sub>⌋ = 7, 10, 14</span> para <span class="m">N<sub>iter</sub> = 50, 100, 200</span>. Son 14 perturbaciones × 14 iteraciones tabú ≈ 196, comparable con las 200 de TS e ILS. La lista tabú mide <span class="m">0,5·|V<sub>c</sub>|</span> y <span class="m">N<sub>rand</sub> = 0,1·|V<sub>c</sub>|</span>, igual que en ILS.</p>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="padding:8px 10px"><svg id="itsSvg" viewBox="0 0 640 330" width="100%" height="330"></svg></div>
+      <div style="position:relative;height:80px;margin-top:10px">
+        <p class="callout" data-s="0-0" style="position:absolute;inset:0;margin:0">El mismo paisaje y el mismo punto de partida que ILS.</p>
+        <p class="callout" data-s="1-1" style="position:absolute;inset:0;margin:0"><b>Perturbar.</b> Esta vez los saltos aleatorios caen <b>hacia el lado malo</b>, lejos del valle mejor.</p>
+        <p class="callout" data-s="2-2" style="position:absolute;inset:0;margin:0"><b>Búsqueda tabú.</b> Cada iteración va al <b>mejor vecino no tabú</b>, aunque suba. Las × marcan posiciones prohibidas por un tiempo, así que no puede volver atrás y termina cruzando la cresta.</p>
+        <p class="callout" data-s="3-3" style="position:absolute;inset:0;margin:0"><b>Aceptar.</b> La búsqueda tabú devuelve lo mejor que vio. Como mejora a <span class="m">costCurrent</span>, se actualiza bestTour.</p>
+        <p class="hlbox" data-s="4" style="position:absolute;inset:0;margin:0">ITS <b>no depende de que la perturbación acierte</b>: puede salir de un valle por su cuenta, subiendo.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 18 TS ============================ -->
+<section class="slide" id="ts" data-sec="ILS vs ITS" data-title="El motor de ITS: búsqueda tabú" data-steps="6">
+  <h2 class="title">El motor de <span class="c-its">ITS</span>: <em>una búsqueda tabú real, iteración a iteración</em></h2>
+  <div class="grid2" style="grid-template-columns:430px 1fr;gap:24px">
+    <div>
+      <div class="code">
+        <div class="cap">Algoritmo 4.1 · <b>TS(N<sub>iter</sub>, Tour)</b></div>
+        <span class="ln">costCurrent ← costo(tour inicial)</span>
+        <span class="ln"><span class="kw">para</span> it ← 1 <span class="kw">hasta</span> N<sub>iter</sub></span>
+        <span class="ln">  (i, p, cost1) ← <span class="mark">mejor relocate no tabú</span></span>
+        <span class="ln">  (i, j, cost2) ← <span class="mark">mejor 2-opt no tabú</span></span>
+        <span class="ln"><span class="kw">  si</span> cost1 &lt; cost2</span>
+        <span class="ln">    aplicar relocate(i, p); tabú ← (i, i)</span>
+        <span class="ln"><span class="kw">  si no</span></span>
+        <span class="ln">    aplicar 2-opt(i, j);    tabú ← (i, j)</span>
+        <span class="ln">  actualizar costCurrent</span>
+      </div>
+      <ul class="bul" style="margin-top:12px">
+        <li class="small">Se aplica el mejor movimiento <b>aunque empeore</b>.</li>
+        <li class="small">Aspiración: un movimiento tabú se permite si mejora <span class="m">costCurrent</span>.</li>
+        <li class="small">Tabú <span class="m">(i, i)</span>: prohíbe reubicar al cliente <span class="m">i</span>. Tabú <span class="m">(i, j)</span>: prohíbe el 2-opt sobre los arcos <span class="m">i</span> y <span class="m">j</span>. Largo de la lista: <span class="m">0,5·|V<sub>c</sub>|</span> (Fig. 4: 3,89 %).</li>
+        <li class="small">El contador no se reinicia al mejorar, para que el tiempo sea predecible.</li>
+      </ul>
+    </div>
+    <div>
+      <div class="card" style="padding:10px 14px">
+        <h3 id="tsHead">Instancia de 10 clientes, evaluación exacta</h3>
+        <table class="t" id="tsTbl" style="font-size:13px">
+          <thead><tr><th>it</th><th>mejor relocate</th><th class="n">cost1</th><th>mejor 2-opt</th><th class="n">cost2</th><th class="n">costo actual</th><th>lista tabú</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="card" style="padding:8px 14px;margin-top:10px"><svg id="tsSpark" viewBox="0 0 640 120" width="100%" height="120"></svg></div>
+      <p class="note" style="margin-top:6px">Se calcula en vivo sobre la misma instancia de la lámina 13 (10 clientes, <span class="m">h = 20/|V<sub>c</sub>| = 2</span>), con todos los movimientos factibles evaluados de forma exacta. La lista tabú mide 0,5·|V<sub>c</sub>| = 5, así que en la iteración 6 sale la entrada más antigua.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 19 ILS vs ITS ============================ -->
+<section class="slide" id="ilsvits" data-sec="ILS vs ITS" data-title="ILS vs ITS: resumen" data-steps="2">
+  <h2 class="title"><span class="c-ils">ILS</span> vs <span class="c-its">ITS</span>: <em>misma perturbación, otra intensificación</em></h2>
+  <div class="card" style="padding:14px 18px;margin-bottom:14px">
+    <svg id="budget" viewBox="0 0 1130 150" width="100%" height="150"></svg>
+  </div>
+  <div class="cmp" data-s="1">
+    <div class="h"></div><div class="h c-ils">ILS</div><div class="h c-its">ITS</div>
+    <div class="k">perturbación</div><div><span class="m">N<sub>rand</sub> = 0,1·|V<sub>c</sub>|</span> movimientos aleatorios desde bestTour</div><div class="same">idéntica</div>
+    <div class="k">intensificación</div><div>descenso: mejor movimiento <b>mientras mejore</b>; se detiene en el primer óptimo local</div><div>búsqueda tabú de <span class="m">N*<sub>iter</sub></span> iteraciones: siempre el mejor no tabú, <b>aunque empeore</b></div>
+    <div class="k">iteraciones externas</div><div><span class="m">N<sub>iter</sub></span> = 200</div><div><span class="m">⌊√200⌋</span> = 14 (× 14 iteraciones tabú)</div>
+    <div class="k">aceptación</div><div>solo si mejora costCurrent</div><div class="same">igual</div>
+    <div class="k">1-dir, exacta (Tabla 2)</div><div><b>3,85 %</b> de desviación · 1 002,61 s</div><div><b>0,83 %</b> de desviación · 491,79 s</div>
+  </div>
+  <p class="callout" data-s="2" style="margin-top:12px">ILS rinde «mucho peor que los otros dos, aun con casi el doble de tiempo» (§5). Para el paper, la razón es que <span class="m">N<sub>rand</sub></span> crece linealmente con <span class="m">|V<sub>c</sub>|</span>, y la diversificación solo ayuda si los movimientos aleatorios son pocos: ITS-1dir le gana a TS-1dir cuando <span class="m">|V<sub>c</sub>| ∈ {20, 40}</span>, es decir, con <span class="m">N<sub>rand</sub></span> = 2 y 4.</p>
+</section>
+
+<!-- ============================ 20 DIR EJEMPLO ============================ -->
+<section class="slide" id="dirx" data-sec="1-dir vs 2-dir" data-title="El mismo tour, al revés" data-steps="3">
+  <h2 class="title">1-dir vs 2-dir: <em>el mismo tour, al revés</em></h2>
+  <div class="grid2" style="grid-template-columns:400px 1fr;gap:26px">
+    <div class="card" style="padding:10px 12px">
+      <svg id="dirMap" viewBox="0 0 520 370" width="100%" height="300"></svg>
+      <div class="small" style="padding:4px 8px" id="dirRoute"></div>
+    </div>
+    <div>
+      <div class="card" style="padding:12px 16px"><svg id="dirSeq" viewBox="0 0 700 330" width="100%" height="330"></svg></div>
+    </div>
+  </div>
+  <div style="position:relative;height:74px;margin-top:12px">
+    <p class="callout" data-s="0-0" style="position:absolute;inset:0;margin:0">Las distancias son simétricas, así que recorrer el ciclo al revés cuesta <b>exactamente lo mismo en ruteo</b>.</p>
+    <p class="callout" data-s="1-1" style="position:absolute;inset:0;margin:0"><b>Sentido original</b> A→F: la DP pone P2 en C y la manipulación óptima cuesta <b>8</b>.</p>
+    <p class="callout" data-s="2-2" style="position:absolute;inset:0;margin:0"><b>Sentido invertido</b> F→A: la mejor decisión cambia (P2 en C, ahora 4.º en la ruta) y la manipulación óptima cuesta <b>16</b>.</p>
+    <p class="hlbox" data-s="3" style="position:absolute;inset:0;margin:0">¿Por qué el doble? F retira 3 cajas. Si es el <b>último</b> cliente, esas cajas casi no viajan. Si es el <b>primero</b>, van atrás y estorban casi todas las entregas que siguen. El orden decide qué va a bordo y cuándo.</p>
+  </div>
+</section>
+
+<!-- ============================ 21 DIR PROCEDIMIENTO ============================ -->
+<section class="slide" id="dirp" data-sec="1-dir vs 2-dir" data-title="1-dir vs 2-dir: el procedimiento" data-steps="3">
+  <h2 class="title">1-dir vs 2-dir: <em>el procedimiento</em></h2>
+  <div class="grid2" style="grid-template-columns:1fr 1fr;gap:28px">
+    <div>
+      <div class="card" style="padding:14px 18px;margin-bottom:12px">
+        <h3>1-dir</h3>
+        <div class="flow"><span class="bx2">tour TSP T</span><span class="ar">→</span><span class="bx2">metaheurística (N<sub>iter</sub>)</span><span class="ar">→</span><span class="bx2">S</span></div>
+      </div>
+      <div class="card" style="padding:14px 18px" data-s="1">
+        <h3>2-dir <span class="note" style="font-weight:400">≈ 2× tiempo</span></h3>
+        <div class="flow" style="margin-bottom:8px"><span class="bx2">T</span><span class="ar">→</span><span class="bx2">metaheurística (N<sub>iter</sub>)</span><span class="ar">→</span><span class="bx2">S₁</span></div>
+        <div class="flow" style="margin-bottom:8px"><span class="bx2">T invertido</span><span class="ar">→</span><span class="bx2">metaheurística (N<sub>iter</sub>)</span><span class="ar">→</span><span class="bx2">S₂</span></div>
+        <div class="flow"><span class="bx2" style="font-weight:600">reportar min(S₁, S₂)</span></div>
+      </div>
+      <p class="small" data-s="1" style="margin-top:12px">Texto del §4: <i>«it is also profitable to consider as a starting tour the reverse TSP tour. This tour has the same routing cost, but possibly a different handling cost.»</i></p>
+    </div>
+    <div>
+      <div class="card" data-s="2" style="padding:12px 16px;margin-bottom:12px">
+        <h3>¿Vale el doble de tiempo? Tabla 4 (TS, exacta)</h3>
+        <table class="t">
+          <thead><tr><th></th><th class="n">50 iter.</th><th class="n">100 iter.</th><th class="n">200 iter.</th></tr></thead>
+          <tbody>
+            <tr><td>1-dir</td><td class="n">0,68 % · 125 s</td><td class="n" id="t4a">0,58 % · 250 s</td><td class="n" id="t4c">0,46 % · 501 s</td></tr>
+            <tr><td>2-dir</td><td class="n" id="t4b">0,22 % · 250 s</td><td class="n" id="t4d">0,15 % · 501 s</td><td class="n">0,07 % · 1 001 s</td></tr>
+          </tbody>
+        </table>
+        <p class="small" style="margin:8px 0 0">Con el <b>mismo tiempo</b>, 2-dir con la mitad de iteraciones gana: 0,22 % frente a 0,58 % (≈ 250 s) y 0,15 % frente a 0,46 % (≈ 500 s). Conviene más <b>repartir</b> las iteraciones entre las dos direcciones que gastarlas todas en una.</p>
+      </div>
+      <div class="card" data-s="3" style="padding:12px 16px">
+        <h3>Tabla 3: desviación media, 200 iteraciones, exacta</h3>
+        <svg id="t3Svg" viewBox="0 0 520 150" width="100%" height="150"></svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 22 DIR TABLAS ============================ -->
+<section class="slide" id="dirt" data-sec="1-dir vs 2-dir" data-title="Cómo leer «2 dir.» en las Tablas 8–9" data-steps="2">
+  <h2 class="title">Ojo al leer <em>«2 dir.»</em> en las Tablas 8–9</h2>
+  <div class="grid2" style="grid-template-columns:1fr 1fr;gap:30px">
+    <div>
+      <div class="card" style="padding:12px 16px">
+        <h3>Tabla 8, |V<sub>c</sub>| = 20, ILS exacta</h3>
+        <table class="t">
+          <thead><tr><th>Id</th><th class="n">Best</th><th class="n">1 dir.</th><th class="n">2 dir.</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td class="n">633,00</td><td class="n">633,00</td><td class="n">634,00</td></tr>
+            <tr class="hl"><td>2</td><td class="n">584,00</td><td class="n">584,00</td><td class="n">610,00</td></tr>
+            <tr><td>3</td><td class="n">573,00</td><td class="n">587,00</td><td class="n">573,00</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="callout" style="margin-top:14px">Si «2 dir.» fuera el mínimo de las dos corridas, nunca podría ser <b>peor</b> que «1 dir.». En la fila 2 lo es: 610 &gt; 584.</p>
+    </div>
+    <div>
+      <div class="hlbox" data-s="1" style="margin-bottom:14px">En las Tablas 8–9, la columna «2 dir.» es la <b>corrida desde el tour invertido, sola</b>. El resultado X-2dir es <span class="m">min(1 dir., 2 dir.)</span>. Con esa lectura, el promedio de las 100 instancias reproduce la Tabla 3: ILS-2dir <b>2,68 %</b> e ITS-2dir <b>0,66 %</b>.</div>
+      <div class="card" data-s="2" style="padding:12px 16px">
+        <h3>¿Qué dirección ganó? (100 instancias, Tablas 8–9)</h3>
+        <svg id="winSvg" viewBox="0 0 520 190" width="100%" height="190"></svg>
+        <p class="small" style="margin:6px 0 0">Ninguna dirección domina. Saber cuál conviene exigiría resolver ambas, y por eso 2-dir simplemente prueba las dos.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 23 RES OCHO ============================ -->
+<section class="slide" id="res8" data-sec="Resultados" data-title="Las 8 configuraciones" data-steps="3">
+  <h2 class="title">Resultados: <em>las 8 configuraciones</em></h2>
+  <p class="sub">Desviación media respecto de Best en las 100 instancias (|V<sub>c</sub>| = 20…200, 200 iteraciones), calculada desde los valores por instancia de las Tablas 8–9. Los tiempos son de la fila «Time (s)» de la Tabla 9.</p>
+  <div class="grid2" style="grid-template-columns:1fr 380px;gap:24px">
+    <div class="card" style="padding:12px 14px"><svg id="r8Dev" viewBox="0 0 720 330" width="100%" height="330"></svg></div>
+    <div class="card" style="padding:12px 14px"><svg id="r8Time" viewBox="0 0 360 330" width="100%" height="330"></svg></div>
+  </div>
+  <div style="position:relative;height:60px;margin-top:12px">
+    <p class="callout" data-s="0-0" style="position:absolute;inset:0;margin:0">Las líneas verticales marcan la <b>solución inicial</b> (dos fases): 4,54 % en 1-dir y 2,90 % si se toma la mejor de las dos direcciones.</p>
+    <p class="callout" data-s="1-1" style="position:absolute;inset:0;margin:0"><b>ILS</b> apenas se aleja de la solución inicial, con evaluación heurística o exacta (3,97 y 3,85 % en 1-dir). Eso sí, la exacta cuesta 8,8× más tiempo.</p>
+    <p class="callout" data-s="2-2" style="position:absolute;inset:0;margin:0"><b>ITS exacta</b> es otra historia: 0,83 % en 1-dir y 0,66 % en 2-dir. Con evaluación heurística, ITS cae a 3,37 %.</p>
+    <p class="hlbox" data-s="3" style="position:absolute;inset:0;margin:0">2-dir mejora a todas, pero sobre todo a las que casi no se movieron de la solución inicial: en ellas, 2-dir es básicamente «elegir la mejor dirección de partida».</p>
+  </div>
+</section>
+
+<!-- ============================ 24 RES MEJORA ============================ -->
+<section class="slide" id="resm" data-sec="Resultados" data-title="¿Mejoran la solución inicial?" data-steps="2">
+  <h2 class="title">¿Cuántas veces <em>mejoran la solución inicial</em>?</h2>
+  <p class="sub">Instancias (de 10 por tamaño) en que la corrida 1-dir termina con un costo menor que el de su solución inicial. Fuente: Tablas 8–9.</p>
+  <div class="card" style="padding:16px 18px"><div class="hm" id="hm"></div></div>
+  <div class="grid2" style="grid-template-columns:1fr 1fr;gap:22px;margin-top:14px">
+    <p class="callout" data-s="1" style="margin:0"><b>ILS</b>, con cualquier evaluación, devuelve <b>exactamente la solución inicial</b> en las 60 instancias con <span class="m">|V<sub>c</sub>| ≥ 60</span>. Cada iteración perturba con <span class="m">0,1·|V<sub>c</sub>|</span> movimientos aleatorios (6 a 20), y el descenso no consigue volver a algo mejor que el tour de Lin–Kernighan.</p>
+    <p class="callout" data-s="2" style="margin:0"><b>ITS exacta</b> mejora en 99 de 100 instancias. <b>ITS heurística</b> solo en 31: para el paper, una evaluación inexacta «dificulta la capacidad de la búsqueda tabú para escapar de óptimos locales» (comentario sobre la Tabla 5).</p>
+  </div>
+</section>
+
+<!-- ============================ 25 RES TRADEOFF ============================ -->
+<section class="slide" id="rest" data-sec="Resultados" data-title="Tiempo vs calidad" data-steps="2">
+  <h2 class="title">El trade-off: <em>tiempo vs calidad</em></h2>
+  <div class="grid2" style="grid-template-columns:1fr 360px;gap:24px">
+    <div class="card" style="padding:12px 14px"><svg id="toSvg" viewBox="0 0 740 440" width="100%" height="440"></svg></div>
+    <div>
+      <div class="card" data-s="1" style="padding:12px 16px;margin-bottom:12px">
+        <h3>La heurística es ≈ 8–9× más rápida</h3>
+        <table class="t" style="font-size:13px">
+          <thead><tr><th></th><th class="n">exacta</th><th class="n">heur.</th><th class="n">×</th></tr></thead>
+          <tbody>
+            <tr><td>ILS (por dir.)</td><td class="n">1 002,6 s</td><td class="n">113,7 s</td><td class="n">8,8</td></tr>
+            <tr><td>ITS (por dir.)</td><td class="n">471,8 s</td><td class="n">57,5 s</td><td class="n">8,2</td></tr>
+            <tr><td>TS-2dir (Tabla 5)</td><td class="n">1 000,7 s</td><td class="n">117,2 s</td><td class="n">8,5</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card" data-s="2" style="padding:12px 16px">
+        <h3>…y el precio en calidad varía</h3>
+        <p class="small" style="margin:0 0 6px">ILS: +0,12 pp (3,85 → 3,97 %, 1-dir). Casi nada, porque ILS casi no mejora con ninguna de las dos.</p>
+        <p class="small" style="margin:0 0 6px">ITS: +2,54 pp (0,83 → 3,37 %, 1-dir).</p>
+        <p class="small" style="margin:0">TS-2dir: +2,51 pp (0,07 → 2,58 %): «roughly 2.5% better… about 10 times smaller» (§5).</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 26 CONFIGURADOR ============================ -->
+<section class="slide" id="config" data-sec="Resultados" data-title="Arma tu configuración">
+  <h2 class="title">Arma tu configuración</h2>
+  <div class="cfg-sw" id="cfgSw">
+    <div><div class="lab">metaheurística</div><div class="sw-row" data-v="1" data-k="m" style="display:block;padding:0;border:0"><div class="sw"><span>ILS</span><span>ITS</span><i class="knob"></i></div></div></div>
+    <div><div class="lab">evaluación</div><div class="sw-row" data-v="1" data-k="e" style="display:block;padding:0;border:0"><div class="sw"><span>heurística</span><span>exacta</span><i class="knob"></i></div></div></div>
+    <div><div class="lab">tour inicial</div><div class="sw-row" data-v="1" data-k="d" style="display:block;padding:0;border:0"><div class="sw"><span>1-dir</span><span>2-dir</span><i class="knob"></i></div></div></div>
+  </div>
+  <div class="grid2" style="grid-template-columns:500px 1fr;gap:24px">
+    <div>
+      <div class="cfg-name" id="cfgName"></div>
+      <div class="code" id="cfgCode" style="font-size:12.6px"></div>
+    </div>
+    <div>
+      <div class="kpis">
+        <div class="kpi"><div class="lb">desviación media vs Best</div><div class="vl" id="cfgDev"></div></div>
+        <div class="kpi"><div class="lb">tiempo medio total</div><div class="vl" id="cfgTime"></div></div>
+        <div class="kpi"><div class="lb">mejora la solución inicial</div><div class="vl" id="cfgImp"></div></div>
+      </div>
+      <div class="card" style="padding:10px 14px"><svg id="cfgLine" viewBox="0 0 640 230" width="100%" height="230"></svg></div>
+      <p class="note" style="margin-top:6px">Datos: Tablas 8–9 (valores por instancia), 200 iteraciones. En 2-dir el tiempo es la suma de las dos corridas y «mejora» compara contra la mejor solución inicial de ambas direcciones.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 27 CIERRE ============================ -->
+<section class="slide" id="cierre" data-sec="Resultados" data-title="En resumen">
+  <h2 class="title">En resumen</h2>
+  <div class="grid3" style="margin-top:10px">
+    <div class="card summary-card" style="--c:var(--its)"><h3><span class="c-ils">ILS</span> vs <span class="c-its">ITS</span></h3><p>Tienen la misma perturbación y la misma aceptación. ILS intensifica con un <b>descenso</b> que se detiene en el primer óptimo local. ITS usa una <b>búsqueda tabú</b> corta que puede subir para salir de él. Con evaluación exacta: 3,85 % frente a 0,83 %, y ITS además tarda la mitad.</p></div>
+    <div class="card summary-card" style="--c:var(--exact)"><h3><span class="c-heur">Heurística</span> vs <span class="c-exact">exacta</span></h3><p>No cambia el algoritmo de búsqueda, sino la forma de <b>medir</b> los movimientos. La exacta es una DP <span class="m">O(n²)</span>. La heurística es una regla de umbral <span class="m">O(n)</span> que elige el movimiento, y luego la DP le pone el precio exacto. Resultado: unas 8–9× menos tiempo, a cambio de peores decisiones.</p></div>
+    <div class="card summary-card" style="--c:var(--ink2)"><h3>1-dir vs 2-dir</h3><p>Es el <b>mismo tour leído al revés</b>: igual ruteo y otra manipulación. 2-dir corre la metaheurística desde ambos y se queda con la mejor, con el doble de tiempo. Aun con el mismo tiempo total, repartir las iteraciones en dos direcciones rinde más (Tabla 4).</p></div>
+  </div>
+  <p class="bigq" style="margin-top:26px">«Our results show that the TS algorithm using the exact dynamic programming algorithm yields the best results, and replacing the exact algorithm with the approximate one results in a considerably faster algorithm at the cost of slightly worse solutions.»<br><span class="note" style="font-family:var(--f-b);font-style:normal">Erdoğan et al. (2012), §6</span></p>
+</section>
+
+<div id="overview"><h2>Índice</h2><div class="cols" id="ovCols"></div></div>
+
+<footer class="chrome-bot">
+  <div id="progress"></div>
+  <div id="stepDots"></div>
+  <span id="pageNum"></span>
+  <div class="navbtns"><button id="bPrev" title="Anterior (←)">‹</button><button id="bNext" title="Siguiente (→)">›</button><button id="bIdx" title="Índice (O)">☰</button><button id="bTheme" title="Tema claro/oscuro (T)">◐</button><button id="bFs" title="Pantalla completa (F)">⛶</button></div>
+</footer>
+</div></div>
+<div id="tip"></div>
+<script>
+'use strict';
+/* =====================================================================
+   Utilidades
+   ===================================================================== */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const NS = 'http://www.w3.org/2000/svg';
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const sum = a => a.reduce((s, x) => s + x, 0);
+const nf = (x, d = 1) => Number(x).toLocaleString('es-CL', { minimumFractionDigits: d, maximumFractionDigits: d });
+const ease = t => (t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+function S(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  if (attrs) for (const k in attrs) { if (k === 'text') e.textContent = attrs[k]; else e.setAttribute(k, attrs[k]); }
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function H(tag, cls, html, parent) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (html != null) e.innerHTML = html;
+  if (parent) parent.appendChild(e);
+  return e;
+}
+let RUN = 0;
+const live = id => id === RUN;
+function tween(dur, f, my) {
+  return new Promise(res => {
+    const t0 = performance.now();
+    const fr = now => {
+      if (!live(my)) return res(false);
+      const t = Math.min(1, (now - t0) / dur);
+      f(t);
+      if (t < 1) requestAnimationFrame(fr); else res(true);
+    };
+    requestAnimationFrame(fr);
+  });
+}
+const SUP = { '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹', '-': '⁻' };
+function sci(x) {
+  const e = Math.floor(Math.log10(x)), m = x / Math.pow(10, e);
+  return nf(m, 1) + '·10' + String(e).split('').map(c => SUP[c]).join('');
+}
+
+/* =====================================================================
+   Subproblema de manipulación (Sección 2 del paper)
+   al, be: arreglos 1..n en el orden del tour (índice 0 sin uso)
+   ===================================================================== */
+const HC = {
+  // Algoritmo 2.1: p[i][j] = costo de P1 en i+1..j-1 y P2 en j, dado P2 en i
+  p(al, be, ha, hb) {
+    const n = al.length - 1, a0 = sum(al.slice(1));
+    const p = Array.from({ length: n + 1 }, () => new Array(n + 1).fill(null));
+    for (let i = 0; i < n; i++) {
+      let bp = 0, th = 0, ap = a0;
+      for (let j = 1; j <= i; j++) ap -= al[j];
+      for (let j = i + 1; j <= n; j++) {
+        ap -= al[j];
+        p[i][j] = (bp + be[j] > 0) ? th + ha * ap + hb * bp : th;
+        if (al[j] > 0) th += hb * bp;
+        bp += be[j];
+      }
+    }
+    return p;
+  },
+  // DP (ec. 1-2): f(i) = min_j { p_ij + f(j) }, f(n) = 0. En empates se prefiere el j mayor.
+  dp(al, be, ha, hb) {
+    const n = al.length - 1, p = HC.p(al, be, ha, hb);
+    const f = new Array(n + 1).fill(0), nx = new Array(n + 1).fill(null);
+    for (let i = n - 1; i >= 0; i--) {
+      let best = Infinity, bj = null;
+      for (let j = i + 1; j <= n; j++) { const v = p[i][j] + f[j]; if (v <= best + 1e-12) { best = v; bj = j; } }
+      f[i] = best; nx[i] = bj;
+    }
+    const p2 = []; let c = 0;
+    while (c < n) { c = nx[c]; p2.push(c); }
+    return { p, f, nx, p2, cost: f[0] };
+  },
+  // Simula una secuencia de políticas (pol[j] ∈ {1,2}); devuelve costo por cliente
+  sim(al, be, ha, hb, pol) {
+    const n = al.length - 1; let A = sum(al.slice(1)), R = 0, cost = 0; const per = [];
+    for (let j = 1; j <= n; j++) {
+      let c = 0; A -= al[j];
+      if (pol[j] === 2) { if (R + be[j] > 0) { c = ha * A + hb * R; R = 0; } }
+      else { if (al[j] > 0) c = hb * R; R += be[j]; }
+      cost += c; per.push(c);
+    }
+    return { cost, per };
+  },
+  // Heurística lineal (§2.2), umbral 2: retiros acumulados desde la última P2 ≥ k1*·β̄
+  thr(al, be, ha, hb, i, SA, SB) {
+    const n = al.length - 1, m = n - i;
+    if (m <= 0) return { T: Infinity };
+    const ab = SA[i] / m, bb = SB[i] / m;
+    if (bb <= 0 || ab <= 0) return { T: Infinity, ab, bb, m };
+    const r = hb * bb / (ha * ab);
+    const p = ((1 - 2 * r) + Math.sqrt((2 * r - 1) ** 2 + 8 * m * r)) / 2;
+    const k1 = (p - 1) / (2 * r) + m / p;
+    return { T: k1 * bb, ab, bb, p, k1, m, r };
+  },
+  heur(al, be, ha, hb) {
+    const n = al.length - 1, SA = new Array(n + 2).fill(0), SB = new Array(n + 2).fill(0);
+    for (let i = n - 1; i >= 0; i--) { SA[i] = SA[i + 1] + al[i + 1]; SB[i] = SB[i + 1] + be[i + 1]; }
+    const pol = new Array(n + 1).fill(1); let R = 0; let t = HC.thr(al, be, ha, hb, 0, SA, SB);
+    const log = [{ at: 0, ...t }], trace = [];
+    for (let j = 1; j <= n; j++) {
+      R += be[j];
+      const fired = isFinite(t.T) && R >= t.T - 1e-9;
+      trace.push({ j, R, T: t.T, fired });
+      if (fired) { pol[j] = 2; R = 0; t = HC.thr(al, be, ha, hb, j, SA, SB); log.push({ at: j, ...t }); }
+    }
+    const s = HC.sim(al, be, ha, hb, pol);
+    return { pol, cost: s.cost, per: s.per, log, trace };
+  }
+};
+
+/* =====================================================================
+   Generadores e instancias (semillas reproducibles)
+   ===================================================================== */
+function rng(seed) {
+  let s = seed >>> 0;
+  return () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+// Demandas como en Battarra et al. / §5: p' ∈ [1,19], β = ⌊p'(i mod 5)/5⌋, α = p' − β
+function paperDem(R, n) {
+  const al = [0], be = [0];
+  for (let i = 1; i <= n; i++) { const pp = 1 + Math.floor(R() * 19); const b = Math.floor(pp * (i % 5) / 5); be.push(b); al.push(pp - b); }
+  return { al, be };
+}
+function shuffledSeq(R, al, be) {
+  const n = al.length - 1, idx = [...Array(n).keys()].map(i => i + 1);
+  for (let i = n - 1; i > 0; i--) { const k = Math.floor(R() * (i + 1)); [idx[i], idx[k]] = [idx[k], idx[i]]; }
+  return { al: [0, ...idx.map(i => al[i])], be: [0, ...idx.map(i => be[i])] };
+}
+function makeInst(seed, n) {
+  const R = rng(seed); const pts = [[50 + (R() - 0.5) * 20, 50 + (R() - 0.5) * 20]]; const al = [0], be = [0];
+  for (let i = 1; i <= n; i++) { pts.push([5 + R() * 90, 5 + R() * 90]); const pp = 1 + Math.floor(R() * 19); const b = Math.floor(pp * (i % 5) / 5); be.push(b); al.push(pp - b); }
+  return { pts, al, be, h: 20 / n, n };
+}
+const dist = (p, a, b) => Math.hypot(p[a][0] - p[b][0], p[a][1] - p[b][1]);
+function routeLen(pts, seq) { let c = 0, prev = 0; for (const v of seq) { c += dist(pts, prev, v); prev = v; } return c + dist(pts, prev, 0); }
+function tspTour(pts, n) {
+  const left = new Set([...Array(n).keys()].map(i => i + 1)); const seq = []; let cur = 0;
+  while (left.size) { let b = null, bd = Infinity; for (const v of left) { const d = dist(pts, cur, v); if (d < bd) { bd = d; b = v; } } seq.push(b); left.delete(b); cur = b; }
+  let imp = true;
+  while (imp) {
+    imp = false;
+    for (let i = 0; i < n - 1; i++) for (let j = i + 1; j < n; j++) {
+      const s2 = [...seq.slice(0, i), ...seq.slice(i, j + 1).reverse(), ...seq.slice(j + 1)];
+      if (routeLen(pts, s2) < routeLen(pts, seq) - 1e-9) { seq.splice(0, n, ...s2); imp = true; }
+    }
+  }
+  return seq;
+}
+function seqArrays(inst, seq) { return { al: [0, ...seq.map(v => inst.al[v])], be: [0, ...seq.map(v => inst.be[v])] }; }
+function handExact(inst, seq) { const a = seqArrays(inst, seq); return HC.dp(a.al, a.be, inst.h, inst.h).cost; }
+function handHeur(inst, seq) { const a = seqArrays(inst, seq); return HC.heur(a.al, a.be, inst.h, inst.h).cost; }
+function feasible(inst, seq) {
+  const SA = seq.reduce((s, v) => s + inst.al[v], 0), SB = seq.reduce((s, v) => s + inst.be[v], 0); const Q = Math.max(SA, SB); let L = SA;
+  for (const v of seq) { L += inst.be[v] - inst.al[v]; if (L > Q + 1e-9) return false; }
+  return true;
+}
+function rawMoves(seq) {
+  const n = seq.length, mv = [];
+  for (let i = 0; i < n; i++) for (let p = 0; p < n; p++) { if (p === i) continue; const s = seq.slice(); const [v] = s.splice(i, 1); s.splice(p, 0, v); mv.push({ type: 'relocate', i, p, v, seq: s }); }
+  for (let i = 0; i < n - 1; i++) for (let j = i + 1; j < n; j++) mv.push({ type: '2opt', i, j, seq: [...seq.slice(0, i), ...seq.slice(i, j + 1).reverse(), ...seq.slice(j + 1)] });
+  return mv;
+}
+function neighborhood(inst, seq, withHeur = true) {
+  const out = [], seen = new Set();
+  for (const m of rawMoves(seq)) {
+    const key = m.seq.join(','); if (seen.has(key)) continue; seen.add(key);
+    if (!feasible(inst, m.seq)) continue;
+    m.route = routeLen(inst.pts, m.seq); m.ex = m.route + handExact(inst, m.seq); if (withHeur) m.he = m.route + handHeur(inst, m.seq);
+    out.push(m);
+  }
+  return out;
+}
+function startTour(inst) { let seq = tspTour(inst.pts, inst.n); if (!feasible(inst, seq)) { seq = seq.slice().reverse(); if (!feasible(inst, seq)) return null; } return seq; }
+const mvLabel = m => m.type === 'relocate' ? `relocate: pos. ${m.i + 1} → ${m.p + 1}` : `2-opt: invertir pos. ${m.i + 1}–${m.j + 1}`;
+
+/* =====================================================================
+   Ejemplo de 6 clientes (h_a = h_b = 1)
+   ===================================================================== */
+const EX = {
+  lab: ['A', 'B', 'C', 'D', 'E', 'F'], al: [2, 3, 3, 1, 1, 3], be: [1, 0, 3, 0, 1, 3],
+  xy: [[160, 250], [118, 132], [238, 62], [388, 70], [468, 168], [430, 282]], depot: [300, 320]
+};
+const FWD = [0, 1, 2, 3, 4, 5], REV = [5, 4, 3, 2, 1, 0];
+function exArrays(order) { return { al: [0, ...order.map(c => EX.al[c])], be: [0, ...order.map(c => EX.be[c])] }; }
+const exPt = c => (c < 0 ? EX.depot : EX.xy[c]);
+function exRouting(order) { const r = [-1, ...order, -1]; let s = 0; for (let k = 0; k < r.length - 1; k++) { const [a, b] = exPt(r[k]), [c, d] = exPt(r[k + 1]); s += Math.hypot(a - c, b - d); } return s / 10; }
+
+function drawExMap(svg, o = {}) {
+  svg.innerHTML = '';
+  const order = o.order || FWD, route = [-1, ...order, -1], col = o.color || 'var(--ink2)';
+  let d = ''; route.forEach((c, k) => { const [x, y] = exPt(c); d += (k ? 'L' : 'M') + x + ',' + y; });
+  const path = S('path', { d, style: `fill:none;stroke:${col};stroke-width:2.2;stroke-linejoin:round` }, svg);
+  const mkArrows = (ord, color) => {
+    const g = S('g', { style: 'transition:opacity .5s' }, svg); const r = [-1, ...ord, -1];
+    for (let k = 0; k < r.length - 1; k++) {
+      const [x1, y1] = exPt(r[k]), [x2, y2] = exPt(r[k + 1]); const a = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+      S('path', { d: 'M-7,-5.5 L7,0 L-7,5.5 z', transform: `translate(${(x1 + x2) / 2},${(y1 + y2) / 2}) rotate(${a})`, style: `fill:${color}` }, g);
+    }
+    return g;
+  };
+  const arrows = mkArrows(order, col);
+  const arrowsRev = o.withReverse ? mkArrows(order.slice().reverse(), 'var(--ink)') : null;
+  const [dx, dy] = EX.depot;
+  S('rect', { x: dx - 14, y: dy - 14, width: 28, height: 28, rx: 4, style: 'fill:var(--ink)' }, svg);
+  S('text', { x: dx, y: dy + 32, 'text-anchor': 'middle', class: 'lbl', text: 'depósito' }, svg);
+  const rings = [];
+  EX.xy.forEach(([x, y], c) => {
+    rings.push(S('circle', { cx: x, cy: y, r: 24, style: 'fill:none;stroke:var(--heur);stroke-width:3;opacity:0;transition:opacity .4s' }, svg));
+    S('circle', { cx: x, cy: y, r: 17, style: 'fill:var(--card);stroke:var(--ink2);stroke-width:2' }, svg);
+    S('text', { x, y: y + 5.5, 'text-anchor': 'middle', style: 'font-size:15px;font-weight:700;fill:var(--ink)', text: EX.lab[c] }, svg);
+    if (o.glyphs !== false) {
+      const right = x >= 300, x0 = right ? x + 25 : x - 25;
+      const tip = `Cliente ${EX.lab[c]}: entrega α = ${EX.al[c]}, retira β = ${EX.be[c]}`;
+      const g = S('g', { 'data-tip': tip }, svg);
+      for (let u = 0; u < EX.al[c]; u++) S('rect', { x: right ? x0 + u * 10 : x0 - (u + 1) * 10, y: y - 11, width: 8.5, height: 9, rx: 1.5, style: 'fill:var(--a)' }, g);
+      for (let u = 0; u < EX.be[c]; u++) S('rect', { x: right ? x0 + u * 10 : x0 - (u + 1) * 10, y: y + 1, width: 8.5, height: 9, rx: 3, style: 'fill:var(--b)' }, g);
+      S('rect', { x: right ? x0 - 2 : x0 - 34, y: y - 13, width: 36, height: 26, style: 'fill:transparent' }, g);
+    }
+  });
+  return { path, arrows, arrowsRev, rings };
+}
+
+/* =====================================================================
+   El vehículo como pila (animado)
+   ===================================================================== */
+const SLOT = 30, HX = 58, BY = 15, DY = 74;
+class Truck {
+  constructor(host, order) {
+    this.host = host; this.order = order; this.ha = 1; this.hb = 1; this.gen = 0;
+    this.Q = Math.max(sum(EX.al), sum(EX.be)); this.holdW = this.Q * SLOT + 12;
+    host.classList.add('tk');
+    host.style.setProperty('--holdW', this.holdW + 'px');
+    host.style.setProperty('--laneW', (HX + this.holdW + 120) + 'px');
+    host.innerHTML = `<div class="tk-cab"><div class="tk-win"></div></div><div class="tk-hold"><span class="tk-lbl l">◂ frente</span><span class="tk-lbl r">puerta</span></div>` +
+      [12, HX + 26, HX + this.holdW - 44].map(x => `<div class="tk-wheel" style="left:${x}px"></div>`).join('') +
+      `<div class="tk-ground"></div><div class="tk-dock-lbl" style="left:${HX + this.holdW - 46}px">andén ▴</div><div class="tk-cust" style="left:${HX + this.holdW + 16}px"></div>`;
+    this.layer = H('div', 'tk-layer', null, host);
+    this.custEl = host.querySelector('.tk-cust');
+    this.reset();
+  }
+  reset() {
+    this.gen++; this.layer.innerHTML = ''; this.stack = []; this.dock = []; this.t = 0; this.cost = 0; this.costs = []; this.logs = [];
+    for (let t = this.order.length - 1; t >= 0; t--) { const c = this.order[t]; for (let u = 0; u < EX.al[c]; u++) this.stack.push(this.mk('a', c, t)); }
+    this.custEl.textContent = 'en el depósito';
+    this.layout(false);
+  }
+  mk(type, c, t) { return { type, c, t, front: false, e: H('div', 'bx ' + type, EX.lab[c], this.layer) }; }
+  pos(b, x, y, op = 1) { b.e.style.transform = `translate(${x}px,${y}px)`; b.e.style.opacity = op; }
+  layout(anim) {
+    if (!anim) this.host.classList.add('noanim');
+    this.stack.forEach((b, k) => this.pos(b, HX + 8 + k * SLOT, BY));
+    this.dock.forEach((b, k) => this.pos(b, HX + this.holdW - (k + 1) * SLOT, DY));
+    if (!anim) { void this.host.offsetWidth; this.host.classList.remove('noanim'); }
+  }
+  newB(c, n, anim) {
+    const arr = [];
+    if (!anim) this.host.classList.add('noanim');
+    for (let u = 0; u < n; u++) { const b = this.mk('b', c, this.t); this.pos(b, HX + this.holdW + 34 + u * 6, BY - 10, 0); arr.push(b); }
+    void this.host.offsetWidth;
+    if (!anim) this.host.classList.remove('noanim');
+    return arr;
+  }
+  async visit(pol, anim) {
+    const t = this.t, c = this.order[t], g = this.gen, D = anim ? 560 : 0;
+    const ok = async ms => { if (anim) await sleep(ms); return g === this.gen; };
+    this.custEl.textContent = `→ cliente ${EX.lab[c]} (${pol === 2 ? 'P2' : 'P1'})`;
+    let cost = 0; const log = [];
+    const R = this.stack.filter(b => b.type === 'b' && !b.front), nb = EX.be[c];
+    const doP2 = pol === 2 && R.length + nb > 0;
+    if (R.length && (doP2 || EX.al[c] > 0)) {
+      this.stack = this.stack.filter(b => !R.includes(b)); this.dock.push(...R.slice().reverse());
+      cost += this.hb * R.length; log.push(`${R.length} retiro${R.length > 1 ? 's' : ''} estorba${R.length > 1 ? 'n' : ''}: bajar y subir +${this.hb * R.length}`);
+      this.layout(anim); if (!await ok(D)) return null;
+    }
+    const del = this.stack.filter(b => b.type === 'a' && b.c === c);
+    this.stack = this.stack.filter(b => !del.includes(b));
+    del.forEach((b, k) => this.pos(b, HX + this.holdW + 36 + k * 6, BY - 14, 0));
+    if (!await ok(D * 0.8)) return null;
+    del.forEach(b => b.e.remove());
+    if (doP2) {
+      const As = this.stack.filter(b => b.type === 'a');
+      if (As.length) {
+        this.stack = this.stack.filter(b => b.type !== 'a'); this.dock.push(...As.slice().reverse());
+        cost += this.ha * As.length; log.push(`P2: bajar ${As.length} entrega${As.length > 1 ? 's' : ''} para reordenar +${this.ha * As.length}`);
+        this.layout(anim); if (!await ok(D)) return null;
+      }
+      const nbs = this.newB(c, nb, anim); this.dock.push(...nbs); this.layout(anim); if (!await ok(D)) return null;
+      const dB = this.dock.filter(b => b.type === 'b'); dB.forEach(b => { b.front = true; b.e.classList.add('fr'); });
+      this.stack = [...this.stack, ...dB]; this.dock = this.dock.filter(b => b.type === 'a');
+      this.layout(anim); if (!await ok(D)) return null;
+      const dA = this.dock.slice().sort((x, y) => y.t - x.t);
+      this.stack.push(...dA); this.dock = []; this.layout(anim); if (!await ok(D)) return null;
+    } else {
+      if (this.dock.length) { this.stack.push(...this.dock.slice().reverse()); this.dock = []; this.layout(anim); if (!await ok(D)) return null; }
+      if (nb) { const nbs = this.newB(c, nb, anim); this.stack.push(...nbs); this.layout(anim); if (!await ok(D)) return null; }
+    }
+    if (!log.length) log.push('nada estorba: +0');
+    this.cost += cost; this.costs.push(cost); this.logs.push({ c, pol, cost, log }); this.t++;
+    this.custEl.textContent = this.t >= this.order.length ? 'ruta completa' : `después de ${EX.lab[c]}`;
+    return cost;
+  }
+  async replay(pols, upto) { this.reset(); for (let i = 0; i < upto; i++) await this.visit(pols[i], false); }
+}
+
+/* =====================================================================
+   Navegación
+   ===================================================================== */
+const slides = $$('.slide');
+const stage = $('#stage');
+const CTL = {};
+const reg = (id, o) => { CTL[id] = o; };
+let cur = -1, step = 0;
+function rS(s) { const m = String(s).trim().match(/^(\d+)(?:-(\d+))?$/); return m ? [+m[1], m[2] != null ? +m[2] : Infinity] : [0, Infinity]; }
+function rH(s) { const m = String(s).trim().match(/^(\d+)(?:-(\d+))?(\+)?$/); if (!m) return [-1, -1]; const a = +m[1]; return [a, m[3] ? Infinity : (m[2] != null ? +m[2] : a)]; }
+function maxStepOf(sl) {
+  let m = +(sl.dataset.steps || 0);
+  $$('[data-s]', sl).forEach(e => { m = Math.max(m, rS(e.dataset.s)[0]); });
+  $$('[data-hl]', sl).forEach(e => e.dataset.hl.split(',').forEach(r => { const [a, b] = rH(r); m = Math.max(m, isFinite(b) ? b : a); }));
+  return m;
+}
+const MAX = slides.map(maxStepOf);
+function applyFrags(sl, k) {
+  $$('[data-s]', sl).forEach(e => { const [a, b] = rS(e.dataset.s); e.classList.toggle('on', k >= a && k <= b); });
+  $$('[data-hl]', sl).forEach(e => e.classList.toggle('hl', e.dataset.hl.split(',').some(r => { const [a, b] = rH(r); return k >= a && k <= b; })));
+}
+function go(i, k, dir = 0) {
+  i = Math.max(0, Math.min(slides.length - 1, i)); k = Math.max(0, Math.min(MAX[i], k));
+  RUN++;
+  const sl = slides[i], c = CTL[sl.id];
+  if (i !== cur) {
+    if (cur >= 0) { const o = slides[cur]; o.classList.remove('active'); const oc = CTL[o.id]; if (oc && oc.leave) oc.leave(o); }
+    slides.forEach((x, j) => x.classList.toggle('past', j < i));
+    sl.classList.add('active'); cur = i;
+    if (c && !c._i) { c._i = 1; if (c.init) c.init(sl); }
+    if (c && c.enter) c.enter(sl, k);
+  }
+  step = k; applyFrags(sl, k);
+  if (c && c.step) c.step(k, dir, sl);
+  chrome();
+  try { history.replaceState(null, '', '#' + (i + 1) + (k ? '.' + k : '')); } catch (e) { /* file:// sin history */ }
+}
+function next() { if (step < MAX[cur]) go(cur, step + 1, 1); else if (cur < slides.length - 1) go(cur + 1, 0, 1); }
+function prev() { if (step > 0) go(cur, step - 1, -1); else if (cur > 0) go(cur - 1, MAX[cur - 1], -1); }
+
+const SECS = [];
+slides.forEach((s, i) => { const n = s.dataset.sec; let sec = SECS.find(x => x.name === n); if (!sec) { sec = { name: n, idx: [] }; SECS.push(sec); } sec.idx.push(i); });
+function buildChrome() {
+  const pr = $('#progress');
+  SECS.forEach(sec => { const d = H('div', 'seg', '<i></i>', pr); d.style.flex = sec.idx.length; d.title = sec.name; d.onclick = () => go(sec.idx[0], 0, 0); sec.el = d; });
+  const ov = $('#ovCols');
+  SECS.forEach(sec => {
+    const box = H('div', 'sec', `<h4>${sec.name}</h4>`, ov);
+    sec.idx.forEach(i => { const a = H('a', null, `<span>${i + 1}</span>${slides[i].dataset.title}`, box); a.onclick = () => { toggleOverview(false); go(i, 0, 0); }; a.dataset.i = i; });
+  });
+}
+function chrome() {
+  const sl = slides[cur];
+  $('#secLabel').textContent = sl.dataset.sec;
+  $('#pageNum').textContent = `${cur + 1} / ${slides.length}`;
+  const dots = $('#stepDots'); dots.innerHTML = '';
+  if (MAX[cur] > 0) for (let k = 0; k <= MAX[cur]; k++) H('i', k <= step ? 'on' : '', null, dots);
+  SECS.forEach(sec => {
+    const pos = sec.idx.indexOf(cur);
+    const f = cur > sec.idx[sec.idx.length - 1] ? 1 : pos < 0 ? 0 : (pos + (MAX[cur] ? step / (MAX[cur] + 1) : 1)) / sec.idx.length;
+    sec.el.firstChild.style.transform = `scaleX(${f})`;
+  });
+  $$('#ovCols a').forEach(a => a.classList.toggle('cur', +a.dataset.i === cur));
+}
+function toggleOverview(on) { const o = $('#overview'); o.classList.toggle('on', on == null ? !o.classList.contains('on') : on); }
+function toggleTheme() {
+  const r = document.documentElement;
+  const dark = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  r.dataset.theme = dark ? 'light' : 'dark';
+  try { localStorage.setItem('erdogan-deck-theme', r.dataset.theme); } catch (e) { /* sin almacenamiento */ }
+}
+function fit() { const s = Math.min(innerWidth / 1280, innerHeight / 720) * 0.985; stage.style.transform = `scale(${s})`; }
+
+/* tooltip */
+const tip = $('#tip');
+document.addEventListener('mousemove', e => {
+  const t = e.target.closest && e.target.closest('[data-tip]');
+  if (!t) { tip.classList.remove('on'); return; }
+  tip.innerHTML = t.getAttribute('data-tip'); tip.classList.add('on');
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  let x = e.clientX + 14, y = e.clientY + 14;
+  if (x + w > innerWidth - 8) x = e.clientX - w - 14;
+  if (y + h > innerHeight - 8) y = e.clientY - h - 14;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+});
+
+/* =====================================================================
+   Controladores de cada lámina
+   ===================================================================== */
+reg('portada', {
+  init(sl) { this.rows = $$('.sw-row', sl); this.out = $('#coverOut'); this.i = 0; },
+  enter() {
+    const G = ['000', '001', '011', '010', '110', '111', '101', '100'];
+    const nm = [['ILS', 'ITS'], ['heurística', 'exacta'], ['1-dir', '2-dir']], cl = [['c-ils', 'c-its'], ['c-heur', 'c-exact'], ['', '']];
+    const tick = () => { const g = G[this.i++ % 8]; this.rows.forEach((r, j) => { r.dataset.v = g[j]; }); this.out.innerHTML = [0, 1, 2].map(j => `<span class="${cl[j][+g[j]]}">${nm[j][+g[j]]}</span>`).join('<span class="dot">·</span>'); };
+    tick(); clearInterval(this.tm); this.tm = setInterval(tick, 1900);
+  },
+  leave() { clearInterval(this.tm); }
+});
+
+reg('mapa', {
+  init() {
+    const g = $('#combosGrid');
+    for (const m of ['ILS', 'ITS']) for (const e of ['heurística', 'exacta']) for (const d of ['1-dir', '2-dir'])
+      H('div', 'combo', `<i style="background:var(--${m === 'ILS' ? 'ils' : 'its'})"></i>${m} · <span class="${e === 'exacta' ? 'c-exact' : 'c-heur'}">${e}</span> · ${d}`, g);
+  }
+});
+
+reg('problema', {
+  init() {
+    this.m = drawExMap($('#mapProblem'));
+    this.L = this.m.path.getTotalLength() || 1400;
+    this.m.path.style.strokeDasharray = this.L;
+  },
+  step(k, dir) {
+    const show = k >= 1, an = dir === 1 && k === 1;
+    this.m.path.style.transition = an ? 'stroke-dashoffset 1.8s ease' : 'none';
+    this.m.path.style.strokeDashoffset = show ? 0 : this.L;
+    this.m.arrows.style.transition = an ? 'opacity .5s ease 1.5s' : 'none';
+    this.m.arrows.style.opacity = show ? 1 : 0;
+  }
+});
+
+reg('pila', {
+  init() { this.tk = new Truck($('#tk-pila'), FWD); this.pol = [1, 1]; },
+  async step(k, dir) {
+    const my = RUN, upto = Math.min(k, 2), show = () => { $('#pilaCost').textContent = this.tk.cost; };
+    if (dir === 1 && k >= 1 && k <= 2) {
+      await this.tk.replay(this.pol, upto - 1); show();
+      if (!live(my)) return;
+      const r = await this.tk.visit(this.pol[upto - 1], true); if (r !== null && live(my)) show();
+    } else { await this.tk.replay(this.pol, upto); show(); }
+  }
+});
+
+reg('politicas', {
+  init() { this.A = new Truck($('#tk-p1'), FWD); this.B = new Truck($('#tk-p2'), FWD); this.pA = [1, 1, 1, 1, 1, 1]; this.pB = [1, 1, 2, 1, 1, 1]; },
+  show() {
+    $('#p1Cost').textContent = this.A.cost; $('#p2Cost').textContent = this.B.cost;
+    const ch = (tk, el) => { el.innerHTML = tk.costs.map((c, t) => `<span class="chip${c ? '' : ' z'}">${EX.lab[tk.order[t]]} +${c}</span>`).join(''); };
+    ch(this.A, $('#p1Chips')); ch(this.B, $('#p2Chips'));
+  },
+  async step(k, dir) {
+    const my = RUN, target = k === 0 ? 2 : k === 1 ? 3 : 6;
+    const from = dir === 1 && k === 1 ? 2 : dir === 1 && k === 2 ? 3 : target;
+    await this.A.replay(this.pA, from); await this.B.replay(this.pB, from); this.show();
+    for (let t = from; t < target; t++) {
+      if (!live(my)) return;
+      const r = await Promise.all([this.A.visit(this.pA[t], true), this.B.visit(this.pB[t], true)]);
+      if (r.includes(null) || !live(my)) return;
+      this.show(); await sleep(250);
+    }
+  }
+});
+
+reg('simulador', {
+  init() {
+    this.pol = [1, 1, 1, 1, 1, 1]; this.tk = new Truck($('#tk-sim'), FWD); this.pt = 0;
+    const box = $('#simCust');
+    this.cards = EX.lab.map((L, c) => {
+      const d = H('div', 'cust', `<div class="L">${L}</div><div class="d">α = ${EX.al[c]} · β = ${EX.be[c]}</div><div class="seg2"><button data-p="1">P1</button><button data-p="2">P2</button></div><div class="cc"></div>`, box);
+      $$('button', d).forEach(b => { b.onclick = () => { this.pol[c] = +b.dataset.p; this.restart(); }; });
+      return d;
+    });
+    $('#simPlay').onclick = () => this.play();
+    $('#simStep').onclick = () => this.one();
+    $('#simReset').onclick = () => this.restart();
+    $('#simOpt').onclick = () => {
+      const a = exArrays(FWD), r = HC.dp(a.al, a.be, 1, 1);
+      this.pol = [1, 1, 1, 1, 1, 1]; r.p2.forEach(j => { if (j < 6) this.pol[j - 1] = 2; });
+      $('#simOptV').textContent = r.cost; this.restart();
+    };
+    this.restart();
+  },
+  paint() {
+    this.cards.forEach((d, c) => {
+      $$('button', d).forEach(b => b.classList.toggle('on', +b.dataset.p === this.pol[c]));
+      d.classList.toggle('now', c === this.tk.t);
+      d.querySelector('.cc').textContent = c < this.tk.t ? `+${this.tk.costs[c]}` : '';
+    });
+    $('#simCost').textContent = this.tk.cost;
+    $('#simLog').innerHTML = this.tk.logs.map(l => `<li><b>${EX.lab[l.c]}</b> (P${l.pol}) · ${l.log.join(' · ')}</li>`).join('');
+    const lg = $('#simLog'); lg.scrollTop = lg.scrollHeight;
+  },
+  restart() { this.pt++; this.busy = false; this.tk.reset(); this.paint(); },
+  async one() {
+    if (this.busy || this.tk.t >= 6) return false;
+    this.busy = true; this.paint();
+    const r = await this.tk.visit(this.pol[this.tk.t], true);
+    this.busy = false; if (r === null) return false;
+    this.paint(); return true;
+  },
+  async play() {
+    if (this.busy) return;
+    if (this.tk.t >= 6) this.restart();
+    const pt = this.pt;
+    while (this.tk.t < 6 && pt === this.pt) { const ok = await this.one(); if (!ok || pt !== this.pt) break; await sleep(180); }
+  },
+  leave() { this.pt++; }
+});
+
+reg('cuello', {
+  init() { const inp = $('#cuN'); inp.oninput = () => this.draw(); this.draw(); },
+  draw() {
+    const n = +$('#cuN').value; $('#cuNo').textContent = n;
+    const moves = n * (n - 1) + (n + 1) * (n - 2) / 2, ex = moves * n * n, he = moves * n + n * n;
+    const svg = $('#cuChart'); svg.innerHTML = '';
+    const x0 = 110, x1 = 470, lo = 3, hi = 11, X = v => x0 + (Math.log10(v) - lo) / (hi - lo) * (x1 - x0);
+    S('text', { x: 0, y: 20, class: 'lbl', text: `movimientos por iteración: ${moves.toLocaleString('es-CL')}` }, svg);
+    for (let e = lo; e <= hi; e += 2) { S('line', { x1: X(10 ** e), x2: X(10 ** e), y1: 40, y2: 168, class: 'gd' }, svg); S('text', { x: X(10 ** e), y: 186, 'text-anchor': 'middle', class: 'tk-t', text: '10' + String(e).split('').map(c => SUP[c]).join('') }, svg); }
+    S('line', { x1: x0, x2: x0, y1: 40, y2: 168, class: 'ax' }, svg);
+    const bar = (y, v, col, name) => {
+      const w = Math.max(2, X(v) - x0);
+      S('path', { d: `M${x0},${y} h${w - 4} a4,4 0 0 1 4,4 v16 a4,4 0 0 1 -4,4 h-${w - 4} z`, style: `fill:${col}`, 'data-tip': `${name}: ≈ ${sci(v)} operaciones por iteración` }, svg);
+      S('text', { x: x0 - 10, y: y + 17, 'text-anchor': 'end', class: 'lblb', text: name }, svg);
+      S('text', { x: X(v) + 8, y: y + 17, class: 'lbl', text: '≈ ' + sci(v) }, svg);
+    };
+    bar(58, ex, 'var(--exact)', 'exacta'); bar(118, he, 'var(--heur)', 'heurística');
+    S('text', { x: 0, y: 216, class: 'lbl', text: `La evaluación exacta hace ≈ ${Math.round(ex / he).toLocaleString('es-CL')}× más operaciones (≈ n).` }, svg);
+  }
+});
+
+reg('alg21', {
+  init() {
+    const a = exArrays(FWD), n = 6, a0 = sum(a.al);
+    const rows = [{ j: '—', c: 'depósito', al: '', be: '', ap: a0, p: '—', th: 0, bp: 0 }];
+    let bp = 0, th = 0, ap = a0;
+    for (let j = 1; j <= n; j++) {
+      ap -= a.al[j]; const p = (bp + a.be[j] > 0) ? th + ap + bp : th;
+      if (a.al[j] > 0) th += bp; bp += a.be[j];
+      rows.push({ j, c: EX.lab[j - 1], al: a.al[j], be: a.be[j], ap, p, th, bp });
+    }
+    const tb = $('#a21tbl tbody');
+    this.trs = rows.map(r => { const tr = H('tr', null, `<td>${r.j}</td><td>${r.c}</td><td class="n">${r.al}</td><td class="n">${r.be}</td><td class="n">${r.ap}</td><td class="n"><b>${r.p}</b></td><td class="n">${r.th}</td><td class="n">${r.bp}</td>`, tb); tr.style.transition = 'opacity .4s'; return tr; });
+  },
+  step(k) {
+    this.trs.forEach((tr, r) => {
+      const vis = r === 0 ? k >= 1 : r <= 3 ? k >= r + 1 : k >= 5;
+      tr.style.opacity = vis ? (r >= 4 ? .75 : 1) : 0;
+      tr.classList.toggle('hl', k >= 1 && k <= 4 && r === k - 1);
+    });
+  }
+});
+
+reg('dp', {
+  init() {
+    const a = exArrays(FWD); this.r = HC.dp(a.al, a.be, 1, 1); const n = 6, p = this.r.p;
+    const g = $('#dpGraph'); g.innerHTML = '';
+    const X = i => 50 + i * 100, Y = 240;
+    this.arc = {};
+    for (let i = 0; i < n; i++) for (let j = i + 1; j <= n; j++) {
+      const h = 26 + (j - i) * 30, mx = (X(i) + X(j)) / 2;
+      this.arc[i + '-' + j] = S('path', { d: `M${X(i)},${Y - 16} Q${mx},${Y - 16 - h * 1.25} ${X(j)},${Y - 16}`, style: 'fill:none;stroke:var(--line);stroke-width:1.2;transition:stroke .3s,stroke-width .3s,opacity .3s', 'data-tip': `p<sub>${i}${j}</sub> = ${p[i][j]}` }, g);
+    }
+    this.fl = []; this.tags = [];
+    for (let i = 0; i <= n; i++) {
+      S('circle', { cx: X(i), cy: Y, r: 16, style: i === 0 ? 'fill:var(--ink)' : 'fill:var(--card);stroke:var(--ink2);stroke-width:2' }, g);
+      S('text', { x: X(i), y: Y + 5, 'text-anchor': 'middle', style: `font-size:13px;font-weight:700;fill:${i === 0 ? 'var(--paper)' : 'var(--ink)'}`, text: i }, g);
+      S('text', { x: X(i), y: Y + 36, 'text-anchor': 'middle', class: 'lbl', text: i === 0 ? 'depósito' : EX.lab[i - 1] }, g);
+      this.fl.push(S('text', { x: X(i), y: Y + 56, 'text-anchor': 'middle', style: 'font-size:13px;font-weight:700;fill:var(--exact);opacity:0;transition:opacity .3s', text: `f = ${this.r.f[i]}` }, g));
+      const tg = S('g', { style: 'opacity:0;transition:opacity .4s' }, g);
+      S('rect', { x: X(i) - 15, y: Y - 44, width: 30, height: 18, rx: 4, style: 'fill:var(--exact)' }, tg);
+      S('text', { x: X(i), y: Y - 31, 'text-anchor': 'middle', style: 'font-size:11px;font-weight:700;fill:#fff', text: i === n ? 'fin' : 'P2' }, tg);
+      this.tags.push(tg);
+    }
+    // matriz
+    const m = $('#dpMat'); m.innerHTML = '';
+    const cx = j => 46 + (j - 1) * 58, cy = i => 34 + i * 48;
+    for (let j = 1; j <= n; j++) S('text', { x: cx(j) + 26, y: 18, 'text-anchor': 'middle', class: 'tk-t', text: `${j} ${EX.lab[j - 1]}` }, m);
+    this.rowBg = []; this.cells = {}; this.cellT = {};
+    for (let i = 0; i < n; i++) {
+      this.rowBg.push(S('rect', { x: 0, y: cy(i) - 3, width: 400, height: 46, rx: 6, style: 'fill:var(--hl);opacity:0;transition:opacity .3s' }, m));
+      S('text', { x: 18, y: cy(i) + 25, 'text-anchor': 'middle', class: 'tk-t', text: i === 0 ? '0' : `${i} ${EX.lab[i - 1]}` }, m);
+      for (let j = i + 1; j <= n; j++) {
+        this.cells[i + '-' + j] = S('rect', { x: cx(j), y: cy(i), width: 52, height: 40, rx: 5, style: 'fill:var(--card);stroke:var(--line);stroke-width:1;transition:fill .3s,stroke .3s' }, m);
+        this.cellT[i + '-' + j] = S('text', { x: cx(j) + 26, y: cy(i) + 25, 'text-anchor': 'middle', style: 'font-size:14px;font-weight:600;fill:var(--ink);opacity:0;transition:opacity .3s', text: p[i][j] }, m);
+      }
+    }
+  },
+  paint(k) {
+    const n = 6, nx = this.r.nx, onPath = new Set(), path = [0, ...this.r.p2];
+    for (let q = 0; q < path.length - 1; q++) onPath.add(path[q] + '-' + path[q + 1]);
+    Object.values(this.cellT).forEach(t => { t.style.opacity = k >= 1 ? 1 : 0; });
+    this.rowBg.forEach(r => { r.style.opacity = 0; });
+    for (let i = 0; i < n; i++) for (let j = i + 1; j <= n; j++) {
+      const key = i + '-' + j, best = nx[i] === j, a = this.arc[key], c = this.cells[key];
+      let st = 'var(--line)', w = 1.2, op = 1;
+      if (k >= 2 && best) { st = 'var(--exact)'; w = 2.4; }
+      if (k >= 3) { if (onPath.has(key)) { st = 'var(--exact)'; w = 4.5; } else if (best) { op = .3; } }
+      a.style.stroke = st; a.style.strokeWidth = w; a.style.opacity = op;
+      c.style.fill = k >= 2 && best ? 'var(--exact-s)' : 'var(--card)'; c.style.stroke = k >= 2 && best ? 'var(--exact)' : 'var(--line)';
+    }
+    this.fl.forEach(t => { t.style.opacity = k >= 2 ? 1 : 0; });
+    this.tags.forEach((t, i) => { t.style.opacity = k >= 3 && path.includes(i) && i > 0 ? 1 : 0; });
+  },
+  async step(k, dir) {
+    if (!(dir === 1 && (k === 1 || k === 2))) { this.paint(k); return; }
+    const my = RUN;
+    if (k === 1) {
+      this.paint(0);
+      const keys = Object.keys(this.cellT);
+      for (const key of keys) { if (!live(my)) return; this.cellT[key].style.opacity = 1; await sleep(60); }
+      return;
+    }
+    this.paint(1); this.fl[6].style.opacity = 1;
+    const n = 6, nx = this.r.nx;
+    for (let i = n - 1; i >= 0; i--) {
+      if (!live(my)) return;
+      this.rowBg.forEach((r, q) => { r.style.opacity = q === i ? .9 : 0; });
+      for (let j = i + 1; j <= n; j++) { const a = this.arc[i + '-' + j]; a.style.stroke = 'var(--exact)'; a.style.opacity = .35; a.style.strokeWidth = 1.6; }
+      await sleep(650); if (!live(my)) return;
+      for (let j = i + 1; j <= n; j++) {
+        const a = this.arc[i + '-' + j], best = nx[i] === j;
+        a.style.opacity = best ? 1 : 1; a.style.stroke = best ? 'var(--exact)' : 'var(--line)'; a.style.strokeWidth = best ? 2.4 : 1.2;
+        if (best) { this.cells[i + '-' + j].style.fill = 'var(--exact-s)'; this.cells[i + '-' + j].style.stroke = 'var(--exact)'; }
+      }
+      this.fl[i].style.opacity = 1;
+      await sleep(450);
+    }
+    if (live(my)) this.rowBg.forEach(r => { r.style.opacity = 0; });
+  }
+});
+
+reg('heurf', {
+  init() { $('#hfN').oninput = () => this.draw(); $('#hfR').oninput = () => this.draw(); this.draw(); },
+  draw() {
+    const n = +$('#hfN').value, rho = +$('#hfR').value; $('#hfNo').textContent = n; $('#hfRo').textContent = nf(rho, 1);
+    const r = 1 / rho, ps = ((1 - 2 * r) + Math.sqrt((2 * r - 1) ** 2 + 8 * n * r)) / 2, P = Math.max(1, Math.floor(ps + 1e-9));
+    const ks = []; for (let i = 1; i <= P; i++) ks.push(rho * ((P + 1) / 2 - i) + n / P);
+    $('#hfP').textContent = nf(ps, 2); $('#hfPi').textContent = P; $('#hfK1').textContent = nf(ks[0], 1);
+    const svg = $('#hfSvg'); svg.innerHTML = '';
+    const x0 = 20, W = 480, X = u => x0 + u / n * W;
+    S('line', { x1: x0, x2: x0 + W, y1: 70, y2: 70, class: 'ax' }, svg);
+    for (let u = 1; u <= n; u++) S('circle', { cx: X(u) - W / n / 2, cy: 70, r: Math.min(5, W / n / 2.6), style: 'fill:var(--card);stroke:var(--muted);stroke-width:1.2' }, svg);
+    S('rect', { x: x0 - 12, y: 61, width: 12, height: 18, rx: 2, style: 'fill:var(--ink)' }, svg);
+    let acc = 0;
+    ks.forEach((k, i) => {
+      const a = X(acc), b = X(acc + k); acc += k;
+      const shade = i % 2 ? 'var(--heur-s)' : 'var(--grid)';
+      S('rect', { x: a + 1, y: 100, width: Math.max(1, b - a - 2), height: 46, rx: 4, style: `fill:${shade}`, 'data-tip': `tramo ${i + 1}: k<sub>${i + 1}</sub>* = ${nf(k, 2)} clientes` }, svg);
+      if (b - a > 26) S('text', { x: (a + b) / 2, y: 128, 'text-anchor': 'middle', class: 'lbl', text: nf(k, 1) }, svg);
+      S('line', { x1: b, x2: b, y1: 52, y2: 150, style: 'stroke:var(--heur);stroke-width:2' }, svg);
+      S('text', { x: b, y: 46, 'text-anchor': 'middle', style: 'font-size:11px;font-weight:700;fill:var(--ink2)', text: 'P2' }, svg);
+    });
+    S('text', { x: x0, y: 176, class: 'tk-t', text: `k₁* ≥ k₂* ≥ … ≥ k_p*  ·  Σ k_i* = n = ${n}` }, svg);
+    S('text', { x: x0, y: 198, class: 'tk-t', text: 'Las k_i* son continuas: el caso especial solo sirve de guía para la regla de la lámina siguiente.' }, svg);
+  }
+});
+
+reg('heuru', {
+  init() {
+    this.al = [0, 1, 2, 1, 4, 1, 2, 1, 1, 1, 4, 2, 2]; this.be = [0, 1, 1, 2, 1, 1, 1, 2, 1, 3, 3, 0, 0];
+    this.h = HC.heur(this.al, this.be, 1, 1); this.e = HC.dp(this.al, this.be, 1, 1);
+    const t0 = this.h.log[0];
+    $('#huT0').innerHTML = `<span class="m">ᾱ = ${nf(t0.ab, 2)}</span>, <span class="m">β̄ = ${nf(t0.bb, 2)}</span> → <span class="m">p* = ${nf(t0.p, 2)}</span>, <span class="m">k₁* = ${nf(t0.k1, 2)}</span> → <b>T = ${nf(t0.T, 2)}</b>`;
+    const hp = this.h.pol.map((v, i) => (v === 2 ? i : 0)).filter(Boolean), ep = this.e.p2.filter(j => j < 12);
+    const dev = (this.h.cost - this.e.cost) / this.e.cost * 100;
+    $('#huRes').innerHTML = `Heurística: P2 en ${hp.join(', ')} → costo <b>${this.h.cost}</b>. Exacta (DP): P2 en ${ep.join(', ')} y cierre en 12 → <b>${this.e.cost}</b>. Desviación <b>${nf(dev, 1)} %</b>, cerca del promedio del paper.`;
+    const svg = $('#huSvg'); svg.innerHTML = ''; this.svg = svg;
+    const n = 12, X = u => 70 + u * 50; this.X = X;
+    // medidor
+    S('text', { x: 0, y: 18, class: 'lbl', text: 'retiros acumulados desde la última P2' }, svg);
+    const gx = 0, gw = 640, G = v => gx + Math.min(v, 10) / 10 * gw; this.G = G;
+    S('rect', { x: gx, y: 28, width: gw, height: 18, rx: 4, style: 'fill:var(--grid)' }, svg);
+    this.fill = S('rect', { x: gx, y: 28, width: 0, height: 18, rx: 4, style: 'fill:var(--b);transition:width .3s' }, svg);
+    for (let v = 0; v <= 10; v += 2) S('text', { x: G(v), y: 60, 'text-anchor': 'middle', class: 'tk-t', text: v }, svg);
+    this.thr = S('g', { style: 'transition:transform .35s' }, svg);
+    S('line', { x1: 0, x2: 0, y1: 22, y2: 52, style: 'stroke:var(--heur);stroke-width:3' }, this.thr);
+    this.thrT = S('text', { x: 6, y: 22, style: 'font-size:12px;font-weight:700;fill:var(--ink)' }, this.thr);
+    // filas de marcadores
+    S('text', { x: 0, y: 98, class: 'lbl', text: 'heurística' }, svg); S('text', { x: 0, y: 122, class: 'lbl', text: 'exacta' }, svg);
+    this.hf = []; this.ef = [];
+    const base = 210;
+    for (let u = 1; u <= n; u++) {
+      const x = X(u);
+      for (let q = 0; q < this.al[u]; q++) S('rect', { x: x - 9, y: base - 4 - (q + 1) * 10, width: 18, height: 8.5, rx: 1.5, style: 'fill:var(--a)' }, svg);
+      for (let q = 0; q < this.be[u]; q++) S('rect', { x: x - 9, y: base + 4 + q * 10, width: 18, height: 8.5, rx: 3, style: 'fill:var(--b)' }, svg);
+      S('text', { x, y: 300, 'text-anchor': 'middle', class: 'lblb', text: u }, svg);
+      const hf = S('g', { style: 'opacity:0;transition:opacity .3s' }, svg); S('rect', { x: x - 15, y: 84, width: 30, height: 19, rx: 4, style: 'fill:var(--heur)' }, hf); S('text', { x, y: 98, 'text-anchor': 'middle', style: 'font-size:11px;font-weight:700;fill:#fff', text: 'P2' }, hf); this.hf.push(hf);
+      const ef = S('g', { style: 'opacity:0;transition:opacity .3s' }, svg); S('rect', { x: x - 15, y: 108, width: 30, height: 19, rx: 4, style: u === 12 ? 'fill:none;stroke:var(--exact);stroke-width:1.5;stroke-dasharray:3 2' : 'fill:var(--exact)' }, ef); S('text', { x, y: 122, 'text-anchor': 'middle', style: `font-size:11px;font-weight:700;fill:${u === 12 ? 'var(--exact)' : '#fff'}`, text: u === 12 ? 'fin' : 'P2' }, ef); this.ef.push(ef);
+    }
+    S('line', { x1: X(0.5), x2: X(12.5), y1: base, y2: base, class: 'ax' }, svg);
+    S('text', { x: 0, y: base - 14, class: 'tk-t', text: 'α (entregas)' }, svg); S('text', { x: 0, y: base + 22, class: 'tk-t', text: 'β (retiros)' }, svg);
+    this.cur = S('rect', { x: X(1) - 22, y: 74, width: 44, height: 238, rx: 8, style: 'fill:none;stroke:var(--ink2);stroke-width:1.5;stroke-dasharray:4 3;opacity:0;transition:transform .3s,opacity .3s' }, svg);
+  },
+  setThr(T) {
+    if (!isFinite(T)) { this.thr.style.transform = `translate(${this.G(10)}px,0)`; this.thrT.textContent = 'T = ∞ (no quedan retiros)'; this.thrT.setAttribute('x', -170); return; }
+    this.thr.style.transform = `translate(${this.G(T)}px,0)`; this.thrT.textContent = `T = ${nf(T, 2)}`; this.thrT.setAttribute('x', 6);
+  },
+  render(k) {
+    const tr = this.h.trace;
+    this.ef.forEach(e => { e.style.opacity = k >= 3 ? 1 : 0; });
+    if (k <= 1) {
+      this.fill.setAttribute('width', 0); this.hf.forEach(e => { e.style.opacity = 0; });
+      this.cur.style.opacity = 0; this.thr.style.opacity = k >= 1 ? 1 : 0; this.setThr(this.h.log[0].T); return;
+    }
+    this.thr.style.opacity = 1; this.cur.style.opacity = 0;
+    tr.forEach((t, q) => { this.hf[q].style.opacity = t.fired ? 1 : 0; });
+    const last = tr[tr.length - 1]; this.fill.setAttribute('width', this.G(last.fired ? 0 : last.R) - this.G(0));
+    this.setThr(this.h.log[this.h.log.length - 1].T);
+  },
+  async step(k, dir) {
+    if (!(dir === 1 && k === 2)) { this.render(k); return; }
+    const my = RUN; this.render(1); this.cur.style.opacity = 1;
+    let li = 0;
+    for (const t of this.h.trace) {
+      if (!live(my)) return;
+      this.cur.style.transform = `translate(${this.X(t.j) - this.X(1)}px,0)`;
+      await sleep(320); if (!live(my)) return;
+      this.fill.setAttribute('width', this.G(t.R) - this.G(0));
+      await sleep(380); if (!live(my)) return;
+      if (t.fired) {
+        this.hf[t.j - 1].style.opacity = 1; await sleep(450); if (!live(my)) return;
+        li++; this.fill.setAttribute('width', 0); this.setThr(this.h.log[li].T); await sleep(450);
+      }
+    }
+    if (live(my)) this.cur.style.opacity = 0;
+  }
+});
+
+reg('heurv', {
+  init() { $('#hvNew').onclick = () => this.fresh(); $('#hvMany').onclick = () => this.many(); this.fresh(1234); },
+  fresh(seed) {
+    const R = rng(seed || Math.floor(Math.random() * 1e9)); const d = paperDem(R, 20); const s = shuffledSeq(R, d.al, d.be);
+    const e = HC.dp(s.al, s.be, 1, 1), h = HC.heur(s.al, s.be, 1, 1), n = 20;
+    $('#hvE').textContent = nf(e.cost, 0); $('#hvH').textContent = nf(h.cost, 0);
+    const dev = e.cost > 0 ? (h.cost - e.cost) / e.cost * 100 : 0; $('#hvD').textContent = nf(dev, 1) + ' %';
+    const svg = $('#hvSvg'); svg.innerHTML = '';
+    const X = u => 110 + (u - 1) * 51, base = 118, sc = 4.2;
+    S('line', { x1: 84, x2: X(20) + 26, y1: base, y2: base, class: 'ax' }, svg);
+    S('text', { x: 0, y: base - 30, class: 'tk-t', text: 'α (entregas)' }, svg); S('text', { x: 0, y: base + 36, class: 'tk-t', text: 'β (retiros)' }, svg);
+    S('text', { x: 0, y: 212, class: 'lblb', text: 'exacta' }, svg); S('text', { x: 0, y: 238, class: 'lblb', text: 'heurística' }, svg);
+    for (let u = 1; u <= n; u++) {
+      const x = X(u), tipTxt = `posición ${u}: α = ${s.al[u]}, β = ${s.be[u]}`;
+      S('rect', { x: x - 9, y: base - 2 - s.al[u] * sc, width: 18, height: s.al[u] * sc, rx: 2, style: 'fill:var(--a)', 'data-tip': tipTxt }, svg);
+      if (s.be[u]) S('rect', { x: x - 9, y: base + 2, width: 18, height: s.be[u] * sc, rx: 2, style: 'fill:var(--b)', 'data-tip': tipTxt }, svg);
+      S('text', { x, y: 190, 'text-anchor': 'middle', class: 'tk-t', text: u }, svg);
+      if (e.p2.includes(u)) { const last = u === n; S('rect', { x: x - 14, y: 199, width: 28, height: 18, rx: 4, style: last ? 'fill:none;stroke:var(--exact);stroke-width:1.5;stroke-dasharray:3 2' : 'fill:var(--exact)' }, svg); S('text', { x, y: 212, 'text-anchor': 'middle', style: `font-size:10.5px;font-weight:700;fill:${last ? 'var(--exact)' : '#fff'}`, text: last ? 'fin' : 'P2' }, svg); }
+      if (h.pol[u] === 2) { S('rect', { x: x - 14, y: 225, width: 28, height: 18, rx: 4, style: 'fill:var(--heur)' }, svg); S('text', { x, y: 238, 'text-anchor': 'middle', style: 'font-size:10.5px;font-weight:700;fill:#fff', text: 'P2' }, svg); }
+    }
+  },
+  many() {
+    const devs = []; let opt = 0;
+    for (let q = 0; q < 1000; q++) {
+      const R = rng(777 + q * 7919); const d = paperDem(R, 50); const s = shuffledSeq(R, d.al, d.be);
+      const e = HC.dp(s.al, s.be, 1, 1).cost, h = HC.heur(s.al, s.be, 1, 1).cost;
+      const v = e > 0 ? (h - e) / e * 100 : 0; devs.push(v); if (v < 1e-9) opt++;
+    }
+    devs.sort((a, b) => a - b);
+    const q = f => devs[Math.min(devs.length - 1, Math.floor(f * devs.length))], mean = sum(devs) / devs.length;
+    const box = $('#hvManyBox');
+    box.innerHTML = `<div class="row" style="gap:20px;margin-bottom:6px">
+      <div class="stat"><span class="lb">media</span><span class="vl" style="font-size:20px">${nf(mean, 2)} % <small>paper 8,66</small></span></div>
+      <div class="stat"><span class="lb">cuartiles</span><span class="vl" style="font-size:20px">${nf(q(.25), 1)} / ${nf(q(.5), 1)} / ${nf(q(.75), 1)} <small>paper 5,9 / 8,2 / 10,9</small></span></div>
+      <div class="stat"><span class="lb">máx.</span><span class="vl" style="font-size:20px">${nf(devs[devs.length - 1], 1)} %</span></div></div><svg viewBox="0 0 540 80" width="100%" height="80" id="hvHist"></svg>`;
+    const svg = $('#hvHist'); const bins = new Array(15).fill(0); devs.forEach(v => { bins[Math.min(14, Math.floor(v / 2))]++; });
+    const mx = Math.max(...bins);
+    bins.forEach((b, i) => { const hgt = b / mx * 52; S('path', { d: `M${10 + i * 35},62 v-${Math.max(0, hgt - 3)} a3,3 0 0 1 3,-3 h22 a3,3 0 0 1 3,3 v${Math.max(0, hgt - 3)} z`, style: 'fill:var(--heur)', 'data-tip': `${i * 2}${i === 14 ? '+' : '–' + (i * 2 + 2)} % : ${b} secuencias` }, svg); });
+    S('line', { x1: 8, x2: 535, y1: 62, y2: 62, class: 'ax' }, svg);
+    [0, 10, 20, 28].forEach(v => S('text', { x: 10 + v / 2 * 35, y: 76, class: 'tk-t', text: v + (v === 28 ? '+ %' : ' %') }, svg));
+  }
+});
+
+reg('enbusq', {
+  init() { this.load(62); $('#ebNew').onclick = () => { let s; let tries = 0; do { s = 1 + Math.floor(Math.random() * 1e6); this.load(s); tries++; } while (!this.ok && tries < 20); this.render(step); }; },
+  load(seed) {
+    const inst = makeInst(seed, 10), seq = startTour(inst); this.ok = !!seq; if (!seq) return;
+    const nb = neighborhood(inst, seq);
+    const route = routeLen(inst.pts, seq), hex = handExact(inst, seq);
+    Object.assign(this, { seed, inst, seq, nb, route, hex, curC: route + hex });
+    const byH = nb.slice().sort((a, b) => a.he - b.he), bE = nb.reduce((a, b) => (b.ex < a.ex ? b : a)), bH = byH[0];
+    this.rows = byH.slice(0, 6); if (!this.rows.includes(bE)) this.rows[5] = bE;
+    this.bE = bE; this.bH = bH; this.rankE = byH.indexOf(bE) + 1;
+    $('#ebTxt0').innerHTML = `Instancia de 10 clientes (semilla ${seed}, <span class="m">h = 2</span>). Tour actual: ruteo ${nf(route)} + manipulación ${nf(hex)} = <b>${nf(this.curC)}</b>. Hay ${nb.length} movimientos factibles. Las 6 mejores estimaciones de la regla:`;
+    const same = bE === bH;
+    $('#ebTxt2').innerHTML = `La regla elige «${mvLabel(bH)}» (estimación ${nf(bH.he)}). La DP le pone precio: <b>${nf(bH.ex)}</b>, ${bH.ex < this.curC - 1e-9 ? 'que mejora el tour actual' : 'peor que el tour actual: en ILS el descenso se detendría aquí, mientras que TS lo aplica igual'}.`;
+    $('#ebTxt3').innerHTML = same ? `Aquí la regla acertó: el mejor movimiento según la DP es el mismo (${nf(bE.ex)}).` : `Con la DP para todos, el mejor era «${mvLabel(bE)}»: <b>${nf(bE.ex)}</b> (${nf((bE.ex - this.curC) / this.curC * 100)} %). La regla lo dejaba en el puesto ${this.rankE} porque sobreestima su manipulación en ${nf(bE.he - bE.ex)}.`;
+    this.statDone = false;
+  },
+  stat() {
+    if (this.statDone) return; let same = 0, tot = 0;
+    for (let s = 1; tot < 200 && s < 1000; s++) { const inst = makeInst(5000 + s, 10), seq = startTour(inst); if (!seq) continue; const nb = neighborhood(inst, seq); if (!nb.length) continue; tot++; const bE = nb.reduce((a, b) => (b.ex < a.ex ? b : a)), bH = nb.reduce((a, b) => (b.he < a.he ? b : a)); if (bE === bH) same++; }
+    $('#ebTxt4').innerHTML = `En ${tot} tours aleatorios de 10 clientes, la regla y la DP eligen el <b>mismo</b> movimiento solo en el <b>${nf(same / tot * 100, 0)} %</b> de los casos.`;
+    this.statDone = true;
+  },
+  render(k) {
+    const map = $('#ebMap'); map.innerHTML = '';
+    const P = v => [20 + this.inst.pts[v][0] * 2.6, 20 + this.inst.pts[v][1] * 2.6];
+    const draw = (seq, style) => { const r = [0, ...seq, 0]; let d = ''; r.forEach((v, q) => { const [x, y] = P(v); d += (q ? 'L' : 'M') + x.toFixed(1) + ',' + y.toFixed(1); }); S('path', { d, style: 'fill:none;stroke-linejoin:round;' + style }, map); };
+    draw(this.seq, 'stroke:var(--ink2);stroke-width:1.6');
+    if (k >= 2) draw(this.bH.seq, 'stroke:var(--heur);stroke-width:2.6;stroke-dasharray:7 5');
+    if (k >= 3 && this.bE !== this.bH) draw(this.bE.seq, 'stroke:var(--exact);stroke-width:2.6');
+    for (let v = 1; v <= this.inst.n; v++) { const [x, y] = P(v); S('circle', { cx: x, cy: y, r: 9, style: 'fill:var(--card);stroke:var(--ink2);stroke-width:1.5', 'data-tip': `cliente ${v}: α = ${this.inst.al[v]}, β = ${this.inst.be[v]}` }, map); S('text', { x, y: y + 4, 'text-anchor': 'middle', style: 'font-size:10px;font-weight:700;fill:var(--ink)', text: v }, map); }
+    const [dx, dy] = P(0); S('rect', { x: dx - 8, y: dy - 8, width: 16, height: 16, rx: 3, style: 'fill:var(--ink)' }, map);
+    // dot plot
+    const svg = $('#ebBars'); svg.innerHTML = '';
+    if (k < 1) { S('text', { x: 350, y: 125, 'text-anchor': 'middle', class: 'lbl', text: 'Avanza para ver cómo evalúa la regla cada movimiento.' }, svg); return; }
+    const vals = [this.curC, ...this.rows.flatMap(m => [m.he, m.ex])], lo = Math.floor(Math.min(...vals) / 10) * 10 - 10, hi = Math.ceil(Math.max(...vals) / 10) * 10 + 10;
+    const x0 = 230, x1 = 680, X = v => x0 + (v - lo) / (hi - lo) * (x1 - x0), y0 = 34, dy2 = 34;
+    for (let v = lo; v <= hi; v += 20) { S('line', { x1: X(v), x2: X(v), y1: 20, y2: y0 + this.rows.length * dy2 - 10, class: 'gd' }, svg); S('text', { x: X(v), y: y0 + this.rows.length * dy2 + 6, 'text-anchor': 'middle', class: 'tk-t', text: v }, svg); }
+    S('line', { x1: X(this.curC), x2: X(this.curC), y1: 14, y2: y0 + this.rows.length * dy2 - 10, style: 'stroke:var(--ink);stroke-width:1.5' }, svg);
+    S('text', { x: X(this.curC), y: 10, 'text-anchor': 'middle', style: 'font-size:11px;fill:var(--ink);font-weight:600', text: `tour actual ${nf(this.curC)}` }, svg);
+    this.rows.forEach((m, r) => {
+      const y = y0 + r * dy2, isH = m === this.bH, isE = m === this.bE;
+      if ((k === 2 && isH) || (k >= 3 && isE)) S('rect', { x: 0, y: y - 15, width: 690, height: 30, rx: 6, style: `fill:${k >= 3 && isE ? 'var(--exact-s)' : 'var(--heur-s)'}` }, svg);
+      S('text', { x: 0, y: y + 4, style: `font-size:12.5px;fill:var(--ink);font-weight:${isH || (k >= 3 && isE) ? 700 : 500}`, text: `${byRank(this, m)}. ${mvLabel(m)}` }, svg);
+      const showE = (k >= 2 && isH) || k >= 3;
+      if (showE && Math.abs(m.he - m.ex) > 0.05) S('line', { x1: X(m.he), x2: X(m.ex), y1: y, y2: y, style: 'stroke:var(--muted);stroke-width:2' }, svg);
+      S('circle', { cx: X(m.he), cy: y, r: 6.5, style: 'fill:var(--heur);stroke:var(--card);stroke-width:2', 'data-tip': `${mvLabel(m)}<br>estimación de la regla: ${nf(m.he)}<br>costo exacto (DP): ${nf(m.ex)}` }, svg);
+      if (showE) S('circle', { cx: X(m.ex), cy: y, r: 6.5, style: 'fill:var(--exact);stroke:var(--card);stroke-width:2', 'data-tip': `${mvLabel(m)}<br>costo exacto (DP): ${nf(m.ex)}` }, svg);
+    });
+    const ly = y0 + this.rows.length * dy2 + 26;
+    S('circle', { cx: x0, cy: ly - 4, r: 5, style: 'fill:var(--heur)' }, svg); S('text', { x: x0 + 10, y: ly, class: 'lbl', text: 'estimación de la regla' }, svg);
+    S('circle', { cx: x0 + 170, cy: ly - 4, r: 5, style: 'fill:var(--exact)' }, svg); S('text', { x: x0 + 180, y: ly, class: 'lbl', text: 'costo exacto (DP)' }, svg);
+  },
+  step(k) { if (k >= 4) this.stat(); this.render(k); }
+});
+function byRank(o, m) { return o.nb.slice().sort((a, b) => a.he - b.he).indexOf(m) + 1; }
+
+reg('comun', {
+  init() {
+    const svg = $('#cmSvg'); svg.innerHTML = ''; this.svg = svg;
+    const s = 0.62, ox = -40, oy = 4, P = c => { const [x, y] = exPt(c); return [ox + x * s + 60, oy + y * s]; };
+    this.P = P;
+    // ciclo de clientes
+    this.edges = [];
+    for (let k = 0; k < 6; k++) { const [x1, y1] = P(k), [x2, y2] = P((k + 1) % 6); this.edges.push(S('line', { x1, y1, x2, y2, style: 'stroke:var(--ink2);stroke-width:2;transition:opacity .3s' }, svg)); }
+    this.dl = [S('line', { style: 'stroke:var(--exact);stroke-width:2;stroke-dasharray:5 4;opacity:0;transition:opacity .3s' }, svg), S('line', { style: 'stroke:var(--exact);stroke-width:2;stroke-dasharray:5 4;opacity:0;transition:opacity .3s' }, svg)];
+    EX.xy.forEach((_, c) => { const [x, y] = P(c); S('circle', { cx: x, cy: y, r: 12, style: 'fill:var(--card);stroke:var(--ink2);stroke-width:1.8' }, svg); S('text', { x, y: y + 4.5, 'text-anchor': 'middle', style: 'font-size:12px;font-weight:700;fill:var(--ink)', text: EX.lab[c] }, svg); });
+    const [dx, dy] = P(-1); S('rect', { x: dx - 10, y: dy - 10, width: 20, height: 20, rx: 3, style: 'fill:var(--ink)' }, svg);
+    S('text', { x: dx + 16, y: dy + 5, class: 'tk-t', text: 'depósito' }, svg);
+    // candidatos: depósito entre c_k y c_{k+1}
+    const cyc = [0, 1, 2, 3, 4, 5]; this.cand = [];
+    const Q = Math.max(sum(EX.al), sum(EX.be));
+    for (let k = 0; k < 6; k++) {
+      const order = [...cyc.slice(k + 1), ...cyc.slice(0, k + 1)];
+      const a = exArrays(order); let L = sum(a.al), feas = true; for (let j = 1; j <= 6; j++) { L += a.be[j] - a.al[j]; if (L > Q) feas = false; }
+      const rt = exRouting(order), hc = HC.dp(a.al, a.be, 1, 1).cost;
+      this.cand.push({ k, order, rt, hc, tot: rt + hc, feas, name: `entre ${EX.lab[k]} y ${EX.lab[(k + 1) % 6]}` });
+    }
+    const feasC = this.cand.filter(c => c.feas); this.best = feasC.reduce((a, b) => (b.tot < a.tot ? b : a));
+    // barras
+    const bx0 = 112, bx1 = 430, mx = Math.max(...this.cand.map(c => c.tot)) * 1.05, Xb = v => bx0 + v / mx * (bx1 - bx0);
+    this.bars = this.cand.map((c, i) => {
+      const y = 236 + i * 30, g = S('g', { style: 'opacity:.18;transition:opacity .35s', 'data-tip': `depósito ${c.name}: ruteo ${nf(c.rt)} + manipulación ${c.hc} = ${nf(c.tot)}${c.feas ? '' : ' (infactible por capacidad)'}` }, svg);
+      S('text', { x: bx0 - 8, y: y + 13, 'text-anchor': 'end', class: 'lbl', text: c.name }, g);
+      S('rect', { x: bx0, y, width: Xb(c.rt) - bx0, height: 18, style: 'fill:var(--muted)' }, g);
+      S('path', { d: `M${Xb(c.rt) + 2},${y} h${Math.max(1, Xb(c.tot) - Xb(c.rt) - 6)} a4,4 0 0 1 4,4 v10 a4,4 0 0 1 -4,4 h-${Math.max(1, Xb(c.tot) - Xb(c.rt) - 6)} z`, style: 'fill:var(--exact)' }, g);
+      S('text', { x: Xb(c.tot) + 6, y: y + 13, class: 'lbl', text: nf(c.tot) + (c.feas ? '' : ' ✕') }, g);
+      return g;
+    });
+    S('text', { x: bx0, y: 222, class: 'tk-t', text: '■ ruteo   ' }, svg);
+    S('rect', { x: bx0 + 52, y: 213, width: 10, height: 10, style: 'fill:var(--exact)' }, svg); S('text', { x: bx0 + 66, y: 222, class: 'tk-t', text: 'manipulación óptima (DP)' }, svg);
+    S('rect', { x: bx0 - 1, y: 213, width: 10, height: 10, style: 'fill:var(--muted)' }, svg);
+    this.res = S('text', { x: 0, y: 425, class: 'lbl', style: 'opacity:0;transition:opacity .4s', text: `Se elige el depósito ${this.best.name}: ${nf(this.best.tot)} (ruteo ${nf(this.best.rt)} + manipulación ${this.best.hc}).` }, svg);
+  },
+  show(i, all) {
+    const c = this.cand[i]; const [dx, dy] = this.P(-1), [x1, y1] = this.P(c.k), [x2, y2] = this.P((c.k + 1) % 6);
+    this.edges.forEach((e, q) => { e.style.opacity = q === c.k ? .15 : 1; });
+    this.dl[0].setAttribute('x1', dx); this.dl[0].setAttribute('y1', dy); this.dl[0].setAttribute('x2', x1); this.dl[0].setAttribute('y2', y1);
+    this.dl[1].setAttribute('x1', dx); this.dl[1].setAttribute('y1', dy); this.dl[1].setAttribute('x2', x2); this.dl[1].setAttribute('y2', y2);
+    this.dl.forEach(l => { l.style.opacity = 1; });
+    this.bars.forEach((b, q) => { b.style.opacity = all ? (q === i ? 1 : .45) : q <= i ? (q === i ? 1 : .45) : .12; });
+  },
+  async step(k, dir) {
+    if (k === 0) { this.dl.forEach(l => { l.style.opacity = 0; }); this.edges.forEach(e => { e.style.opacity = 1; }); this.bars.forEach(b => { b.style.opacity = .12; }); this.res.style.opacity = 0; return; }
+    const bi = this.cand.indexOf(this.best);
+    if (!(dir === 1 && k === 1)) { this.show(bi, true); this.res.style.opacity = 1; return; }
+    const my = RUN; this.res.style.opacity = 0;
+    for (let i = 0; i < 6; i++) { if (!live(my)) return; this.show(i, false); await sleep(700); }
+    if (!live(my)) return; this.show(bi, true); this.res.style.opacity = 1;
+  }
+});
+
+/* ---- tour con flechas (movimientos) ---- */
+const MV_PTS = [[160, 268], [62, 210], [52, 112], [118, 40], [214, 34], [282, 96], [292, 186], [236, 250], [150, 150]];
+class TourView {
+  constructor(svg, seq) {
+    this.svg = svg; svg.innerHTML = ''; this.g = S('g', null, svg); this.nodes = S('g', null, svg); this.E = {};
+    MV_PTS.forEach(([x, y], v) => {
+      if (v === 0) { S('rect', { x: x - 11, y: y - 11, width: 22, height: 22, rx: 3, style: 'fill:var(--ink)' }, this.nodes); return; }
+      const g = S('g', null, this.nodes);
+      S('circle', { cx: x, cy: y, r: 20, class: 'ring', style: 'fill:none;stroke:var(--heur);stroke-width:3;opacity:0;transition:opacity .3s' }, g);
+      S('circle', { cx: x, cy: y, r: 13, style: 'fill:var(--card);stroke:var(--ink2);stroke-width:1.8' }, g);
+      S('text', { x, y: y + 4.5, 'text-anchor': 'middle', style: 'font-size:12px;font-weight:700;fill:var(--ink)', text: v }, g);
+    });
+    this.set(seq, false);
+  }
+  key(a, b) { return a < b ? a + '-' + b : b + '-' + a; }
+  edgesOf(seq) { const r = [0, ...seq, 0], out = []; for (let k = 0; k < r.length - 1; k++) out.push([r[k], r[k + 1]]); return out; }
+  drawEdge(a, b, el) {
+    const [x1, y1] = MV_PTS[a], [x2, y2] = MV_PTS[b], ang = Math.atan2(y2 - y1, x2 - x1), r1 = a ? 14 : 12, r2 = b ? 14 : 12;
+    const sx = x1 + Math.cos(ang) * r1, sy = y1 + Math.sin(ang) * r1, ex = x2 - Math.cos(ang) * r2, ey = y2 - Math.sin(ang) * r2;
+    el.line.setAttribute('x1', sx); el.line.setAttribute('y1', sy); el.line.setAttribute('x2', ex); el.line.setAttribute('y2', ey);
+    el.arr.setAttribute('transform', `translate(${(sx + ex) / 2},${(sy + ey) / 2}) rotate(${ang * 180 / Math.PI})`);
+    el.dir = a + '>' + b;
+  }
+  mkEdge(a, b) {
+    const g = S('g', { style: 'transition:opacity .45s' }, this.g);
+    const line = S('line', { style: 'stroke:var(--ink2);stroke-width:2;transition:stroke .3s' }, g);
+    const arr = S('path', { d: 'M-6,-4.5 L6,0 L-6,4.5 z', style: 'fill:var(--ink2);transition:fill .3s' }, g);
+    const el = { g, line, arr }; this.drawEdge(a, b, el); return el;
+  }
+  ring(vs) { $$('.ring', this.nodes).forEach((r, q) => { r.style.opacity = vs.includes(q + 1) ? 1 : 0; }); }
+  async set(seq, anim, my) {
+    const ne = this.edgesOf(seq), nk = new Set(ne.map(([a, b]) => this.key(a, b)));
+    const removed = Object.keys(this.E).filter(k => !nk.has(k));
+    if (anim) {
+      removed.forEach(k => { const e = this.E[k]; e.line.style.stroke = 'var(--bad)'; e.arr.style.fill = 'var(--bad)'; e.line.style.strokeDasharray = '5 4'; });
+      if (!(await tween(650, () => {}, my))) return false;
+      removed.forEach(k => { this.E[k].g.style.opacity = 0; });
+      if (!(await tween(380, () => {}, my))) return false;
+    }
+    removed.forEach(k => { this.E[k].g.remove(); delete this.E[k]; });
+    const added = [];
+    ne.forEach(([a, b]) => {
+      const k = this.key(a, b);
+      if (!this.E[k]) { const e = this.mkEdge(a, b); this.E[k] = e; added.push(e); if (anim) { e.g.style.opacity = 0; e.line.style.stroke = 'var(--good)'; e.arr.style.fill = 'var(--good)'; } }
+      else if (this.E[k].dir !== a + '>' + b) { this.drawEdge(a, b, this.E[k]); if (anim) { this.E[k].line.style.stroke = 'var(--its)'; this.E[k].arr.style.fill = 'var(--its)'; added.push(this.E[k]); } }
+    });
+    if (anim) {
+      void this.svg.getBoundingClientRect();
+      added.forEach(e => { e.g.style.opacity = 1; });
+      if (!(await tween(900, () => {}, my))) return false;
+      added.forEach(e => { e.line.style.stroke = 'var(--ink2)'; e.arr.style.fill = 'var(--ink2)'; });
+    }
+    this.seq = seq.slice(); return true;
+  }
+}
+reg('movs', {
+  init() {
+    this.s0 = [1, 2, 3, 4, 5, 6, 7, 8];
+    this.A = new TourView($('#mvA'), this.s0); this.B = new TourView($('#mvB'), this.s0); this.C = new TourView($('#mvC'), this.s0);
+    const rel = (s, i, p) => { const t = s.slice(); const [v] = t.splice(i, 1); t.splice(p, 0, v); return t; };
+    const opt = (s, i, j) => [...s.slice(0, i), ...s.slice(i, j + 1).reverse(), ...s.slice(j + 1)];
+    this.sA = rel(this.s0, 7, 2);           // cliente 8: pos. 8 → 3
+    this.sB = opt(this.s0, 2, 5);           // invertir pos. 3–6
+    this.pert = [opt(this.s0, 1, 4)]; this.pert.push(rel(this.pert[0], 6, 1)); this.pert.push(opt(this.pert[1], 3, 6));
+  },
+  async step(k, dir) {
+    const my = RUN;
+    if (dir !== 1 || k === 0) {
+      await this.A.set(k >= 1 ? this.sA : this.s0, false); await this.B.set(k >= 2 ? this.sB : this.s0, false); await this.C.set(k >= 3 ? this.pert[2] : this.s0, false);
+      this.A.ring(k >= 1 ? [8] : []); this.B.ring(k >= 2 ? [3, 6] : []); this.C.ring([]); return;
+    }
+    if (k === 1) { this.A.ring([8]); await this.A.set(this.sA, true, my); }
+    if (k === 2) { this.B.ring([3, 6]); await this.B.set(this.sB, true, my); }
+    if (k === 3) { await this.C.set(this.s0, false); for (const s of this.pert) { if (!live(my)) return; if (!(await this.C.set(s, true, my))) return; await sleep(200); } }
+  }
+});
+
+/* ---- paisaje 1D para ILS / ITS ---- */
+const LK = [[0, .66], [.07, .74], [.18, .52], [.31, .78], [.43, .40], [.53, .58], [.64, .30], [.76, .68], [.87, .47], [1, .72]];
+function landF(x) { for (let k = 0; k < LK.length - 1; k++) { const [x0, y0] = LK[k], [x1, y1] = LK[k + 1]; if (x <= x1) { const t = (x - x0) / (x1 - x0), s = t * t * (3 - 2 * t); return y0 + (y1 - y0) * s; } } return LK[LK.length - 1][1]; }
+const LM = 61, LYv = [...Array(LM)].map((_, i) => landF(i / (LM - 1)));
+const lnb = s => [s - 2, s - 1, s + 1, s + 2].filter(v => v >= 0 && v < LM);
+function lDescent(s) { const path = [s]; for (;;) { let b = s; for (const v of lnb(s)) if (LYv[v] < LYv[b] - 1e-12) b = v; if (b === s) break; s = b; path.push(s); } return path; }
+function lTS(s, iters, ten) {
+  const path = [s], tabu = [], hist = []; let best = s;
+  for (let it = 0; it < iters; it++) {
+    let b = null; for (const v of lnb(s)) { const isT = tabu.includes(v); if (isT && !(LYv[v] < LYv[best])) continue; if (b === null || LYv[v] < LYv[b]) b = v; }
+    if (b === null) break; tabu.push(s); if (tabu.length > ten) tabu.shift(); s = b; path.push(s); if (LYv[s] < LYv[best]) best = s; hist.push({ s, tabu: tabu.slice(), best });
+  }
+  return { path, best, hist };
+}
+const lc = s => nf(LYv[s] * 100, 1);
+class Land {
+  constructor(svg, color) {
+    this.svg = svg; svg.innerHTML = ''; this.color = color;
+    let d = ''; for (let i = 0; i <= 300; i++) { const x = i / 300; d += (i ? 'L' : 'M') + this.X(x * 60).toFixed(1) + ',' + this.Y(landF(x)).toFixed(1); }
+    S('path', { d: d + `L${this.X(60)},305 L${this.X(0)},305 z`, style: 'fill:var(--grid)' }, svg);
+    S('path', { d, style: 'fill:none;stroke:var(--ink2);stroke-width:2' }, svg);
+    S('line', { x1: this.X(0), x2: this.X(60), y1: 305, y2: 305, class: 'ax' }, svg);
+    S('text', { x: this.X(60), y: 322, 'text-anchor': 'end', class: 'tk-t', text: 'tours (vecinos quedan cerca) →' }, svg);
+    S('text', { x: this.X(0), y: 322, class: 'tk-t', text: '↑ costo' }, svg);
+    this.trail = S('g', null, svg); this.marks = S('g', null, svg);
+    this.flag = S('g', { style: 'transition:transform .7s ease' }, svg);
+    S('line', { x1: 0, y1: 0, x2: 0, y2: -58, style: 'stroke:var(--ink);stroke-width:1.6' }, this.flag);
+    S('path', { d: 'M0,-58 L24,-51 L0,-44 z', style: 'fill:var(--ink)' }, this.flag);
+    S('text', { x: 4, y: -63, style: 'font-size:11px;font-weight:700;fill:var(--ink)', text: 'bestTour' }, this.flag);
+    this.star = S('path', { d: 'M0,-7 L2,-2 L7,-2 L3,1.5 L4.5,7 L0,3.8 L-4.5,7 L-3,1.5 L-7,-2 L-2,-2 z', style: 'fill:var(--good);opacity:0' }, svg);
+    this.ball = S('circle', { r: 9, style: `fill:${color};stroke:var(--card);stroke-width:2.5` }, svg);
+    this.badge = S('text', { style: 'font-size:22px;font-weight:700;opacity:0;transition:opacity .3s', 'text-anchor': 'middle' }, svg);
+    this.st = S('text', { x: 40, y: 22, style: 'font-size:13px;fill:var(--ink2);font-variant-numeric:tabular-nums' }, svg);
+    this.st2 = S('text', { x: 600, y: 22, 'text-anchor': 'end', style: 'font-size:13px;fill:var(--ink2);font-weight:600' }, svg);
+  }
+  X(s) { return 40 + s * 9.5; }
+  Y(v) { return 300 - (v - .25) / .6 * 250; }
+  P(s) { return [this.X(s), this.Y(landF(s / 60)) - 10]; }
+  ballAt(x, y) { this.ball.setAttribute('cx', x); this.ball.setAttribute('cy', y); }
+  setBall(s) { const [x, y] = this.P(s); this.ballAt(x, y); this.s = s; }
+  setFlag(s) { const [x, y] = this.P(s); this.flag.style.transform = `translate(${x}px,${y + 10}px)`; }
+  setStar(s) { if (s == null) { this.star.style.opacity = 0; return; } const [x, y] = this.P(s); this.star.setAttribute('transform', `translate(${x},${y + 24})`); this.star.style.opacity = 1; }
+  status(cc, cn) { this.st.textContent = `costCurrent = ${cc}    costNew = ${cn}`; }
+  info(t) { this.st2.textContent = t || ''; }
+  setBadge(s, ok) { if (s == null) { this.badge.style.opacity = 0; return; } const [x, y] = this.P(s); this.badge.setAttribute('x', x + 20); this.badge.setAttribute('y', y - 14); this.badge.textContent = ok ? '✓' : '✕'; this.badge.style.fill = ok ? 'var(--good)' : 'var(--bad)'; this.badge.style.opacity = 1; }
+  clear() { this.trail.innerHTML = ''; this.marks.innerHTML = ''; this.setBadge(null); this.setStar(null); this.info(''); }
+  hopPath(a, b) { const [x1, y1] = this.P(a), [x2, y2] = this.P(b); const cx = (x1 + x2) / 2, cy = Math.min(y1, y2) - 44; return { x1, y1, x2, y2, cx, cy }; }
+  trailHop(a, b) { const h = this.hopPath(a, b); S('path', { d: `M${h.x1},${h.y1} Q${h.cx},${h.cy} ${h.x2},${h.y2}`, style: 'fill:none;stroke:var(--muted);stroke-width:1.6;stroke-dasharray:4 4' }, this.trail); }
+  async hop(a, b, my) {
+    this.trailHop(a, b); const h = this.hopPath(a, b);
+    const ok = await tween(470, t => { t = ease(t); const u = 1 - t; this.ballAt(u * u * h.x1 + 2 * u * t * h.cx + t * t * h.x2, u * u * h.y1 + 2 * u * t * h.cy + t * t * h.y2); }, my);
+    if (ok) this.s = b; return ok;
+  }
+  async roll(a, b, my, dur = 300) { const ok = await tween(dur, t => { const s = a + (b - a) * ease(t); const [x, y] = this.P(s); this.ballAt(x, y); }, my); if (ok) this.s = b; return ok; }
+  tabuMarks(list) { this.marks.innerHTML = ''; list.forEach((s, q) => { const [x] = this.P(s); S('text', { x, y: 298, 'text-anchor': 'middle', style: `font-size:13px;font-weight:700;fill:var(--its);opacity:${(0.35 + 0.65 * (q + 1) / list.length).toFixed(2)}`, text: '×' }, this.marks); }); }
+}
+reg('ils', {
+  init() {
+    this.L = new Land($('#ilsSvg'), 'var(--ils)');
+    this.h1 = [11, 13, 15, 14]; this.d1 = lDescent(14); this.h2 = [11, 14, 17, 20]; this.d2 = lDescent(20);
+  },
+  render(k) {
+    const L = this.L; L.clear();
+    const b2 = this.d2[this.d2.length - 1];
+    L.setFlag(k >= 6 ? b2 : 11);
+    const cc = k >= 6 ? lc(b2) : lc(11);
+    let cn = '—';
+    if (k === 0) L.setBall(11);
+    if (k === 1) { this.h1.slice(1).forEach((s, q) => L.trailHop(this.h1[q], s)); L.setBall(14); L.info('iteración 1 · perturbación'); }
+    if (k === 2) { L.setBall(11); cn = lc(11); L.info('iteración 1 · búsqueda local'); }
+    if (k === 3) { L.setBall(11); cn = lc(11); L.setBadge(11, false); L.info('iteración 1 · no mejora'); }
+    if (k === 4) { this.h2.slice(1).forEach((s, q) => L.trailHop(this.h2[q], s)); L.setBall(20); L.info('iteración 2 · perturbación'); }
+    if (k === 5) { L.setBall(b2); cn = lc(b2); L.info('iteración 2 · búsqueda local'); }
+    if (k >= 6) { L.setBall(b2); cn = lc(b2); L.setBadge(b2, true); L.info(k === 6 ? 'iteración 2 · se acepta' : '… hasta N_iter = 200'); }
+    L.status(cc, cn);
+  },
+  async step(k, dir) {
+    if (dir !== 1 || ![1, 2, 4, 5, 6].includes(k)) { this.render(k); return; }
+    const my = RUN, L = this.L; this.render(k - 1);
+    if (k === 3) return;
+    if (k === 1 || k === 4) {
+      L.clear(); L.setBall(11); L.info(`iteración ${k === 1 ? 1 : 2} · perturbación`); L.status(lc(11), '—');
+      const hp = k === 1 ? this.h1 : this.h2;
+      for (let q = 1; q < hp.length; q++) { if (!(await L.hop(hp[q - 1], hp[q], my))) return; await sleep(120); }
+      return;
+    }
+    if (k === 2 || k === 5) {
+      const dp = k === 2 ? this.d1 : this.d2; L.trail.innerHTML = ''; L.info(`iteración ${k === 2 ? 1 : 2} · búsqueda local`);
+      for (let q = 1; q < dp.length; q++) { if (!(await L.roll(dp[q - 1], dp[q], my))) return; await sleep(80); }
+      if (live(my)) this.render(k); return;
+    }
+    if (k === 6) { this.render(6); }
+  }
+});
+reg('its', {
+  init() { this.L = new Land($('#itsSvg'), 'var(--its)'); this.hp = [11, 9, 7, 8]; this.ts = lTS(8, 14, 6); },
+  render(k) {
+    const L = this.L; L.clear(); const tsEnd = this.ts.path[this.ts.path.length - 1], best = this.ts.best;
+    L.setFlag(k >= 3 ? best : 11);
+    let cn = '—';
+    if (k === 0) L.setBall(11);
+    if (k === 1) { this.hp.slice(1).forEach((s, q) => L.trailHop(this.hp[q], s)); L.setBall(8); L.info('perturbación'); }
+    if (k >= 2) { L.setBall(tsEnd); const last = this.ts.hist[this.ts.hist.length - 1]; L.tabuMarks(last.tabu); L.setStar(best); cn = lc(best); L.info(k === 2 ? `búsqueda tabú · ${this.ts.hist.length}/14 iteraciones` : 'se acepta lo mejor que vio'); }
+    if (k >= 3) L.setBadge(best, true);
+    L.status(k >= 3 ? lc(best) : lc(11), cn);
+  },
+  async step(k, dir) {
+    if (dir !== 1 || ![1, 2, 3].includes(k)) { this.render(k); return; }
+    const my = RUN, L = this.L; this.render(k - 1);
+    if (k === 1) { L.clear(); L.setBall(11); L.info('perturbación'); for (let q = 1; q < this.hp.length; q++) { if (!(await L.hop(this.hp[q - 1], this.hp[q], my))) return; await sleep(120); } return; }
+    if (k === 2) {
+      L.trail.innerHTML = ''; let prev = 8;
+      for (let q = 0; q < this.ts.hist.length; q++) {
+        const h = this.ts.hist[q]; L.info(`búsqueda tabú · iteración ${q + 1}/14`);
+        if (!(await L.roll(prev, h.s, my, 340))) return;
+        L.tabuMarks(h.tabu); L.setStar(h.best); L.status(lc(11), lc(h.best)); prev = h.s; await sleep(140);
+      }
+      return;
+    }
+    if (k === 3) this.render(3);
+  }
+});
+
+reg('ts', {
+  init() {
+    const inst = makeInst(62, 10), seq0 = startTour(inst); this.inst = inst;
+    let seq = seq0.slice(), curC = routeLen(inst.pts, seq) + handExact(inst, seq); const tabu = [], L = 5; this.rows = []; this.trace = [curC];
+    for (let it = 1; it <= 6; it++) {
+      const mv = rawMoves(seq).filter(m => feasible(inst, m.seq)); mv.forEach(m => { m.ex = routeLen(inst.pts, m.seq) + handExact(inst, m.seq); });
+      const isTabu = m => m.type === 'relocate' ? tabu.some(t => t.k === 'r' + m.v) : tabu.some(t => t.k === `o${m.i},${m.j}`);
+      const allowed = m => !isTabu(m) || m.ex < curC - 1e-9;
+      const pick = arr => arr.filter(allowed).reduce((a, b) => (!a || b.ex < a.ex ? b : a), null);
+      const r = pick(mv.filter(m => m.type === 'relocate')), o = pick(mv.filter(m => m.type === '2opt'));
+      const ch = (r && (!o || r.ex < o.ex)) ? r : o;
+      tabu.push(ch.type === 'relocate' ? { k: 'r' + ch.v, lab: `(${ch.v},${ch.v})` } : { k: `o${ch.i},${ch.j}`, lab: `(${ch.i + 1},${ch.j + 1})` });
+      if (tabu.length > L) tabu.shift();
+      const prevC = curC; seq = ch.seq; curC = ch.ex; this.trace.push(curC);
+      this.rows.push({ it, r, o, ch, curC, up: curC > prevC + 1e-9, tabu: tabu.map(t => t.lab).join(' ') });
+    }
+    const tb = $('#tsTbl tbody');
+    $('#tsHead').innerHTML = `Instancia de 10 clientes, evaluación exacta · costo inicial ${nf(this.trace[0])}`;
+    const lab = m => m ? (m.type === 'relocate' ? `c${m.v}: ${m.i + 1}→${m.p + 1}` : `${m.i + 1}–${m.j + 1}`) : '—';
+    this.trs = this.rows.map(r => H('tr', null, `<td>${r.it}</td><td${r.ch === r.r ? ' style="font-weight:700"' : ''}>${lab(r.r)}</td><td class="n"${r.ch === r.r ? ' style="font-weight:700"' : ''}>${r.r ? nf(r.r.ex) : '—'}</td><td${r.ch === r.o ? ' style="font-weight:700"' : ''}>${lab(r.o)}</td><td class="n"${r.ch === r.o ? ' style="font-weight:700"' : ''}>${r.o ? nf(r.o.ex) : '—'}</td><td class="n">${nf(r.curC)} ${r.up ? '<span style="color:var(--bad)">▲</span>' : '<span style="color:var(--good)">▼</span>'}</td><td class="mono" style="font-size:12px">${r.tabu}</td>`, tb));
+    this.trs.forEach(tr => { tr.style.transition = 'opacity .4s'; });
+  },
+  step(k) {
+    this.trs.forEach((tr, q) => { tr.style.opacity = q < k ? 1 : 0; tr.classList.toggle('hl', q === k - 1); });
+    const svg = $('#tsSpark'); svg.innerHTML = '';
+    const pts = this.trace.slice(0, k + 1), lo = Math.min(...this.trace) - 8, hi = Math.max(...this.trace) + 8;
+    const X = i => 60 + i * 95, Y = v => 100 - (v - lo) / (hi - lo) * 80;
+    S('text', { x: 0, y: 14, class: 'tk-t', text: 'costo actual por iteración' }, svg);
+    for (let i = 0; i <= 6; i++) S('text', { x: X(i), y: 117, 'text-anchor': 'middle', class: 'tk-t', text: i }, svg);
+    let d = ''; pts.forEach((v, i) => { d += (i ? 'L' : 'M') + X(i) + ',' + Y(v); });
+    S('path', { d, style: 'fill:none;stroke:var(--its);stroke-width:2;stroke-linejoin:round' }, svg);
+    const bestV = Math.min(...pts);
+    pts.forEach((v, i) => { S('circle', { cx: X(i), cy: Y(v), r: 4.5, style: `fill:${v === bestV ? 'var(--good)' : 'var(--its)'};stroke:var(--card);stroke-width:2`, 'data-tip': `iteración ${i}: ${nf(v)}` }, svg); });
+    S('text', { x: X(pts.length - 1) + 10, y: Y(pts[pts.length - 1]) + 4, class: 'lbl', text: nf(pts[pts.length - 1]) }, svg);
+  }
+});
+
+reg('ilsvits', {
+  init() {
+    const svg = $('#budget'); svg.innerHTML = '';
+    const x0 = 150, W = 960;
+    const clip = S('clipPath', { id: 'budClip' }, S('defs', null, svg)); this.cr = S('rect', { x: x0, y: 0, width: W, height: 150 }, clip);
+    const g = S('g', { 'clip-path': 'url(#budClip)' }, svg);
+    S('text', { x: 0, y: 40, style: 'font-size:15px;font-weight:700;fill:var(--ils)', text: 'ILS' }, svg); S('text', { x: 0, y: 58, class: 'tk-t', text: '200 iteraciones' }, svg);
+    S('text', { x: 0, y: 108, style: 'font-size:15px;font-weight:700;fill:var(--its)', text: 'ITS' }, svg); S('text', { x: 0, y: 126, class: 'tk-t', text: '14 × 14 iteraciones' }, svg);
+    const R = rng(9); const w1 = W / 200;
+    for (let i = 0; i < 200; i++) { const x = x0 + i * w1; S('rect', { x, y: 30, width: w1 * 0.32, height: 26, style: 'fill:var(--muted)' }, g); const dl = 0.35 + R() * 0.25; S('rect', { x: x + w1 * 0.36, y: 30 + 26 * (1 - dl / 0.6), width: w1 * 0.5, height: 26 * dl / 0.6, style: 'fill:var(--ils)' }, g); }
+    const w2 = W / 14;
+    for (let i = 0; i < 14; i++) { const x = x0 + i * w2; S('rect', { x: x + 1, y: 92, width: 7, height: 26, rx: 1, style: 'fill:var(--muted)' }, g); for (let q = 0; q < 14; q++) S('rect', { x: x + 11 + q * ((w2 - 14) / 14), y: 92, width: (w2 - 14) / 14 - 1, height: 26, rx: 1, style: 'fill:var(--its)' }, g); }
+    S('rect', { x: x0, y: 8, width: 10, height: 10, style: 'fill:var(--muted)' }, svg); S('text', { x: x0 + 14, y: 17, class: 'tk-t', text: 'perturbación (N_rand movimientos aleatorios)' }, svg);
+    S('rect', { x: x0 + 300, y: 8, width: 10, height: 10, style: 'fill:var(--ils)' }, svg); S('text', { x: x0 + 314, y: 17, class: 'tk-t', text: 'descenso hasta un óptimo local (largo variable)' }, svg);
+    S('rect', { x: x0 + 600, y: 8, width: 10, height: 10, style: 'fill:var(--its)' }, svg); S('text', { x: x0 + 614, y: 17, class: 'tk-t', text: 'una iteración de búsqueda tabú' }, svg);
+    S('text', { x: x0, y: 76, class: 'tk-t', text: 'muchas intensificaciones cortas: cada una termina en el primer óptimo local' }, svg);
+    S('text', { x: x0, y: 144, class: 'tk-t', text: 'pocas perturbaciones, cada una seguida de 14 pasos que pueden empeorar' }, svg);
+  },
+  enter() {
+    const my = RUN; this.cr.setAttribute('width', 0);
+    tween(2600, t => this.cr.setAttribute('width', 960 * ease(t)), my).then(ok => { if (!ok) this.cr.setAttribute('width', 960); });
+  }
+});
+
+reg('dirx', {
+  init() {
+    this.m = drawExMap($('#dirMap'), { withReverse: true });
+    $('#dirRoute').innerHTML = `Ruteo = <b>${nf(exRouting(FWD))}</b> en ambos sentidos (distancias simétricas).`;
+    const svg = $('#dirSeq'); svg.innerHTML = ''; this.panels = [];
+    [[FWD, '→ sentido original'], [REV, '← sentido invertido']].forEach(([ord, title], pi) => {
+      const y0 = pi * 168, g = S('g', { style: 'transition:opacity .45s' }, svg);
+      const a = exArrays(ord), r = HC.dp(a.al, a.be, 1, 1), pol = new Array(7).fill(1); r.p2.forEach(j => { pol[j] = 2; }); const sm = HC.sim(a.al, a.be, 1, 1, pol);
+      S('text', { x: 0, y: y0 + 16, style: 'font-size:14px;font-weight:700;fill:var(--ink)', text: title }, g);
+      S('text', { x: 690, y: y0 + 16, 'text-anchor': 'end', style: 'font-size:14px;fill:var(--ink2)', text: `manipulación óptima = ${r.cost}` }, g);
+      const fcol = S('rect', { x: 0, y: y0 + 24, width: 60, height: 136, rx: 8, style: 'fill:var(--hl);opacity:0;transition:opacity .4s' }, g);
+      ord.forEach((c, u) => {
+        const x = 150 + u * 90;
+        if (c === 5) { fcol.setAttribute('x', x - 30); }
+        S('text', { x, y: y0 + 46, 'text-anchor': 'middle', style: 'font-size:16px;font-weight:700;fill:var(--ink)', text: EX.lab[c] }, g);
+        for (let q = 0; q < EX.al[c]; q++) S('rect', { x: x - 9, y: y0 + 86 - (q + 1) * 10, width: 18, height: 8.5, rx: 1.5, style: 'fill:var(--a)' }, g);
+        for (let q = 0; q < EX.be[c]; q++) S('rect', { x: x - 9, y: y0 + 92 + q * 10, width: 18, height: 8.5, rx: 3, style: 'fill:var(--b)' }, g);
+        if (pol[u + 1] === 2 && u < 5) { S('rect', { x: x + 12, y: y0 + 33, width: 26, height: 17, rx: 4, style: 'fill:var(--exact)' }, g); S('text', { x: x + 25, y: y0 + 45.5, 'text-anchor': 'middle', style: 'font-size:10.5px;font-weight:700;fill:#fff', text: 'P2' }, g); }
+        S('text', { x, y: y0 + 148, 'text-anchor': 'middle', style: `font-size:13px;font-weight:600;fill:${sm.per[u] ? 'var(--ink)' : 'var(--muted)'}`, text: '+' + sm.per[u] }, g);
+      });
+      S('line', { x1: 110, x2: 650, y1: y0 + 89, y2: y0 + 89, class: 'ax' }, g);
+      S('text', { x: 0, y: y0 + 80, class: 'tk-t', text: 'entrega α' }, g); S('text', { x: 0, y: y0 + 104, class: 'tk-t', text: 'retiro β' }, g);
+      S('text', { x: 0, y: y0 + 148, class: 'tk-t', text: 'costo en cada cliente' }, g);
+      this.panels.push({ g, fcol });
+    });
+  },
+  step(k) {
+    this.panels[0].g.style.opacity = k >= 1 ? 1 : 0; this.panels[1].g.style.opacity = k >= 2 ? 1 : 0;
+    this.panels.forEach(p => { p.fcol.style.opacity = k >= 3 ? 1 : 0; });
+    this.m.arrows.style.opacity = k === 1 ? 1 : 0; this.m.arrowsRev.style.opacity = k >= 2 ? 1 : 0;
+    this.m.rings.forEach((r, c) => { r.style.opacity = k >= 3 && c === 5 ? 1 : 0; });
+  }
+});
+
+/* ---- datos de las Tablas 2-9 ---- */
+const DEV = { ilsH1: 3.97, ilsH2: 2.74, ilsE1: 3.85, ilsE2: 2.68, itsH1: 3.37, itsH2: 2.56, itsE1: 0.83, itsE2: 0.66, init1: 4.54, init2: 2.90 };
+const NSZ = [20, 40, 60, 80, 100, 120, 140, 160, 180, 200];
+const BYN = {
+  ilsH1: [1.13, 5.21, 6.22, 1.81, 3.09, 5.52, 4.56, 4.44, 4.08, 3.59], ilsH2: [.64, 3.46, 2.61, 1.08, 1.08, 4.35, 3.53, 3.85, 3.28, 3.51],
+  ilsE1: [.31, 4.89, 6.22, 1.81, 3.09, 5.52, 4.56, 4.44, 4.08, 3.59], ilsE2: [.07, 3.44, 2.61, 1.08, 1.08, 4.35, 3.53, 3.85, 3.28, 3.51],
+  itsH1: [1.35, 3.13, 4.56, 1.18, 2.21, 5.52, 3.99, 4.36, 3.78, 3.59], itsH2: [1.12, 1.88, 2.25, .96, 1.03, 4.35, 3.44, 3.84, 3.23, 3.51],
+  itsE1: [.10, .24, .54, .25, .54, 1.79, 1.15, 1.26, .86, 1.52], itsE2: [.05, .10, .13, .05, .34, 1.32, 1.03, 1.25, .86, 1.52],
+  init1: [6.83, 5.21, 6.22, 1.81, 3.09, 5.52, 4.56, 4.44, 4.08, 3.59], init2: [2.30, 3.46, 2.61, 1.08, 1.08, 4.35, 3.53, 3.85, 3.28, 3.51]
+};
+const IMPN = { ilsH: [8, 0, 0, 0, 0, 0, 0, 0, 0, 0], ilsE: [10, 2, 0, 0, 0, 0, 0, 0, 0, 0], itsH: [6, 5, 5, 3, 5, 0, 4, 1, 2, 0], itsE: [9, 10, 10, 10, 10, 10, 10, 10, 10, 10] };
+const IMP = { ilsH1: 8, ilsH2: 7, ilsE1: 12, ilsE2: 10, itsH1: 31, itsH2: 18, itsE1: 99, itsE2: 99 };
+const TIME = { ilsH: [113.68, 113.68], ilsE: [1002.61, 1002.46], itsH: [57.47, 57.44], itsE: [471.79, 471.93] };
+const WIN = [['ILS heurística', 48, 2, 50], ['ILS exacta', 51, 3, 46], ['ITS heurística', 54, 2, 44], ['ITS exacta', 43, 27, 30], ['solución inicial', 49, 0, 51]];
+const CFGS = [['ils', 'H', 'ILS', 'heurística'], ['ils', 'E', 'ILS', 'exacta'], ['its', 'H', 'ITS', 'heurística'], ['its', 'E', 'ITS', 'exacta']];
+
+reg('dirp', {
+  init() {
+    const svg = $('#t3Svg'); svg.innerHTML = '';
+    const data = [['TS', .46, .07], ['ILS', 3.85, 2.68], ['ITS', .83, .66]], x0 = 60, x1 = 450, X = v => x0 + v / 4.2 * (x1 - x0);
+    for (let v = 0; v <= 4; v++) { S('line', { x1: X(v), x2: X(v), y1: 6, y2: 128, class: 'gd' }, svg); S('text', { x: X(v), y: 144, 'text-anchor': 'middle', class: 'tk-t', text: v + ' %' }, svg); }
+    data.forEach(([nm, a, b], i) => {
+      const y = 12 + i * 40;
+      S('text', { x: x0 - 10, y: y + 18, 'text-anchor': 'end', class: 'lblb', text: nm }, svg);
+      const bar = (yy, v, col, lab) => { const w = Math.max(3, X(v) - x0); S('path', { d: `M${x0},${yy} h${w - 3} a3,3 0 0 1 3,3 v8 a3,3 0 0 1 -3,3 h-${w - 3} z`, style: `fill:${col}`, 'data-tip': `${nm} ${lab}: ${nf(v, 2)} %` }, svg); S('text', { x: X(v) + 6, y: yy + 11, class: 'lbl', text: `${nf(v, 2)} % · ${lab}` }, svg); };
+      bar(y, a, 'var(--muted)', '1-dir'); bar(y + 16, b, 'var(--ink2)', '2-dir');
+    });
+    S('line', { x1: x0, x2: x0, y1: 6, y2: 128, class: 'ax' }, svg);
+  }
+});
+
+reg('dirt', {
+  init() {
+    const svg = $('#winSvg'); svg.innerHTML = '';
+    const x0 = 120, x1 = 510, X = v => x0 + v / 100 * (x1 - x0);
+    WIN.forEach(([nm, f, t, r], i) => {
+      const y = 8 + i * 34; S('text', { x: x0 - 8, y: y + 15, 'text-anchor': 'end', class: 'lbl', text: nm }, svg);
+      let acc = 0;
+      [[f, 'var(--ink2)', '#fff', 'gana el original'], [t, 'var(--line)', 'var(--ink)', 'empate'], [r, 'var(--muted)', '#fff', 'gana el invertido']].forEach(([v, col, tc, lab]) => {
+        if (!v) return; const xa = X(acc) + (acc ? 1 : 0), w = X(acc + v) - X(acc) - (acc ? 1 : 0); acc += v;
+        S('rect', { x: xa, y, width: Math.max(1, w), height: 22, style: `fill:${col}`, 'data-tip': `${nm}: ${lab} en ${v} de 100` }, svg);
+        if (w > 26) S('text', { x: xa + w / 2, y: y + 15, 'text-anchor': 'middle', style: `font-size:11.5px;font-weight:600;fill:${tc}`, text: v }, svg);
+      });
+    });
+    const ly = 182; [['var(--ink2)', 'gana el tour original'], ['var(--line)', 'empate'], ['var(--muted)', 'gana el tour invertido']].forEach(([c, t], i) => { S('rect', { x: x0 + i * 135, y: ly - 9, width: 10, height: 10, style: `fill:${c}` }, svg); S('text', { x: x0 + i * 135 + 14, y: ly, class: 'tk-t', text: t }, svg); });
+  }
+});
+
+reg('res8', {
+  init() {
+    // dumbbell de desviación
+    const svg = $('#r8Dev'); svg.innerHTML = '';
+    const x0 = 170, x1 = 700, X = v => x0 + v / 5 * (x1 - x0), Y = i => 92 + i * 62;
+    for (let v = 0; v <= 5; v++) { S('line', { x1: X(v), x2: X(v), y1: 56, y2: 300, class: 'gd' }, svg); S('text', { x: X(v), y: 318, 'text-anchor': 'middle', class: 'tk-t', text: v + ' %' }, svg); }
+    [[DEV.init1, 'inicial 1-dir'], [DEV.init2, 'inicial 2-dir']].forEach(([v, t]) => { S('line', { x1: X(v), x2: X(v), y1: 50, y2: 300, style: 'stroke:var(--muted);stroke-width:1.5' }, svg); S('text', { x: X(v), y: 44, 'text-anchor': 'middle', style: 'font-size:11.5px;fill:var(--ink2);font-weight:600', text: `${t} ${nf(v, 2)} %` }, svg); });
+    // leyenda
+    S('circle', { cx: 6, cy: 12, r: 5.5, style: 'fill:var(--card);stroke:var(--ink2);stroke-width:2' }, svg); S('text', { x: 16, y: 16, class: 'lbl', text: '1-dir' }, svg);
+    S('circle', { cx: 70, cy: 12, r: 5.5, style: 'fill:var(--ink2)' }, svg); S('text', { x: 80, y: 16, class: 'lbl', text: '2-dir' }, svg);
+    S('rect', { x: 140, y: 6, width: 12, height: 12, rx: 3, style: 'fill:var(--heur)' }, svg); S('text', { x: 157, y: 16, class: 'lbl', text: 'heurística' }, svg);
+    S('rect', { x: 240, y: 6, width: 12, height: 12, rx: 3, style: 'fill:var(--exact)' }, svg); S('text', { x: 257, y: 16, class: 'lbl', text: 'exacta' }, svg);
+    this.g = CFGS.map(([m, e, M, E], i) => {
+      const g = S('g', { style: 'transition:opacity .45s' }, svg), y = Y(i), col = e === 'E' ? 'var(--exact)' : 'var(--heur)';
+      const a = DEV[m + e + '1'], b = DEV[m + e + '2'];
+      S('text', { x: 0, y: y + 5, style: 'font-size:14px;font-weight:700;fill:var(--ink)', text: M }, g);
+      S('text', { x: 36, y: y + 5, class: 'lbl', text: E }, g);
+      S('line', { x1: X(a), x2: X(b), y1: y, y2: y, style: `stroke:${col};stroke-width:2.5` }, g);
+      S('circle', { cx: X(a), cy: y, r: 7, style: `fill:var(--card);stroke:${col};stroke-width:2.5`, 'data-tip': `${M} ${E} 1-dir: ${nf(a, 2)} %` }, g);
+      S('circle', { cx: X(b), cy: y, r: 7, style: `fill:${col};stroke:var(--card);stroke-width:2`, 'data-tip': `${M} ${E} 2-dir: ${nf(b, 2)} %` }, g);
+      S('text', { x: X(a), y: y - 14, 'text-anchor': 'middle', class: 'lbl', text: nf(a, 2) }, g);
+      S('text', { x: X(b), y: y + 24, 'text-anchor': 'middle', class: 'lblb', text: nf(b, 2) }, g);
+      return g;
+    });
+    // tiempos
+    const t = $('#r8Time'); t.innerHTML = '';
+    S('text', { x: 0, y: 16, style: 'font-size:13px;font-weight:600;fill:var(--ink)', text: 'Tiempo medio por dirección (s)' }, t);
+    S('text', { x: 0, y: 34, class: 'tk-t', text: 'en 2-dir se suman las dos corridas: ≈ ×2' }, t);
+    const tx0 = 100, tx1 = 290, TX = v => tx0 + v / 1100 * (tx1 - tx0);
+    [0, 500, 1000].forEach(v => { S('line', { x1: TX(v), x2: TX(v), y1: 56, y2: 300, class: 'gd' }, t); S('text', { x: TX(v), y: 318, 'text-anchor': 'middle', class: 'tk-t', text: v.toLocaleString('es-CL') }, t); });
+    this.tg = CFGS.map(([m, e, M, E], i) => {
+      const g = S('g', { style: 'transition:opacity .45s' }, t), y = Y(i) - 11, v = TIME[m + e][0], col = e === 'E' ? 'var(--exact)' : 'var(--heur)', w = TX(v) - tx0;
+      S('text', { x: tx0 - 8, y: y + 15, 'text-anchor': 'end', class: 'lbl', text: `${M} ${E === 'exacta' ? 'exac.' : 'heur.'}` }, g);
+      S('path', { d: `M${tx0},${y} h${w - 4} a4,4 0 0 1 4,4 v14 a4,4 0 0 1 -4,4 h-${w - 4} z`, style: `fill:${col}`, 'data-tip': `${M} ${E}: ${nf(v, 2)} s por dirección (Tabla 9)` }, g);
+      S('text', { x: TX(v) + 6, y: y + 15, class: 'lbl', text: nf(v, 1) }, g);
+      return g;
+    });
+    S('line', { x1: tx0, x2: tx0, y1: 56, y2: 300, class: 'ax' }, t);
+  },
+  step(k) { this.g.forEach((g, i) => { g.style.opacity = (i < 2 ? k >= 1 : k >= 2) ? 1 : 0; }); this.tg.forEach((g, i) => { g.style.opacity = (i < 2 ? k >= 1 : k >= 2) ? 1 : 0; }); }
+});
+
+reg('resm', {
+  init() {
+    const hm = $('#hm'); hm.innerHTML = '';
+    const ramp = ['#cde2fb', '#b7d3f6', '#9ec5f4', '#86b6ef', '#6da7ec', '#5598e7', '#3987e5', '#2a78d6', '#1c5cab', '#104281'];
+    H('div', null, '', hm); NSZ.forEach(n => H('div', 'ch', `|V<sub>c</sub>| = ${n}`, hm)); H('div', 'ch', 'total', hm);
+    this.rowsEl = [];
+    CFGS.forEach(([m, e, M, E]) => {
+      const els = [];
+      els.push(H('div', 'rh', `<i style="width:10px;height:10px;border-radius:3px;background:var(--${e === 'E' ? 'exact' : 'heur'})"></i>${M} ${E}`, hm));
+      IMPN[m + e].forEach((v, q) => { const c = H('div', 'c', v, hm); c.style.background = v ? ramp[v - 1] : 'var(--grid)'; c.style.color = v >= 6 ? '#fff' : v ? '#0d2240' : 'var(--muted)'; c.setAttribute('data-tip', `${M} ${E}, |V<sub>c</sub>| = ${NSZ[q]}: mejora la inicial en ${v} de 10 instancias`); els.push(c); });
+      els.push(H('div', 'tot', `${IMP[m + e + '1']}/100`, hm));
+      els.forEach(x => { x.style.transition = 'opacity .4s'; });
+      this.rowsEl.push(els);
+    });
+  },
+  step(k) { this.rowsEl.forEach((els, i) => { const dim = (k === 1 && i >= 2) || (k === 2 && i < 2); els.forEach(x => { x.style.opacity = dim ? .3 : 1; }); }); }
+});
+
+reg('rest', {
+  init() {
+    const svg = $('#toSvg'); svg.innerHTML = ''; this.svg = svg;
+    const x0 = 70, x1 = 720, y0 = 400, y1 = 30, lo = Math.log10(40), hi = Math.log10(3000);
+    const X = v => x0 + (Math.log10(v) - lo) / (hi - lo) * (x1 - x0), Y = v => y0 - v / 4.5 * (y0 - y1);
+    this.X = X; this.Y = Y;
+    [50, 100, 200, 500, 1000, 2000].forEach(v => { S('line', { x1: X(v), x2: X(v), y1: y1, y2: y0, class: 'gd' }, svg); S('text', { x: X(v), y: y0 + 18, 'text-anchor': 'middle', class: 'tk-t', text: v.toLocaleString('es-CL') + ' s' }, svg); });
+    [0, 1, 2, 3, 4].forEach(v => { S('line', { x1: x0, x2: x1, y1: Y(v), y2: Y(v), class: 'gd' }, svg); S('text', { x: x0 - 8, y: Y(v) + 4, 'text-anchor': 'end', class: 'tk-t', text: v + ' %' }, svg); });
+    S('line', { x1: x0, x2: x1, y1: y0, y2: y0, class: 'ax' }, svg); S('line', { x1: x0, x2: x0, y1: y1, y2: y0, class: 'ax' }, svg);
+    S('text', { x: x1, y: y0 + 36, 'text-anchor': 'end', class: 'tk-t', text: 'tiempo medio total (s, escala log) →' }, svg);
+    S('text', { x: x0, y: 16, class: 'tk-t', text: '↑ desviación media vs Best (Tablas 8–9)' }, svg);
+    this.arrows = S('g', { style: 'transition:opacity .45s' }, svg);
+    const pts = [];
+    CFGS.forEach(([m, e, M, E]) => [1, 2].forEach(d => { const tm = d === 1 ? TIME[m + e][0] : TIME[m + e][0] + TIME[m + e][1]; pts.push({ m, e, d, M, E, tm, dev: DEV[m + e + d] }); }));
+    this.pts = pts;
+    const off = { 'ilsH1': [10, 4, 'start'], 'ilsH2': [10, 4, 'start'], 'ilsE1': [10, 4, 'start'], 'ilsE2': [-12, -10, 'end'], 'itsH1': [10, 4, 'start'], 'itsH2': [-8, 22, 'end'], 'itsE1': [10, 4, 'start'], 'itsE2': [10, -8, 'start'] };
+    // flechas heurística → exacta
+    CFGS.filter(c => c[1] === 'H').forEach(([m]) => [1, 2].forEach(d => {
+      const a = pts.find(p => p.m === m && p.e === 'H' && p.d === d), b = pts.find(p => p.m === m && p.e === 'E' && p.d === d);
+      S('path', { d: `M${X(a.tm)},${Y(a.dev)} L${X(b.tm)},${Y(b.dev)}`, style: 'stroke:var(--muted);stroke-width:1.5;stroke-dasharray:4 4;fill:none' }, this.arrows);
+      const xm = (X(a.tm) + X(b.tm)) / 2, ym = (Y(a.dev) + Y(b.dev)) / 2;
+      S('text', { x: xm, y: ym - 6, 'text-anchor': 'middle', style: 'font-size:11px;fill:var(--muted)', text: `×${nf(b.tm / a.tm, 1)}` }, this.arrows);
+    }));
+    // TS-2dir referencia
+    const tsx = X(1000.69), tsy = Y(0.07);
+    S('rect', { x: tsx - 6, y: tsy - 6, width: 12, height: 12, style: 'fill:var(--card);stroke:var(--ink);stroke-width:2', transform: `rotate(45 ${tsx} ${tsy})`, 'data-tip': 'TS-2dir exacta (Tabla 5): 0,07 % · 1 000,69 s' }, svg);
+    S('text', { x: tsx + 12, y: tsy - 6, class: 'lbl', text: 'TS-2dir exacta (referencia, Tabla 5)' }, svg);
+    pts.forEach(p => {
+      const x = X(p.tm), y = Y(p.dev), col = p.e === 'E' ? 'var(--exact)' : 'var(--heur)', key = p.m + p.e + p.d, [dx, dy, an] = off[key];
+      const fill = p.d === 2 ? col : 'var(--card)', strk = p.d === 2 ? 'var(--card)' : col;
+      const tipT = `${p.M} ${p.E} ${p.d}-dir<br>desviación ${nf(p.dev, 2)} %<br>tiempo ${nf(p.tm, 1)} s`;
+      if (p.m === 'ils') S('circle', { cx: x, cy: y, r: 7.5, style: `fill:${fill};stroke:${strk};stroke-width:2.5`, 'data-tip': tipT }, svg);
+      else S('rect', { x: x - 7, y: y - 7, width: 14, height: 14, rx: 2, transform: `rotate(45 ${x} ${y})`, style: `fill:${fill};stroke:${strk};stroke-width:2.5`, 'data-tip': tipT }, svg);
+      S('text', { x: x + dx, y: y + dy, 'text-anchor': an, class: 'lbl', text: `${p.M} ${p.E} ${p.d}-dir` }, svg);
+    });
+    // leyenda
+    const lx = 470, ly = 56;
+    S('circle', { cx: lx, cy: ly, r: 6, style: 'fill:var(--card);stroke:var(--ink2);stroke-width:2' }, svg); S('text', { x: lx + 12, y: ly + 4, class: 'tk-t', text: 'ILS' }, svg);
+    S('rect', { x: lx + 50, y: ly - 6, width: 12, height: 12, rx: 2, transform: `rotate(45 ${lx + 56} ${ly})`, style: 'fill:var(--card);stroke:var(--ink2);stroke-width:2' }, svg); S('text', { x: lx + 68, y: ly + 4, class: 'tk-t', text: 'ITS' }, svg);
+    S('text', { x: lx, y: ly + 24, class: 'tk-t', text: 'hueco = 1-dir · relleno = 2-dir' }, svg);
+    S('rect', { x: lx, y: ly + 36, width: 10, height: 10, rx: 2, style: 'fill:var(--heur)' }, svg); S('text', { x: lx + 14, y: ly + 45, class: 'tk-t', text: 'heurística' }, svg);
+    S('rect', { x: lx + 90, y: ly + 36, width: 10, height: 10, rx: 2, style: 'fill:var(--exact)' }, svg); S('text', { x: lx + 104, y: ly + 45, class: 'tk-t', text: 'exacta' }, svg);
+  },
+  step(k) { this.arrows.style.opacity = k >= 1 ? 1 : 0; }
+});
+
+reg('config', {
+  init() {
+    this.v = { m: 1, e: 1, d: 1 };
+    $('#cfgSw .sw-row').forEach(r => { r.querySelector('.sw').onclick = e => { const b = e.currentTarget.getBoundingClientRect(); this.v[r.dataset.k] = e.clientX - b.left > b.width / 2 ? 1 : 0; r.dataset.v = this.v[r.dataset.k]; this.draw(); }; });
+    this.draw();
+  },
+  draw() {
+    const { m, e, d } = this.v, mk = m ? 'its' : 'ils', ek = e ? 'E' : 'H', key = mk + ek + (d + 1);
+    const M = m ? 'ITS' : 'ILS', E = e ? 'exacta' : 'heurística', D = d ? '2-dir' : '1-dir';
+    $('#cfgName').innerHTML = `<span class="c-${mk}">${M}</span> · <span class="c-${e ? 'exact' : 'heur'}">${E}</span> · ${D}`;
+    const T = d ? TIME[mk + ek][0] + TIME[mk + ek][1] : TIME[mk + ek][0];
+    $('#cfgDev').innerHTML = `${nf(DEV[key], 2)} %`; $('#cfgTime').innerHTML = `${nf(T, 0)} <small>s</small>`; $('#cfgImp').innerHTML = `${IMP[key]} <small>de 100</small>`;
+    const L = [];
+    const ln = (t, cls) => L.push(`<span class="ln${cls ? ' ' + cls : ''}">${t}</span>`);
+    ln(d ? '<span class="kw">para cada</span> T₀ <span class="kw">en</span> {T, inverso(T)}       <span class="cm">// 2-dir</span>' : 'T₀ ← T                               <span class="cm">// 1-dir</span>');
+    ln(`${d ? '  ' : ''}costCurrent ← costo(T₀); bestTour ← T₀`);
+    ln(`${d ? '  ' : ''}<span class="kw">para</span> it ← 1 <span class="kw">hasta</span> ${m ? '⌊√200⌋ = 14' : '200'}`);
+    ln(`${d ? '  ' : ''}  Tour ← bestTour`);
+    ln(`${d ? '  ' : ''}  perturbar: N<sub>rand</sub> = 0,1·|V<sub>c</sub>| movimientos al azar`);
+    if (m) ln(`${d ? '  ' : ''}  costNew ← <span class="mark">TabuSearch(14, Tour)</span>`);
+    else { ln(`${d ? '  ' : ''}  <span class="kw">mientras</span> haya mejora`); ln(`${d ? '  ' : ''}    costNew ← <span class="mark">aplicar mejor movimiento</span>`); }
+    ln(`${d ? '  ' : ''}  <span class="kw">si</span> costNew &lt; costCurrent: bestTour ← Tour`);
+    ln(d ? '<span class="kw">devolver</span> la mejor de las dos corridas' : '<span class="kw">devolver</span> bestTour');
+    L.push('<span class="ln"> </span>');
+    ln('<span class="cm">// «mejor movimiento» (relocate o 2-opt) se evalúa con:</span>');
+    if (e) ln('<span class="fx">DP exacta O(n²)</span> para cada movimiento factible');
+    else { ln('<span class="fh">regla de umbral O(n)</span> para cada movimiento'); ln('<span class="fx">DP O(n²)</span> solo para el elegido'); }
+    $('#cfgCode').innerHTML = `<div class="cap">pseudocódigo de esta configuración</div>${L.join('')}`;
+    // línea por tamaño
+    const svg = $('#cfgLine'); svg.innerHTML = '';
+    const x0 = 50, x1 = 560, y0 = 196, y1 = 26, X = i => x0 + i / 9 * (x1 - x0), Y = v => y0 - v / 7 * (y0 - y1);
+    [0, 2, 4, 6].forEach(v => { S('line', { x1: x0, x2: x1, y1: Y(v), y2: Y(v), class: 'gd' }, svg); S('text', { x: x0 - 8, y: Y(v) + 4, 'text-anchor': 'end', class: 'tk-t', text: v + ' %' }, svg); });
+    NSZ.forEach((n, i) => S('text', { x: X(i), y: y0 + 18, 'text-anchor': 'middle', class: 'tk-t', text: n }, svg));
+    S('text', { x: x1, y: y0 + 32, 'text-anchor': 'end', class: 'tk-t', text: '|V_c|' }, svg);
+    S('text', { x: x0, y: 12, class: 'tk-t', text: 'desviación media por tamaño de instancia' }, svg);
+    const line = (arr, col, w, nm) => { let p = ''; arr.forEach((v, i) => { p += (i ? 'L' : 'M') + X(i) + ',' + Y(v); }); S('path', { d: p, style: `fill:none;stroke:${col};stroke-width:${w};stroke-linejoin:round` }, svg); arr.forEach((v, i) => S('circle', { cx: X(i), cy: Y(v), r: 4, style: `fill:${col};stroke:var(--card);stroke-width:2`, 'data-tip': `${nm}, |V<sub>c</sub>| = ${NSZ[i]}: ${nf(v, 2)} %` }, svg)); S('text', { x: X(9) + 10, y: Y(arr[9]) + 4, class: 'lbl', text: nm }, svg); };
+    line(BYN['init' + (d + 1)], 'var(--muted)', 2, 'inicial');
+    line(BYN[key], e ? 'var(--exact)' : 'var(--heur)', 2.5, `${M} ${D}`);
+  }
+});
+
+/* =====================================================================
+   Arranque
+   ===================================================================== */
+(function boot() {
+  try { const t = localStorage.getItem('erdogan-deck-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) { /* sin almacenamiento */ }
+  buildChrome(); fit(); addEventListener('resize', fit);
+  $('#bPrev').onclick = prev; $('#bNext').onclick = next; $('#bIdx').onclick = () => toggleOverview(); $('#bTheme').onclick = toggleTheme;
+  $('#bFs').onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); };
+  addEventListener('keydown', e => {
+    if (e.target.matches && e.target.matches('input, textarea, select')) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const k = e.key;
+    if ((k === ' ' || k === 'Enter') && e.target.tagName === 'BUTTON') return;
+    if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(k)) { e.preventDefault(); next(); }
+    else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(k)) { e.preventDefault(); prev(); }
+    else if (k === 'Home') go(0, 0, 0);
+    else if (k === 'End') go(slides.length - 1, 0, 0);
+    else if (k === 'o' || k === 'O' || k === 'Escape') { if (k === 'Escape') toggleOverview(false); else toggleOverview(); }
+    else if (k === 'f' || k === 'F') $('#bFs').click();
+    else if (k === 't' || k === 'T') toggleTheme();
+  });
+  let tx = null;
+  addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, { passive: true });
+  addEventListener('touchend', e => { if (tx == null) return; const dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 60) (dx < 0 ? next : prev)(); tx = null; });
+  const m = location.hash.match(/^#(\d+)(?:\.(\d+))?/);
+  go(m ? +m[1] - 1 : 0, m && m[2] ? +m[2] : 0, 0);
+})();
+
+</script>
+</body>
+</html>

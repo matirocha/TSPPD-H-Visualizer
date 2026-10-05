@@ -35,6 +35,7 @@
   --color-ok: #34d399;
   --color-dp: #fbbf24;
   --color-ils: #60a5fa;
+  --color-its: #e879f9;
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: cubic-bezier(0.34, 1.36, 0.64, 1);
@@ -204,6 +205,26 @@
   .scrollbar-thin {
     scrollbar-width: thin;
     scrollbar-color: var(--color-zinc-700) transparent;
+  }
+  /* Secciones «Tiempos» y «Metaheurísticas»: la barra de control (h o dirección compartidos) queda
+     fija bajo la TopBar desde sm y solo con alto suficiente (en un móvil apaisado taparía un tercio de
+     la pantalla); cada una se pega solo dentro de su sección. El scroll-padding-top de html (5rem)
+     reserva solo la TopBar: los elementos enfocables de la sección —y los bloques a los que se
+     desplaza por código ([data-scroll-anchor], p. ej. la convergencia)— reservan además el alto de la
+     barra, de una o dos filas, para que no queden debajo de ella (WCAG 2.4.11). */
+  @media (min-width: 40rem) and (min-height: 34rem) {
+    [data-bench-bar] {
+      position: sticky;
+      top: 68px;
+    }
+    :is(#tiempos, #metaheuristicas) :is(a[href], button, input, select, textarea, summary, [tabindex], [data-scroll-anchor]):not([data-bench-bar] *) {
+      scroll-margin-top: 11rem;
+    }
+  }
+  @media (min-width: 64rem) and (min-height: 34rem) {
+    :is(#tiempos, #metaheuristicas) :is(a[href], button, input, select, textarea, summary, [tabindex], [data-scroll-anchor]):not([data-bench-bar] *) {
+      scroll-margin-top: 8.5rem;
+    }
   }
 }
 

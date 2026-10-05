@@ -1,6 +1,10 @@
 /**
  * Barra superior: marca · migas de la instancia · selector de modelo | secciones · búsqueda · fuente de datos · atajos.
  * Se pliega por etapas para no desbordar nunca (375 px → marca + instancia + modelo + búsqueda).
+ * Con las ocho secciones visibles (xl) el presupuesto es justo (medido con las métricas de Geist):
+ * la búsqueda queda como icono (Ctrl K y el título la anuncian), las secciones usan px-1.5 y
+ * «Metaheurísticas» se abrevia «ILS · ITS» hasta 2xl (nombre accesible completo). Así la instancia
+ * no se trunca ni a 1 280 px con barra de desplazamiento ni con el chip de versión (≥ 1 680 px).
  */
 import { useMemo } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -21,9 +25,11 @@ const SECTIONS = [
   { id: 'bitacora', label: 'Bitácora' },
   { id: 'comparativa', label: 'Comparativa' },
   { id: 'heuristicas', label: 'Heurísticas' },
+  { id: 'tiempos', label: 'Tiempos' },
+  { id: 'metaheuristicas', label: 'Metaheurísticas', short: 'ILS · ITS' },
   { id: 'modelo', label: 'Modelo' },
   { id: 'datos', label: 'Datos' },
-] as const;
+] as const satisfies readonly { id: string; label: string; short?: string }[];
 const SECTION_IDS: readonly string[] = SECTIONS.map((s) => s.id);
 
 const P3_SPLIT = 'bg-[linear-gradient(90deg,var(--color-p1)_0%,var(--color-p1)_50%,var(--color-p2)_50%,var(--color-p2)_100%)]';
@@ -173,24 +179,35 @@ export function TopBar() {
           <nav aria-label="Secciones" className="mr-2 hidden items-center xl:flex">
             {SECTIONS.map((s) => {
               const isActive = active === s.id;
+              const short = 'short' in s ? s.short : null;
               return (
                 <button
                   key={s.id}
                   type="button"
                   onClick={() => scrollToSection(s.id)}
                   aria-current={isActive ? 'location' : undefined}
+                  title={short ? s.label : undefined}
                   className={cn(
-                    'relative h-8 rounded-xl px-2.5 text-[13px] font-medium transition-colors duration-150',
+                    'relative h-8 rounded-xl px-1.5 text-[13px] font-medium whitespace-nowrap transition-colors duration-150',
                     isActive ? 'text-zinc-50' : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-100',
                   )}
                 >
-                  {s.label}
+                  {short ? (
+                    <>
+                      <span aria-hidden className="2xl:hidden">
+                        {short}
+                      </span>
+                      <span className="sr-only 2xl:not-sr-only">{s.label}</span>
+                    </>
+                  ) : (
+                    s.label
+                  )}
                   {isActive && (
                     <motion.span
                       layoutId="topbar-section-indicator"
                       transition={spring}
                       aria-hidden
-                      className="absolute inset-x-2.5 -bottom-[12px] h-[2px] rounded-full bg-zinc-100"
+                      className="absolute inset-x-1.5 -bottom-[12px] h-[2px] rounded-full bg-zinc-100"
                     />
                   )}
                 </button>
@@ -206,11 +223,11 @@ export function TopBar() {
             aria-haspopup="dialog"
             aria-label="Buscar comandos y soluciones"
             title={`Buscar (${IS_MAC ? '⌘' : 'Ctrl'} K)`}
-            className="w-8 px-0 text-zinc-400 hover:text-zinc-100 lg:w-auto lg:justify-start lg:px-2.5 2xl:min-w-[148px]"
+            className="w-8 px-0 text-zinc-400 hover:text-zinc-100 lg:w-auto lg:justify-start lg:px-2.5 xl:w-8 xl:justify-center xl:px-0"
           >
             <Search className="h-3.5 w-3.5 shrink-0" />
-            <span className="hidden lg:inline">Buscar</span>
-            <Kbd className="ml-auto hidden lg:inline-flex">{IS_MAC ? '⌘ K' : 'Ctrl K'}</Kbd>
+            <span className="hidden lg:inline xl:hidden">Buscar</span>
+            <Kbd className="ml-auto hidden lg:inline-flex xl:hidden">{IS_MAC ? '⌘ K' : 'Ctrl K'}</Kbd>
           </Button>
 
           <Tooltip

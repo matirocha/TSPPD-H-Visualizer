@@ -19,10 +19,12 @@ import { ShortcutsDialog } from './components/ShortcutsDialog';
 import { Footer } from './components/Footer';
 import { ErrorBanner, LoadingStage } from './components/StatusScreens';
 
-// KaTeX (fuentes + CSS) solo se descarga cuando se monta la sección del modelo; la de
-// heurísticas también se carga de forma diferida.
+// KaTeX (fuentes + CSS) solo se descarga cuando se monta la sección del modelo; las de
+// heurísticas, tiempos y metaheurísticas también se cargan de forma diferida.
 const Formulation = lazy(() => import('./components/Formulation').then((m) => ({ default: m.Formulation })));
 const Heuristics = lazy(() => import('./components/Heuristics').then((m) => ({ default: m.Heuristics })));
+const Benchmark = lazy(() => import('./components/Benchmark').then((m) => ({ default: m.Benchmark })));
+const Metaheuristics = lazy(() => import('./components/Metaheuristics').then((m) => ({ default: m.Metaheuristics })));
 
 /** Luz ambiental (patrón Aurora): tenues destellos α (cálido) y β (frío) desenfocados. */
 function Aurora() {
@@ -79,6 +81,16 @@ function Shell() {
             <section id="heuristicas" className="scroll-mt-20 pt-24">
               <Suspense fallback={<div className="surface h-[720px] animate-pulse" aria-busy="true" />}>
                 <Heuristics />
+              </Suspense>
+            </section>
+            <section id="tiempos" className="scroll-mt-20 pt-24">
+              <Suspense fallback={<div className="surface h-[720px] animate-pulse" aria-busy="true" />}>
+                <Benchmark />
+              </Suspense>
+            </section>
+            <section id="metaheuristicas" className="scroll-mt-20 pt-24">
+              <Suspense fallback={<div className="surface h-[720px] animate-pulse" aria-busy="true" />}>
+                <Metaheuristics />
               </Suspense>
             </section>
             <section id="modelo" className="scroll-mt-20 pt-24">

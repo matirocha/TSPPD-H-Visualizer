@@ -3,12 +3,15 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { listSolutions, readHeuristics, readSolution } from './scripts/solutions-api.js';
+import { listSolutions, readBenchmark, readHeuristics, readMetaheuristics, readSolution } from './scripts/solutions-api.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUTPUTS_DIR = path.resolve(__dirname, '../../Outputs');
 
-/** Expone /api/solutions y /api/heuristics durante `npm run dev`, leyendo en vivo la carpeta Outputs/. */
+/**
+ * Expone /api/solutions, /api/heuristics, /api/benchmark y /api/metaheuristics durante `npm run dev`, leyendo en vivo
+ * la carpeta Outputs/.
+ */
 function solutionsApiPlugin(): Plugin {
   return {
     name: 'tsppd-solutions-api-p12',
@@ -19,6 +22,26 @@ function solutionsApiPlugin(): Plugin {
           res.setHeader('Content-Type', 'application/json');
           try {
             return res.end(JSON.stringify({ success: true, ...readHeuristics(OUTPUTS_DIR) }));
+          } catch (err) {
+            res.statusCode = 500;
+            return res.end(JSON.stringify({ success: false, error: (err as Error).message }));
+          }
+        }
+        if (url === '/api/benchmark' || url === '/api/benchmark/') {
+          res.setHeader('Content-Type', 'application/json');
+          res.setHeader('Cache-Control', 'no-store');
+          try {
+            return res.end(JSON.stringify({ success: true, data: readBenchmark(OUTPUTS_DIR) }));
+          } catch (err) {
+            res.statusCode = 500;
+            return res.end(JSON.stringify({ success: false, error: (err as Error).message }));
+          }
+        }
+        if (url === '/api/metaheuristics' || url === '/api/metaheuristics/') {
+          res.setHeader('Content-Type', 'application/json');
+          res.setHeader('Cache-Control', 'no-store');
+          try {
+            return res.end(JSON.stringify({ success: true, ...readMetaheuristics(OUTPUTS_DIR) }));
           } catch (err) {
             res.statusCode = 500;
             return res.end(JSON.stringify({ success: false, error: (err as Error).message }));

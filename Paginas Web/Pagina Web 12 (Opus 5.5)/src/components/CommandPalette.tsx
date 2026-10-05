@@ -17,6 +17,7 @@ import {
   RefreshCw,
   Repeat,
   RotateCcw,
+  Route,
   ScrollText,
   Search,
   SearchX,
@@ -26,6 +27,7 @@ import {
   StepBack,
   StepForward,
   Table2,
+  Timer,
   Truck,
   X,
   type LucideIcon,
@@ -83,8 +85,24 @@ const SECTIONS: { id: string; label: string; index: string; icon: LucideIcon; ke
     icon: FlaskConical,
     keywords: 'heuristicas metaheuristica ils iterated local search algoritmo 2.1 4.2 dp programacion dinamica erdogan manipulacion handling gurobi',
   },
-  { id: 'modelo', label: 'Modelo matemático', index: '05', icon: Sigma, keywords: 'formulacion ecuaciones restricciones funcion objetivo latex' },
-  { id: 'datos', label: 'Datos de la instancia', index: '06', icon: Table2, keywords: 'nodos demanda matriz distancias c_ij capacidad' },
+  {
+    id: 'tiempos',
+    label: 'Tiempos de cómputo',
+    index: '05',
+    icon: Timer,
+    keywords:
+      'tiempos tiempo computo ejecucion segundos benchmark rendimiento gurobi general politica 1 2 3 ils algoritmo 2.1 dp battarra erdogan tabla comparativa gap desviacion clientes n latex csv',
+  },
+  {
+    id: 'metaheuristicas',
+    label: 'Metaheurísticas (ILS e ITS)',
+    index: '06',
+    icon: Route,
+    keywords:
+      'metaheuristicas ils its tabu iterated local search tabu search erdogan tablas 8 9 heuristico exacto 1dir 2dir dos fases gran escala 200 clientes desviacion best tiempo funcion objetivo',
+  },
+  { id: 'modelo', label: 'Modelo matemático', index: '07', icon: Sigma, keywords: 'formulacion ecuaciones restricciones funcion objetivo latex' },
+  { id: 'datos', label: 'Datos de la instancia', index: '08', icon: Table2, keywords: 'nodos demanda matriz distancias c_ij capacidad' },
 ];
 
 const GROUP_TITLE: Record<GroupId, string> = { sol: 'Soluciones', act: 'Acciones', nav: 'Ir a sección' };

@@ -3,7 +3,7 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { listSolutions, readHeuristics, readSolution } from './scripts/solutions-api.js';
+import { listSolutions, readBenchmark, readHeuristics, readMetaheuristics, readSolution } from './scripts/solutions-api.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -36,6 +36,26 @@ app.get('/api/solutions/:filename', (req, res) => {
 app.get('/api/heuristics', (_req, res) => {
   try {
     res.json({ success: true, ...readHeuristics(OUTPUTS_DIR) });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Benchmark de tiempos Gurobi vs Alg. 2.1 + DP e ILS (Outputs/Benchmark/); data = null si aún no hay resultados
+app.get('/api/benchmark', (_req, res) => {
+  try {
+    res.set('Cache-Control', 'no-store');
+    res.json({ success: true, data: readBenchmark(OUTPUTS_DIR) });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Benchmark de metaheurísticas a gran escala (Outputs/BenchmarkErdogan2012/); data / paper = null si aún no existen
+app.get('/api/metaheuristics', (_req, res) => {
+  try {
+    res.set('Cache-Control', 'no-store');
+    res.json({ success: true, ...readMetaheuristics(OUTPUTS_DIR) });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
